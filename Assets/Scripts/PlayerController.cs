@@ -19,20 +19,37 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float climbAnimationBaseSpeed = 1f;
     [SerializeField] private float finishClimbSpeed = 2f;
     [SerializeField] private float finishClimbAnimationBaseSpeed = 1f;
+    [SerializeField] private float climbAnimationForwardOffset = 8f;
+    [Header("Climb Timing")]
+    [SerializeField] private float finishClimbTimeout = 2f;
+    [Header("Climb Stop Detection")]
+    [SerializeField] private float climbStopRayOriginHeight = 1.8f;
+    [SerializeField] private float climbStopRaycastRange = 1f;
+    [SerializeField] private float climbStopDistanceThreshold = 0.35f;
+    [Header("Falling")]
+    [SerializeField] private float fallSpeed = 5f;
+    [SerializeField] private float fallForwardSpeed = 0f;
 
     [Header("Input")]
     [SerializeField] private KeyCode runKey = KeyCode.Space;
     [SerializeField] private KeyCode stopKey = KeyCode.S;
+    [SerializeField] private KeyCode climbKey = KeyCode.T;
 
     [Header("Animation")]
     [SerializeField] private Animator animator;
     [SerializeField] private float walkAnimationBaseSpeed = 1f;
     [SerializeField] private float runAnimationBaseSpeed = 1f;
 
+    [Header("Grounding")]
+    [SerializeField] private LayerMask walkableLayerMask;
+    [SerializeField] private float groundedCheckStartHeight = 0.1f;
+    [SerializeField] private float groundedDistanceThreshold = 0.2f;
+    [SerializeField] private float groundedDistanceDetectionFromPlayer = 1.5f;
+
     [Header("Click To Move")]
     [SerializeField] private float stopDistance = 0.2f;
     [SerializeField] private float maximumRayDistance = 250f;
-    [SerializeField] private LayerMask groundMask = ~0;
+    [SerializeField] private LayerMask groundMask;
     [SerializeField] private ClickMoveMarkerPool moveMarkerPool;
     [SerializeField] private float markerHeight = 0.1f;
 
@@ -44,6 +61,8 @@ public class PlayerController : MonoBehaviour
     private static readonly int IsIdleHash = Animator.StringToHash("isIdle");
     private static readonly int IsClimbingHash = Animator.StringToHash("isClimbing");
     private static readonly int FinishClimbingHash = Animator.StringToHash("FinishClimbing");
+    private static readonly int IsFallingHash = Animator.StringToHash("isFalling");
+    private const float GroundedRaycastPadding = 0.05f;
 
     private Vector3 _moveTarget;
     private bool _hasMoveTarget;
@@ -55,27 +74,42 @@ public class PlayerController : MonoBehaviour
     private bool _hasClimbFacingDirection;
     private HashSet<Collider> _activeClimbContacts;
     private int _climbableLayer;
+    private int _climbableLayerMask;
     private bool _finishClimbing;
+    private bool _isGrounded;
+    private bool _isFalling;
+    private CapsuleCollider _capsuleCollider;
+    private float _finishClimbTimer;
 
     private void Awake()
     {
         _activeClimbContacts = new HashSet<Collider>();
-        _climbableLayer = LayerMask.NameToLayer("Climbable");
+        RefreshClimbableLayerData();
+        EnsureGroundLayerMask();
+
+        if (!TryGetComponent(out _capsuleCollider))
+        {
+            Debug.LogWarning("PlayerController: CapsuleCollider component not found.", this);
+        }
     }
 
     private void Update()
     {
         HandleStopCommand();
         HandleClickToMoveInput();
+        HandleClimbInput();
 
         if (_isClimbing)
         {
             _hasMoveTarget = false;
         }
 
-        _runInputActive = Input.GetKey(runKey);
+        bool runKeyPressed = Input.GetKey(runKey);
+        _runInputActive = runKeyPressed && !_isClimbing && !_finishClimbing;
 
         MovePlayer();
+
+        CheckForClimbStop();
 
         UpdateAnimationState();
 
@@ -87,6 +121,9 @@ public class PlayerController : MonoBehaviour
         {
             HandleRotation();
         }
+
+        UpdateGroundedState();
+        UpdateFinishClimbTimer();
     }
 
     private void HandleStopCommand()
@@ -95,12 +132,60 @@ public class PlayerController : MonoBehaviour
         {
             _hasMoveTarget = false;
             _currentVelocity = Vector3.zero;
+
+            if (_finishClimbing)
+            {
+                return;
+            }
+
+            if (_isClimbing)
+            {
+                _isClimbing = false;
+                _isFalling = true;
+                _isGrounded = false;
+                _hasClimbFacingDirection = false;
+                _climbFacingDirection = Vector3.zero;
+                _activeClimbContacts.Clear();
+
+                if (animator)
+                {
+                    animator.SetBool(IsClimbingHash, false);
+                    animator.SetBool(IsFallingHash, true);
+                    animator.SetBool(FinishClimbingHash, false);
+                    animator.SetBool(IsRunningHash, false);
+                    animator.SetBool(IsWalkingHash, false);
+                    animator.SetBool(IsIdleHash, false);
+                }
+            }
+        }
+    }
+
+    private void HandleClimbInput()
+    {
+        if (_finishClimbing || _isClimbing)
+        {
+            return;
+        }
+
+        if (_activeClimbContacts.Count == 0)
+        {
+            return;
+        }
+
+        if (Input.GetKeyDown(climbKey))
+        {
+            BeginClimb();
         }
     }
 
     private void HandleClickToMoveInput()
     {
         if (!Input.GetMouseButtonDown(1))
+        {
+            return;
+        }
+
+        if (_isFalling || !_isGrounded)
         {
             return;
         }
@@ -132,11 +217,43 @@ public class PlayerController : MonoBehaviour
         }
         if (_finishClimbing)
         {
-            _currentVelocity = Vector3.up * finishClimbSpeed;
+            Vector3 climbForward = transform.forward;
+            climbForward.y = 0f;
+            if (climbForward.sqrMagnitude < 0.0001f)
+            {
+                climbForward = Vector3.forward;
+            }
+            climbForward.Normalize();
+
+            _currentVelocity = (Vector3.up * finishClimbSpeed) + (climbForward * climbAnimationForwardOffset);
             transform.position += _currentVelocity * Time.deltaTime;
             _isRunningThisFrame = false;
             return;
         }
+
+        if (!_isGrounded)
+        {
+            _isFalling = true;
+            _hasMoveTarget = false;
+            Vector3 fallForward = transform.forward;
+            fallForward.y = 0f;
+            if (fallForward.sqrMagnitude > 0.0001f)
+            {
+                fallForward.Normalize();
+            }
+            else
+            {
+                fallForward = Vector3.zero;
+            }
+
+            Vector3 forwardContribution = fallForward * Mathf.Max(0f, fallForwardSpeed);
+            _currentVelocity = (Vector3.down * Mathf.Max(0f, fallSpeed)) + forwardContribution;
+            transform.position += _currentVelocity * Time.deltaTime;
+            _isRunningThisFrame = false;
+            return;
+        }
+
+        _isFalling = false;
 
         Vector3 desiredVelocity = Vector3.zero;
 
@@ -176,6 +293,57 @@ public class PlayerController : MonoBehaviour
         _isRunningThisFrame = wantsToRun && _currentVelocity.sqrMagnitude > 0.0001f;
     }
 
+    private void CheckForClimbStop()
+    {
+        if (!_isClimbing || _finishClimbing)
+        {
+            return;
+        }
+
+        if (_climbableLayerMask == 0)
+        {
+            Debug.LogWarning("PlayerController: Climb stop raycast skipped, Climbable layer not found.", this);
+            return;
+        }
+
+        float rayLength = Mathf.Max(climbStopRaycastRange, climbStopDistanceThreshold);
+        if (rayLength <= 0f)
+        {
+            return;
+        }
+
+        Vector3 origin = transform.position + (Vector3.up * climbStopRayOriginHeight);
+        Vector3 direction = transform.forward;
+
+        if (Physics.Raycast(origin, direction, out RaycastHit hitInfo, rayLength, _climbableLayerMask, QueryTriggerInteraction.Ignore))
+        {
+            if (hitInfo.distance <= climbStopDistanceThreshold)
+            {
+                return;
+            }
+
+            FinishClimb();
+        }
+        else
+        {
+            FinishClimb();
+        }
+    }
+
+    private void BeginClimb()
+    {
+        if (_isClimbing || _finishClimbing)
+        {
+            return;
+        }
+
+        _isClimbing = true;
+        _currentVelocity = Vector3.zero;
+        _isRunningThisFrame = false;
+        _hasMoveTarget = false;
+        _isFalling = false;
+    }
+
     private void UpdateAnimationState()
     {
         if (_isClimbing)
@@ -189,6 +357,7 @@ public class PlayerController : MonoBehaviour
 
             animator.SetBool(IsClimbingHash, true);
             animator.SetBool(FinishClimbingHash, false);
+            animator.SetBool(IsFallingHash, false);
             animator.SetBool(IsRunningHash, false);
             animator.SetBool(IsWalkingHash, false);
             animator.SetBool(IsIdleHash, false);
@@ -206,10 +375,29 @@ public class PlayerController : MonoBehaviour
 
             animator.SetBool(IsClimbingHash, false);
             animator.SetBool(FinishClimbingHash, true);
+            animator.SetBool(IsFallingHash, false);
             animator.SetBool(IsRunningHash, false);
             animator.SetBool(IsWalkingHash, false);
             animator.SetBool(IsIdleHash, false);
             animator.speed = finishClimbAnimationBaseSpeed;
+            return;
+        }
+        if (_isFalling)
+        {
+            UpdateRunParticles(false);
+
+            if (!animator)
+            {
+                return;
+            }
+
+            animator.SetBool(IsClimbingHash, false);
+            animator.SetBool(FinishClimbingHash, false);
+            animator.SetBool(IsFallingHash, true);
+            animator.SetBool(IsRunningHash, false);
+            animator.SetBool(IsWalkingHash, false);
+            animator.SetBool(IsIdleHash, false);
+            animator.speed = 1f;
             return;
         }
 
@@ -230,6 +418,7 @@ public class PlayerController : MonoBehaviour
 
         animator.SetBool(IsClimbingHash, false);
         animator.SetBool(FinishClimbingHash, false);
+        animator.SetBool(IsFallingHash, false);
         animator.SetBool(IsRunningHash, isRunning);
         animator.SetBool(IsWalkingHash, isWalking);
         animator.SetBool(IsIdleHash, isIdle);
@@ -301,6 +490,84 @@ public class PlayerController : MonoBehaviour
         transform.rotation = newRotation;
     }
 
+    private void UpdateGroundedState()
+    {
+        if (_isClimbing || _finishClimbing)
+        {
+            _isGrounded = true;
+            return;
+        }
+
+        if (walkableLayerMask == 0)
+        {
+            return;
+        }
+
+        Vector3 origin = transform.position + (Vector3.up * groundedCheckStartHeight) + (Vector3.forward * groundedDistanceDetectionFromPlayer);
+        float rayLength = groundedCheckStartHeight + groundedDistanceThreshold + GroundedRaycastPadding;
+        bool hitWalkable = Physics.Raycast(origin, Vector3.down, out RaycastHit hitInfo, rayLength, walkableLayerMask, QueryTriggerInteraction.Ignore);
+
+        float distanceFromFeet = hitWalkable ? Mathf.Max(0f, hitInfo.distance - groundedCheckStartHeight) : float.PositiveInfinity;
+        bool groundedNow = hitWalkable && distanceFromFeet <= groundedDistanceThreshold;
+
+        if (groundedNow != _isGrounded)
+        {
+            _isGrounded = groundedNow;
+            string state = groundedNow ? "Grounded" : "Airborne";
+            //Debug.Log($"PlayerController: {state} (distance {distanceFromFeet:F3})", this);
+        }
+
+        if (_isGrounded)
+        {
+            _isFalling = false;
+        }
+        else if (!_isClimbing && !_finishClimbing)
+        {
+            _isFalling = true;
+            Debug.Log("NOT GROUNDED");
+        }
+    }
+
+    private void UpdateFinishClimbTimer()
+    {
+        if (!_finishClimbing)
+        {
+            _finishClimbTimer = 0f;
+            return;
+        }
+
+        _finishClimbTimer += Time.deltaTime;
+        if (_finishClimbTimer >= finishClimbTimeout)
+        {
+            Debug.LogWarning("PlayerController: Finish climb timeout reached, forcing reset.", this);
+            ResetFinishClimbFlag();
+        }
+    }
+
+    private void EnsureGroundLayerMask()
+    {
+        walkableLayerMask = AddLayerToMask(walkableLayerMask, "Walkable");
+        walkableLayerMask = AddLayerToMask(walkableLayerMask, "Climbable");
+        walkableLayerMask = AddLayerToMask(walkableLayerMask, "Ground");
+    }
+
+    private static int AddLayerToMask(int mask, string layerName)
+    {
+        int layer = LayerMask.NameToLayer(layerName);
+        if (layer != -1)
+        {
+            mask |= 1 << layer;
+        }
+
+        return mask;
+    }
+
+    private void RefreshClimbableLayerData()
+    {
+        _climbableLayer = LayerMask.NameToLayer("Climbable");
+        _climbableLayerMask = _climbableLayer != -1 ? 1 << _climbableLayer : 0;
+    }
+
     private void TryBeginClimb(Collision collision)
     {
         if (_finishClimbing)
@@ -315,9 +582,6 @@ public class PlayerController : MonoBehaviour
         }
 
         _activeClimbContacts.Add(collider);
-        _isClimbing = true;
-        _currentVelocity = Vector3.zero;
-        _isRunningThisFrame = false;
         UpdateClimbFacingDirection(collision);
     }
 
@@ -398,16 +662,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (!other.CompareTag("StopClimb"))
-        {
-            return;
-        }
-
-        FinishClimb();
-    }
-
     private void FinishClimb()
     {
         if (_finishClimbing || !_isClimbing)
@@ -420,11 +674,21 @@ public class PlayerController : MonoBehaviour
         _currentVelocity = Vector3.zero;
         _hasMoveTarget = false;
         _activeClimbContacts.Clear();
+        _isFalling = false;
+        if (_capsuleCollider)
+        {
+            _capsuleCollider.isTrigger = true;
+        }
+        _finishClimbTimer = 0f;
 
         if (animator)
         {
             animator.SetBool(IsClimbingHash, false);
             animator.SetBool(FinishClimbingHash, true);
+            animator.SetBool(IsFallingHash, false);
+            animator.SetBool(IsRunningHash, false);
+            animator.SetBool(IsWalkingHash, false);
+            animator.SetBool(IsIdleHash, false);
         }
     }
 
@@ -447,12 +711,16 @@ public class PlayerController : MonoBehaviour
         _hasClimbFacingDirection = false;
         _climbFacingDirection = Vector3.zero;
         _finishClimbing = false;
+        _isFalling = false;
         _activeClimbContacts?.Clear();
+        _isGrounded = false;
+        _finishClimbTimer = 0f;
 
         if (animator)
         {
             animator.SetBool(IsClimbingHash, false);
             animator.SetBool(FinishClimbingHash, false);
+            animator.SetBool(IsFallingHash, false);
         }
     }
 
@@ -467,6 +735,8 @@ public class PlayerController : MonoBehaviour
         climbRotationSpeed = Mathf.Max(0f, climbRotationSpeed);
         climbSpeed = Mathf.Max(0f, climbSpeed);
         finishClimbSpeed = Mathf.Max(0f, finishClimbSpeed);
+        climbAnimationForwardOffset = Mathf.Max(0f, climbAnimationForwardOffset);
+        finishClimbTimeout = Mathf.Max(0.01f, finishClimbTimeout);
         stopDistance = Mathf.Max(0f, stopDistance);
         maximumRayDistance = Mathf.Max(0f, maximumRayDistance);
         markerHeight = Mathf.Max(0f, markerHeight);
@@ -474,6 +744,22 @@ public class PlayerController : MonoBehaviour
         runAnimationBaseSpeed = Mathf.Max(0.01f, runAnimationBaseSpeed);
         climbAnimationBaseSpeed = Mathf.Max(0.01f, climbAnimationBaseSpeed);
         finishClimbAnimationBaseSpeed = Mathf.Max(0.01f, finishClimbAnimationBaseSpeed);
+        groundedCheckStartHeight = Mathf.Max(0f, groundedCheckStartHeight);
+        groundedDistanceThreshold = Mathf.Max(0f, groundedDistanceThreshold);
+        climbStopRayOriginHeight = Mathf.Max(0f, climbStopRayOriginHeight);
+        climbStopRaycastRange = Mathf.Max(0f, climbStopRaycastRange);
+        fallSpeed = Mathf.Max(0f, fallSpeed);
+        fallForwardSpeed = Mathf.Max(0f, fallForwardSpeed);
+        if (climbStopRaycastRange <= 0f)
+        {
+            climbStopDistanceThreshold = 0f;
+        }
+        else
+        {
+            climbStopDistanceThreshold = Mathf.Clamp(climbStopDistanceThreshold, 0f, climbStopRaycastRange);
+        }
+        RefreshClimbableLayerData();
+        EnsureGroundLayerMask();
     }
 
     public void ResetFinishClimbFlag()
@@ -482,10 +768,22 @@ public class PlayerController : MonoBehaviour
         _currentVelocity = Vector3.zero;
         _hasClimbFacingDirection = false;
         _climbFacingDirection = Vector3.zero;
+        _isFalling = false;
+        _finishClimbTimer = 0f;
+        if (_capsuleCollider)
+        {
+            _capsuleCollider.isTrigger = false;
+        }
 
         if (animator)
         {
             animator.SetBool(FinishClimbingHash, false);
+            animator.SetBool(IsFallingHash, false);
+            animator.SetBool(IsRunningHash, false);
+            animator.SetBool(IsWalkingHash, false);
+            animator.SetBool(IsClimbingHash, false);
+            animator.SetBool(IsIdleHash, true);
         }
     }
+
 }
