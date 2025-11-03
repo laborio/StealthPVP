@@ -828,6 +828,10 @@ GameObject:
   - component: {fileID: 4915670464980532377}
   - component: {fileID: 2600605261231814864}
   - component: {fileID: 2861506985018917610}
+  - component: {fileID: 4688101043850543982}
+  - component: {fileID: 2163196102238672091}
+  - component: {fileID: 6170193797682823404}
+  - component: {fileID: 1358479111065527026}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -866,44 +870,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38625e1b7b847460b967c7bd57cd17ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  walkSpeed: 2
-  runMultiplier: 5
-  walkAcceleration: 20
-  runAcceleration: 100
-  walkRotationSpeed: 720
-  runRotationSpeed: 3000
-  climbRotationSpeed: 3000
-  climbSpeed: 10
-  climbAnimationBaseSpeed: 5
-  finishClimbSpeed: 4
-  finishClimbAnimationBaseSpeed: 3
-  climbAnimationForwardOffset: 2
-  finishClimbTimeout: 0.5
-  climbStopRayOriginHeight: 2.2
-  climbStopRaycastRange: 1
-  climbStopDistanceThreshold: 1
-  fallSpeed: 15
-  fallForwardSpeed: 2
-  runKey: 32
-  stopKey: 115
-  climbKey: 116
-  animator: {fileID: 2600605261231814864}
-  walkAnimationBaseSpeed: 0.8
-  runAnimationBaseSpeed: 1
-  walkableLayerMask:
-    serializedVersion: 2
-    m_Bits: 392
-  groundedCheckStartHeight: 0.25
-  groundedDistanceThreshold: 0.25
-  groundedDistanceDetectionFromPlayer: 0.3
-  stopDistance: 0.2
-  maximumRayDistance: 250
-  groundMask:
-    serializedVersion: 2
-    m_Bits: 392
-  moveMarkerPool: {fileID: 0}
-  markerHeight: 0.1
-  runParticleSystem: {fileID: 1635984175154757836}
+  inputRouter: {fileID: 4688101043850543982}
+  locomotion: {fileID: 2163196102238672091}
+  climbController: {fileID: 6170193797682823404}
+  presentationController: {fileID: 1358479111065527026}
 --- !u!54 &4915670464980532377
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -930,7 +900,7 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 112
-  m_CollisionDetection: 0
+  m_CollisionDetection: 2
 --- !u!95 &2600605261231814864
 Animator:
   serializedVersion: 7
@@ -976,6 +946,96 @@ CapsuleCollider:
   m_Height: 1.83
   m_Direction: 1
   m_Center: {x: 0, y: 0.8, z: 0}
+--- !u!114 &4688101043850543982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601125754130475395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 089ecd5965865497d92dafac84512e40, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInputRouter
+  runKey: 32
+  stopKey: 115
+  climbKey: 116
+  maximumRayDistance: 250
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 392
+  moveMarkerPool: {fileID: 0}
+  markerHeight: 0.1
+--- !u!114 &2163196102238672091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601125754130475395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7943497fb9357465c80454ac7c74e47f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerLocomotion
+  walkSpeed: 2
+  runMultiplier: 5
+  walkAcceleration: 20
+  runAcceleration: 100
+  walkRotationSpeed: 720
+  runRotationSpeed: 3000
+  stopDistance: 0.2
+  fallSpeed: 10
+  fallForwardSpeed: 2
+  fallGroundSnapOffset: 0.1
+  capsuleCollider: {fileID: 2861506985018917610}
+  walkableLayerMask:
+    serializedVersion: 2
+    m_Bits: 392
+  groundedCheckStartHeight: 0.25
+  groundedDistanceThreshold: 0.25
+  groundedDistanceDetectionFromPlayer: 0.3
+--- !u!114 &6170193797682823404
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601125754130475395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1eba97f2589a3438285248d17f48c0e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerClimbController
+  climbRotationSpeed: 3000
+  climbSpeed: 10
+  climbAnimationBaseSpeed: 5
+  finishClimbSpeed: 4
+  finishClimbAnimationBaseSpeed: 3
+  climbAnimationForwardOffset: 2
+  climbStopRayOriginHeight: 2.2
+  climbStopRaycastRange: 1
+  climbStopDistanceThreshold: 1
+  finishClimbTimeout: 0.5
+--- !u!114 &1358479111065527026
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601125754130475395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 040db5b1609e14f68945a62de11c9f75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerPresentationController
+  animator: {fileID: 2600605261231814864}
+  walkAnimationBaseSpeed: 0.8
+  runAnimationBaseSpeed: 1
+  climbAnimationBaseSpeed: 5
+  finishClimbAnimationBaseSpeed: 3
+  runParticleSystem: {fileID: 1635984175154757836}
 --- !u!1 &5631832183318855960
 GameObject:
   m_ObjectHideFlags: 0
