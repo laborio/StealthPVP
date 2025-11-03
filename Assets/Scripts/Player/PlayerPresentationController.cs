@@ -10,8 +10,6 @@ public class PlayerPresentationController : MonoBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private float walkAnimationBaseSpeed = 1f;
     [SerializeField] private float runAnimationBaseSpeed = 1f;
-    [SerializeField] private float climbAnimationBaseSpeed = 1f;
-    [SerializeField] private float finishClimbAnimationBaseSpeed = 1f;
 
     [Header("Effects")]
     [SerializeField] private ParticleSystem runParticleSystem;
@@ -19,8 +17,7 @@ public class PlayerPresentationController : MonoBehaviour
     private static readonly int IsRunningHash = Animator.StringToHash("isRunning");
     private static readonly int IsWalkingHash = Animator.StringToHash("isWalking");
     private static readonly int IsIdleHash = Animator.StringToHash("isIdle");
-    private static readonly int IsClimbingHash = Animator.StringToHash("isClimbing");
-    private static readonly int FinishClimbingHash = Animator.StringToHash("FinishClimbing");
+    private static readonly int IsJumpingHash = Animator.StringToHash("isJumping");
     private static readonly int IsFallingHash = Animator.StringToHash("isFalling");
 
     public void Apply(PlayerPresentationContext context)
@@ -33,15 +30,12 @@ public class PlayerPresentationController : MonoBehaviour
         bool isRunning = context.Pose == PlayerPoseState.Running;
         bool isWalking = context.Pose == PlayerPoseState.Walking;
         bool isIdle = context.Pose == PlayerPoseState.Idle;
-        bool isClimbing = context.Pose == PlayerPoseState.Climbing;
-        bool isFinishingClimb = context.Pose == PlayerPoseState.FinishingClimb;
         bool isFalling = context.Pose == PlayerPoseState.Falling;
 
         animator.SetBool(IsRunningHash, isRunning);
         animator.SetBool(IsWalkingHash, isWalking);
         animator.SetBool(IsIdleHash, isIdle);
-        animator.SetBool(IsClimbingHash, isClimbing);
-        animator.SetBool(FinishClimbingHash, isFinishingClimb);
+        animator.SetBool(IsJumpingHash, context.IsJumping);
         animator.SetBool(IsFallingHash, isFalling);
 
         switch (context.Pose)
@@ -65,12 +59,8 @@ public class PlayerPresentationController : MonoBehaviour
                 animator.speed = 1f;
                 UpdateRunParticles(false);
                 break;
-            case PlayerPoseState.Climbing:
-                animator.speed = climbAnimationBaseSpeed;
-                UpdateRunParticles(false);
-                break;
-            case PlayerPoseState.FinishingClimb:
-                animator.speed = finishClimbAnimationBaseSpeed;
+            case PlayerPoseState.Jumping:
+                animator.speed = Mathf.Max(0.01f, context.JumpAnimationSpeed);
                 UpdateRunParticles(false);
                 break;
             case PlayerPoseState.Falling:
@@ -91,8 +81,7 @@ public class PlayerPresentationController : MonoBehaviour
         animator.SetBool(IsRunningHash, false);
         animator.SetBool(IsWalkingHash, false);
         animator.SetBool(IsIdleHash, false);
-        animator.SetBool(IsClimbingHash, false);
-        animator.SetBool(FinishClimbingHash, false);
+        animator.SetBool(IsJumpingHash, false);
         animator.SetBool(IsFallingHash, false);
         animator.speed = 1f;
     }
@@ -106,6 +95,21 @@ public class PlayerPresentationController : MonoBehaviour
 
         ParticleSystem.EmissionModule emission = runParticleSystem.emission;
         emission.enabled = shouldBeActive;
+
+        if (shouldBeActive)
+        {
+            if (!runParticleSystem.isPlaying)
+            {
+                runParticleSystem.Play();
+            }
+        }
+        else
+        {
+            if (runParticleSystem.isPlaying)
+            {
+                runParticleSystem.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            }
+        }
     }
 
     private void OnDisable()
@@ -117,8 +121,6 @@ public class PlayerPresentationController : MonoBehaviour
     {
         walkAnimationBaseSpeed = Mathf.Max(0.01f, walkAnimationBaseSpeed);
         runAnimationBaseSpeed = Mathf.Max(0.01f, runAnimationBaseSpeed);
-        climbAnimationBaseSpeed = Mathf.Max(0.01f, climbAnimationBaseSpeed);
-        finishClimbAnimationBaseSpeed = Mathf.Max(0.01f, finishClimbAnimationBaseSpeed);
     }
 }
 
@@ -128,6 +130,8 @@ public struct PlayerPresentationContext
     public float PlanarSpeed;
     public float WalkSpeed;
     public float RunSpeed;
+    public bool IsJumping;
+    public float JumpAnimationSpeed;
 }
 
 public enum PlayerPoseState
@@ -135,7 +139,6 @@ public enum PlayerPoseState
     Idle,
     Walking,
     Running,
-    Climbing,
-    FinishingClimb,
+    Jumping,
     Falling
 }

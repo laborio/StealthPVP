@@ -6,9 +6,9 @@ using UnityEngine;
 public class PlayerInputRouter : MonoBehaviour
 {
     [Header("Input Keys")]
-    [SerializeField] private KeyCode runKey = KeyCode.Space;
+    [SerializeField] private KeyCode runKey = KeyCode.LeftShift;
     [SerializeField] private KeyCode stopKey = KeyCode.S;
-    [SerializeField] private KeyCode climbKey = KeyCode.T;
+    [SerializeField] private KeyCode jumpKey = KeyCode.Space;
 
     [Header("Click To Move")]
     [SerializeField] private float maximumRayDistance = 250f;
@@ -25,7 +25,7 @@ public class PlayerInputRouter : MonoBehaviour
         {
             RunHeld = Input.GetKey(runKey),
             StopPressed = Input.GetKeyDown(stopKey),
-            ClimbPressed = Input.GetKeyDown(climbKey)
+            JumpPressed = Input.GetKeyDown(jumpKey)
         };
 
         if (Input.GetMouseButtonDown(1) && TryResolveMoveTarget(out Vector3 targetPosition))
@@ -82,7 +82,7 @@ public struct PlayerInputSnapshot
 {
     public bool RunHeld;
     public bool StopPressed;
-    public bool ClimbPressed;
+    public bool JumpPressed;
     public bool MoveIssued;
     public Vector3 MoveTarget;
 }
