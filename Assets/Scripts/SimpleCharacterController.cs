@@ -12,6 +12,7 @@ public class SimpleCharacterController : MonoBehaviour
     [SerializeField] private float rotationSpeed = 720f;
     [SerializeField] private KeyCode runKey = KeyCode.LeftShift;
     [SerializeField] private KeyCode jumpKey = KeyCode.Space;
+    [SerializeField] private KeyCode squishKey = KeyCode.G;
     [SerializeField] private KeyCode dashKey = KeyCode.R;
 
     [Header("Click To Move")]
@@ -40,6 +41,9 @@ public class SimpleCharacterController : MonoBehaviour
     [SerializeField] private string runningBoolName = "isRunning";
     [SerializeField] private string jumpingBoolName = "isJumping";
     [SerializeField] private string fallingBoolName = "isFalling";
+    [SerializeField] private string squishBoolName = "isSquishing";
+    [SerializeField] private string recoveringBoolName = "isRecovering";
+    [SerializeField] private float recoveryDuration = 0.6f;
 
     private CharacterController _characterController;
     private Camera _camera;
@@ -56,6 +60,10 @@ public class SimpleCharacterController : MonoBehaviour
     private float _dashTimer;
     private float _dashCooldownTimer;
     private bool _isDashing;
+    private bool _isRecovering;
+    private float _recoverTimer;
+    private bool _wasGrounded;
+    private bool _isSquishing;
 
     private void Awake()
     {
@@ -107,25 +115,51 @@ public class SimpleCharacterController : MonoBehaviour
             }
         }
 
+        bool wasGrounded = _wasGrounded;
         bool isGrounded = IsGrounded();
+        bool landedThisFrame = isGrounded && !wasGrounded;
         if (isGrounded)
         {
             _coyoteTimer = coyoteTime;
             if (_verticalVelocity < 0f)
             {
                 _verticalVelocity = groundedGravity;
-                if (!_isJumping)
-                {
-                    _isFalling = false;
-                }
+            }
+            _isFalling = false;
+            if (landedThisFrame)
+            {
+                _isJumping = false;
+                _isRecovering = true;
+                _recoverTimer = Mathf.Max(0f, recoveryDuration);
+                _isSquishing = false;
             }
         }
         else
         {
             _coyoteTimer = Mathf.Max(_coyoteTimer - deltaTime, 0f);
+            _isRecovering = false;
+            _isSquishing = false;
         }
 
-        if (Input.GetKeyDown(jumpKey))
+        if (Input.GetKeyDown(squishKey))
+        {
+            if (_isSquishing)
+            {
+                _isSquishing = false;
+            }
+            else
+            {
+                bool canSquishNow = isGrounded && !_isJumping && !_isFalling && !_isRecovering && !_isDashing;
+                if (canSquishNow)
+                {
+                    _isSquishing = true;
+                    _isRecovering = false;
+                }
+            }
+        }
+
+        bool canBufferJump = !_isJumping && (!_isFalling || _coyoteTimer > 0f);
+        if (Input.GetKeyDown(jumpKey) && canBufferJump)
         {
             _jumpBufferTimer = jumpBufferTime;
         }
@@ -195,6 +229,8 @@ public class SimpleCharacterController : MonoBehaviour
             }
             _isJumping = true;
             _isFalling = false;
+            _isRecovering = false;
+            _isSquishing = false;
             _jumpBufferTimer = 0f;
             _coyoteTimer = 0f;
         }
@@ -224,15 +260,33 @@ public class SimpleCharacterController : MonoBehaviour
                 _isJumping = false;
             }
         }
-        else if (planarSpeed <= 0.1f)
+        else
         {
-            _isJumping = false;
             _isFalling = false;
         }
 
-        bool isWalking = planarSpeed > 0.1f && !_isRunning && !_isDashing;
-        bool isRunningEffective = _isRunning || _isDashing;
-        UpdateAnimator(isWalking, isRunningEffective, _isJumping, _isFalling);
+        if (_isRecovering)
+        {
+            if (_recoverTimer > 0f)
+            {
+                _recoverTimer = Mathf.Max(_recoverTimer - deltaTime, 0f);
+            }
+            if (_recoverTimer <= 0f && !landedThisFrame)
+            {
+                _isRecovering = false;
+            }
+            if (_isRecovering)
+            {
+                _isSquishing = false;
+            }
+        }
+
+        bool isAirborne = _isJumping || _isFalling; // Prevent walking/running animations from overriding jump/fall
+        bool isLocomotionOverridden = isAirborne || _isSquishing;
+        bool isWalking = !isLocomotionOverridden && planarSpeed > 0.1f && !_isRunning && !_isDashing;
+        bool isRunningEffective = !isLocomotionOverridden && (_isRunning || _isDashing);
+        UpdateAnimator(isWalking, isRunningEffective, _isJumping, _isFalling, _isRecovering, _isSquishing);
+        _wasGrounded = isGrounded;
     }
 
     private bool IsGrounded()
@@ -308,18 +362,24 @@ public class SimpleCharacterController : MonoBehaviour
         return new Vector3(input.x, 0f, input.y);
     }
 
-    private void UpdateAnimator(bool isWalking, bool isRunning, bool isJumping, bool isFalling)
+    private void UpdateAnimator(bool isWalking, bool isRunning, bool isJumping, bool isFalling, bool isRecovering, bool isSquishing)
     {
         if (!animator)
         {
             return;
         }
 
-        animator.SetBool(walkingBoolName, isWalking);
-        animator.SetBool(idleBoolName, !isWalking && !isRunning && !isJumping && !isFalling);
+        bool inAir = isJumping || isFalling;
+        bool locomotionBlocked = inAir || isSquishing;
+        bool walkingValue = !locomotionBlocked && isWalking;
+        bool runningValue = !locomotionBlocked && isRunning;
+        bool idleValue = !walkingValue && !runningValue && !isJumping && !isFalling && !isSquishing;
+
+        animator.SetBool(walkingBoolName, walkingValue);
+        animator.SetBool(idleBoolName, idleValue);
         if (!string.IsNullOrEmpty(runningBoolName))
         {
-            animator.SetBool(runningBoolName, isRunning);
+            animator.SetBool(runningBoolName, runningValue);
         }
         if (!string.IsNullOrEmpty(jumpingBoolName))
         {
@@ -329,6 +389,14 @@ public class SimpleCharacterController : MonoBehaviour
         {
             animator.SetBool(fallingBoolName, isFalling);
         }
+        if (!string.IsNullOrEmpty(recoveringBoolName))
+        {
+            animator.SetBool(recoveringBoolName, isRecovering);
+        }
+        if (!string.IsNullOrEmpty(squishBoolName))
+        {
+            animator.SetBool(squishBoolName, isSquishing);
+        }
     }
 
     private void OnDisable()
@@ -337,9 +405,13 @@ public class SimpleCharacterController : MonoBehaviour
         _isRunning = false;
         _isJumping = false;
         _isFalling = false;
+        _isRecovering = false;
+        _isSquishing = false;
         _coyoteTimer = 0f;
         _jumpBufferTimer = 0f;
+        _recoverTimer = 0f;
         _currentPlanarVelocity = Vector3.zero;
+        _wasGrounded = false;
         if (animator)
         {
             animator.SetBool(walkingBoolName, false);
@@ -355,6 +427,14 @@ public class SimpleCharacterController : MonoBehaviour
             if (!string.IsNullOrEmpty(fallingBoolName))
             {
                 animator.SetBool(fallingBoolName, false);
+            }
+            if (!string.IsNullOrEmpty(recoveringBoolName))
+            {
+                animator.SetBool(recoveringBoolName, false);
+            }
+            if (!string.IsNullOrEmpty(squishBoolName))
+            {
+                animator.SetBool(squishBoolName, false);
             }
         }
         _hasMoveTarget = false;
@@ -375,5 +455,6 @@ public class SimpleCharacterController : MonoBehaviour
         airControl = Mathf.Clamp(airControl, 0f, 5f);
         groundProbeRadius = Mathf.Max(0f, groundProbeRadius);
         groundProbeDistance = Mathf.Max(0f, groundProbeDistance);
+        recoveryDuration = Mathf.Max(0f, recoveryDuration);
     }
 }
