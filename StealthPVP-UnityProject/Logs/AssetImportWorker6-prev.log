@@ -1,0 +1,1041 @@
+Unity Editor version:    6000.2.9f1 (e0c4e791ab71)
+Branch:                  6000.2/staging
+Build type:              Release
+Batch mode:              YES
+macOS version:           Version 26.0.1 (Build 25A362)
+Darwin version:          25.0.0
+Architecture:            arm64
+Running under Rosetta:   NO
+Available memory:        32768 MB
+Date:                    2025-11-04T19:19:09Z
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-xavierlaborie" at "2025-11-04T19:19:09.044501Z"
+
+COMMAND LINE ARGUMENTS:
+/Applications/Unity/Hub/Editor/6000.2.9f1/Unity.app/Contents/MacOS/Unity
+-adb2
+-batchMode
+-noUpm
+-name
+AssetImportWorker6
+-projectPath
+/Users/xavierlaborie/Documents/StealthPVP
+-logFile
+Logs/AssetImportWorker6.log
+-srvPort
+52968
+-licensingIpc
+LicenseClient-xavierlaborie
+-job-worker-count
+5
+-background-job-worker-count
+8
+-gc-helper-count
+1
+-name AssetImport
+Successfully changed project path to: /Users/xavierlaborie/Documents/StealthPVP
+/Users/xavierlaborie/Documents/StealthPVP
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gfx=262144"
+Player connection [8733313024]  Target information:
+
+Player connection [8733313024]  * "[IP] 192.168.1.155 [Port] 0 [Flags] 2 [Guid] 1420750274 [EditorId] 1420750274 [Version] 1048832 [Id] OSXEditor(0,MacBook-Pro-de-Xavier-2.local) [Debug] 1 [PackageName] OSXEditor [ProjectName] Editor" 
+
+Player connection [8733313024] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [8733313024] Host joined alternative multi-casting on [225.0.0.222:34997]...
+JobSystem: Creating JobQueue using job-worker-count value 5
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+Library Redirect Path: Library/
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Refreshing native plugins compatible for Editor in 2.15 ms, found 1 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Initialize engine version: 6000.2.9f1 (e0c4e791ab71)
+[Subsystems] Discovering subsystems at path /Applications/Unity/Hub/Editor/6000.2.9f1/Unity.app/Contents/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path /Users/xavierlaborie/Documents/StealthPVP/Assets
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+ preferred device: Apple M2 Pro (high power)
+Metal devices available: 1
+0: Apple M2 Pro (high power)
+Using device Apple M2 Pro (high power)
+Initializing Metal device caps: Apple M2 Pro
+Mac GPU Family: 2
+Apple GPU Family: 8
+MSL Version: 3.0
+Has Float MSAA: 1
+Has Float Filtering: 1
+ReadWrite Texture Tier: 2
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 2369, path: "/Applications/Unity Hub.app/Contents/Frameworks/UnityLicensingClient_V1.app/Contents/MacOS/Unity.Licensing.Client")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.17.3+a4e98f1
+  Session Id:              ee76de973e2d401ca1bb7b97b51c4eb9
+  Correlation Id:          5cd19d1c7272e178d7ee8063c5330295
+  External correlation Id: 426407291418454269
+  Machine Id:              e0umkHVmCYw6HzbRpMo8Um8MNSU=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-xavierlaborie" (connect: 0.00s, validation: 0.00s, handshake: 0.25s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-xavierlaborie-notifications" at "2025-11-04T19:19:09.2985Z"
+[Licensing::Module] Licensing Background thread has ended after 0.25s
+Initialize mono
+Mono path[0] = '/Applications/Unity/Hub/Editor/6000.2.9f1/Unity.app/Contents/Managed'
+Mono path[1] = '/Applications/Unity/Hub/Editor/6000.2.9f1/Unity.app/Contents/MonoBleedingEdge/lib/mono/unityjit-macos'
+Mono config path = '/Applications/Unity/Hub/Editor/6000.2.9f1/Unity.app/Contents/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56451
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: /Applications/Unity/Hub/Editor/6000.2.9f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/UnityEditor.OSXStandalone.Extensions.dll
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: SC-34MM-8EW8-NP5N-J7P4-XXXX
+  Product: Unity Pro
+  Type: ULF
+  Expiration: 2123-10-21T00:00:00Z
+Register platform support module: /Applications/Unity/Hub/Editor/6000.2.9f1/PlaybackEngines/AndroidPlayer/UnityEditor.Android.Extensions.dll
+Registered in 0.002032 seconds.
+- Loaded All Assemblies, in  0.219 seconds
+Native extension for Android target not found
+Android Extension - Scanning For ADB Devices 92 ms
+Native extension for OSXStandalone target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.364 seconds
+Domain Reload Profiling: 583ms
+	BeginReloadAssembly (52ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (0ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (0ms)
+	RebuildCommonClasses (24ms)
+	RebuildNativeTypeToScriptingClass (9ms)
+	initialDomainReloadingComplete (28ms)
+	LoadAllAssembliesAndSetupDomain (107ms)
+		LoadAssemblies (52ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (105ms)
+			TypeCache.Refresh (103ms)
+				TypeCache.ScanAssembly (93ms)
+			BuildScriptInfoCaches (0ms)
+			ResolveRequiredComponents (0ms)
+	FinalizeReload (364ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (333ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (169ms)
+			SetLoadedEditorAssemblies (3ms)
+			BeforeProcessingInitializeOnLoad (50ms)
+			ProcessInitializeOnLoadAttributes (77ms)
+			ProcessInitializeOnLoadMethodAttributes (34ms)
+			AfterProcessingInitializeOnLoad (0ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (0ms)
+[CoreBusinessMetrics] Unexpected thread when updating session info.
+[CoreBusinessMetrics] Unexpected thread when constructing MetricsHeader.
+[CoreBusinessMetrics] Unexpected thread when constructing MetricsHeader.
+========================================================================
+Worker process is ready to serve import requests
+Import Worker Mode flag is 0x00
+Begin MonoManager ReloadAssembly
+[Licensing::Client] Successfully resolved entitlement details
+- Loaded All Assemblies, in  0.458 seconds
+Refreshing native plugins compatible for Editor in 0.32 ms, found 1 plugins.
+Native extension for Android target not found
+Native extension for OSXStandalone target not found
+Package Manager log level set to [2]
+[Package Manager] Failed to launch server process. Reason: Unity was launched with the -noUpm command-line argument
+[Package Manager] Unable to send message (not connected to server process).
+[Package Manager] Cannot connect to Unity Package Manager local server
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.437 seconds
+Domain Reload Profiling: 895ms
+	BeginReloadAssembly (89ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (4ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (19ms)
+	RebuildCommonClasses (25ms)
+	RebuildNativeTypeToScriptingClass (10ms)
+	initialDomainReloadingComplete (22ms)
+	LoadAllAssembliesAndSetupDomain (312ms)
+		LoadAssemblies (198ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (152ms)
+			TypeCache.Refresh (117ms)
+				TypeCache.ScanAssembly (104ms)
+			BuildScriptInfoCaches (26ms)
+			ResolveRequiredComponents (6ms)
+	FinalizeReload (437ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (311ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (5ms)
+			SetLoadedEditorAssemblies (3ms)
+			BeforeProcessingInitializeOnLoad (80ms)
+			ProcessInitializeOnLoadAttributes (193ms)
+			ProcessInitializeOnLoadMethodAttributes (28ms)
+			AfterProcessingInitializeOnLoad (1ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (1ms)
+WARNING: Shader Unsupported: 'Universal Render Pipeline/VR/SpatialMapping/Wireframe' - All subshaders removed
+WARNING: Shader Did you use #pragma only_renderers and omit this platform?
+WARNING: Shader If subshaders removal was intentional, you may have forgotten turning Fallback off?
+WARNING: Shader Unsupported: 'Universal Render Pipeline/VR/SpatialMapping/Wireframe' - All subshaders removed
+WARNING: Shader Did you use #pragma only_renderers and omit this platform?
+WARNING: Shader If subshaders removal was intentional, you may have forgotten turning Fallback off?
+Launching external process: /Applications/Unity/Hub/Editor/6000.2.9f1/Unity.app/Contents/Tools/UnityShaderCompiler
+Launched and connected shader compiler UnityShaderCompiler after 0.03 seconds
+Refreshing native plugins compatible for Editor in 0.24 ms, found 1 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Unloading 15 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 5771 unused Assets / (4.2 MB). Loaded Objects now: 6495.
+Memory consumption went from 135.5 MB to 131.3 MB.
+Total: 6.292959 ms (FindLiveObjects: 1.312416 ms CreateObjectMapping: 0.199042 ms MarkObjects: 3.532083 ms  DeleteObjects: 1.249042 ms)
+
+========================================================================
+Received Import Request.
+  Time since last request: 160139.658457 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '3f528f44a501c9ffa97a55573a7bbafe') in 3.052419917 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 5
+
+========================================================================
+Received Import Request.
+  Time since last request: 1.251881 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '07ce0bf36a0734f6097694a084f1e0e4') in 0.092632875 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 33.558985 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'a1b2956a6c00f7832a03bdba661cb38e') in 0.140737292 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 12.113821 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '7d9a8235cb3063e8037d174564e70381') in 0.007478292 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 194.281148 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'dce9bad8713e2d112e7b31ecf3bed2ca') in 0.111856125 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 10.084019 seconds.
+  path: Assets/Textures/T_CracksEmissive.png
+  artifactKey: Guid(5f04fd4ab3f214e02999782691a121e2) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Textures/T_CracksEmissive.png using Guid(5f04fd4ab3f214e02999782691a121e2) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter)[Licensing::Client] Successfully resolved entitlement details
+ -> (artifact id: '8fa8819d03ddd8010b1dfa1920472e17') in 0.010471416 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 2
+
+========================================================================
+Received Import Request.
+  Time since last request: 72.724097 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'adbc2423384f07f6deb8df49e737549e') in 0.130955125 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 19.958499 seconds.
+  path: Assets/Textures/T_DirtNormal.png
+  artifactKey: Guid(84a055c645b3a4601aad7cac9483e81c) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Textures/T_DirtNormal.png using Guid(84a055c645b3a4601aad7cac9483e81c) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '7c1ed69d54df40e2f16a11bcd55a9710') in 0.005494083 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 2
+
+========================================================================
+Received Import Request.
+  Time since last request: 119.337080 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'b744a56ffab1f8f44c4b2cf95d03d2c6') in 0.114405791 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 25.765291 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'cc9638c1360c370faeda818980fdf616') in 0.103973834 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 61.906437 seconds.
+  path: Assets/Materials-Shaders/M_GroundStylized.mat
+  artifactKey: Guid(90527527877f549c586436c98eb1cef4) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/M_GroundStylized.mat using Guid(90527527877f549c586436c98eb1cef4) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'd245b88e021ff35f6be29c2d025b36b7') in 0.004048333 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 6
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000036 seconds.
+  path: Assets/Scenes/DesignScene/DesignScene_Simple3D.unity
+  artifactKey: Guid(266e101f885aa4fd9a63030f4b19bc0e) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Scenes/DesignScene/DesignScene_Simple3D.unity using Guid(266e101f885aa4fd9a63030f4b19bc0e) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '4ce159241f788ac77f297f8578616d77') in 0.01047225 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 32.510960 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '2465c331498d6eb3179b8c414464acda') in 0.108910458 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 38.032838 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'dc842218ab8ae738684eabc8a11a1559') in 0.006271458 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 24.428068 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '60c8a38931f00d8c616c998fdf2e7b33') in 0.127620375 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 88.980681 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'dedc5d8bbef467642d1cb88484753b5b') in 0.004606417 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 5.540129 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '283256606967fa22f7bcc08985d1aae3') in 0.115959875 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 14.521578 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '8118ef555d5a2198cbace0f96673c425') in 0.004442208 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 138.741082 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '446061d5fe8bd7d6dfda14eea79cf929') in 0.129176209 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 59.048267 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '832765d118aaa04f0f8b50db2385dea3') in 0.12020525 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 120.915051 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'c29fb7ee2bff69a2d16c56c18df979f9') in 0.108613084 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 20.981386 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '3c81723a823d9f912d1c5770e2ae3114') in 0.125280083 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 24.703073 seconds.
+  path: Assets/Materials-Shaders/M_GroundStylized.mat
+  artifactKey: Guid(90527527877f549c586436c98eb1cef4) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/M_GroundStylized.mat using Guid(90527527877f549c586436c98eb1cef4) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '608c0c48a322d5e1c5d16baf49f04f19') in 0.003535334 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 6
+
+========================================================================
+Received Import Request.
+  Time since last request: 37.444899 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '664283abbdbb9fbe859b8addcff338e2') in 0.123496834 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 57.804861 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '1b84905e62a1cf25cf5e795ebb3eb33f') in 0.005009125 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 652.189525 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'ae1ba65042d62397a138a121318a88f5') in 0.1242335 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 11.838262 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'dc36e5b177961bc297b24a03ec472b60') in 0.004766208 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 25.413763 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '426e49b9065eabc148c451c93bddaf2f') in 0.128771667 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 12.090493 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '4ea06d0f6eea64ba1c2a3b9950d4657e') in 0.006284334 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 101.232131 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'f0b9c9f0cafcd0f7bbd5a4ce45980a6d') in 0.125902708 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 25.543357 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'c942a3421659fb4835571ddda67c086f') in 0.005088709 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 14.976265 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '7854b6d25a258269047c1daeb54b889b') in 0.109226875 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 29.625342 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'fd1f610484ebb2a4bb9f7b425b21a4d9') in 0.111925917 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 27.126720 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '4486cbeac97dd723f252a65397704415') in 0.106734375 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 33.960522 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '9c06bffbd6e6d70d2c76fb5237fb1bfb') in 0.116071042 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 35.960937 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '9107ed098d4fe6708f6b9e35e95feb73') in 0.005927875 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 24.648801 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '635ebf70afbe013e78f0525a51c268e7') in 0.11189675 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 210.027828 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '38dcb70eca40be69cac3d6ff174a9e19') in 0.122495 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 10.378346 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '6796b18c90bff51211c2ffc18fd8ed48') in 0.108950708 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 51.455075 seconds.
+  path: Assets/Materials-Shaders/M_GroundStylized.mat
+  artifactKey: Guid(90527527877f549c586436c98eb1cef4) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/M_GroundStylized.mat using Guid(90527527877f549c586436c98eb1cef4) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '217aa5d7d90d6a994ab04c052e260c4c') in 0.004534542 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 6
+
+========================================================================
+Received Import Request.
+  Time since last request: 4916.699169 seconds.
+  path: Assets/Textures/T_NoiseCurve.png
+  artifactKey: Guid(dad420516f866455f877c2e6fa7501e9) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Textures/T_NoiseCurve.png using Guid(dad420516f866455f877c2e6fa7501e9) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '077e4bc4ae1bf644f199ea7ddae20a78') in 0.048528333 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 98.436967 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '1397df749f0b8a4f3d10edb0fd0902ac') in 0.1257945 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 22.614627 seconds.
+  path: Assets/Textures/T_NoiseCurve.png
+  artifactKey: Guid(dad420516f866455f877c2e6fa7501e9) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Textures/T_NoiseCurve.png using Guid(dad420516f866455f877c2e6fa7501e9) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'c66c408a5d2410ef0d5a0cb2f4d9c272') in 0.006944292 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 2
+
+========================================================================
+Received Import Request.
+  Time since last request: 5.740129 seconds.
+  path: Assets/Materials-Shaders/M_GroundStylized.mat
+  artifactKey: Guid(90527527877f549c586436c98eb1cef4) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/M_GroundStylized.mat using Guid(90527527877f549c586436c98eb1cef4) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '8afcd3ecb7559e45a6dc1dc87312a3f3') in 0.003754625 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 6
+
+========================================================================
+Received Import Request.
+  Time since last request: 27.303992 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'c941cc2bee897fa57df559d5450b1f8f') in 0.0066055 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 40.085602 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'f5c1a25a833d529651ddaaedde9fbe6f') in 0.1229845 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 30.958974 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'a3aa470e09bed6cd09eacf2790aaddad') in 0.005145667 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 7.930925 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'd48fbda7238612c8d6a057e67d42b34d') in 0.112395834 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 544.996075 seconds.
+  path: Assets/Models/Rock.fbm
+  artifactKey: Guid(b6ca7b7dda2a24e3199dbbb932252672) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Models/Rock.fbm using Guid(b6ca7b7dda2a24e3199dbbb932252672) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '4a7c902d97eb54e2679794ed296ac553') in 0.005826375 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000085 seconds.
+  path: Assets/Models/Rock.fbm/T_NoiseCurve.png
+  artifactKey: Guid(710d6c28f8307474ebb6515467ce5bdb) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Models/Rock.fbm/T_NoiseCurve.png using Guid(710d6c28f8307474ebb6515467ce5bdb) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '69e6ff08aefe442d8a59f452ae88e842') in 0.006180208 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 71.568198 seconds.
+  path: Assets/Materials-Shaders/S_GroundStylized.shadergraph
+  artifactKey: Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_GroundStylized.shadergraph using Guid(ad5bbf13608e2494abb015db29e82b3c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '4cc2ecdda27589ab581675356d53a74b') in 0.006026833 seconds
+Number of updated asset objects reloaded before import = 1Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 47.436197 seconds.
+  path: Assets/Materials-Shaders/M_GroundStylized.mat
+  artifactKey: Guid(90527527877f549c586436c98eb1cef4) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/M_GroundStylized.mat using Guid(90527527877f549c586436c98eb1cef4) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'd2b2fdc46c1880c04fe00b9b9513d8e5') in 0.005742333 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 6
+
+========================================================================
+Received Import Request.
+  Time since last request: 20.933162 seconds.
+  path: Assets/Materials-Shaders/M_GroundStylized 1.mat
+  artifactKey: Guid(eceef288da44b437ab02ff7fa06a82d7) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/M_GroundStylized 1.mat using Guid(eceef288da44b437ab02ff7fa06a82d7) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'a1194c31103fa60d103d97d498636848') in 0.004550542 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 6
+
+========================================================================
+Received Import Request.
+  Time since last request: 6.091370 seconds.
+  path: Assets/Materials-Shaders/M_RockStylized.mat
+  artifactKey: Guid(eceef288da44b437ab02ff7fa06a82d7) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/M_RockStylized.mat using Guid(eceef288da44b437ab02ff7fa06a82d7) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '7ca6b6a127db0adf21df2ddde465bd3c') in 0.006038916 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 6
+
+========================================================================
+Received Prepare
+Begin MonoManager ReloadAssembly
+[Licensing::Client] Successfully resolved entitlement details
+Thread 0x16f1d7000 may have been prematurely finalized
+- Loaded All Assemblies, in  0.443 seconds
+Refreshing native plugins compatible for Editor in 0.21 ms, found 1 plugins.
+Native extension for Android target not found
+Native extension for OSXStandalone target not found
+[Package Manager] Failed to launch server process. Reason: Unity was launched with the -noUpm command-line argument
+[Package Manager] Unable to send message (not connected to server process).
+[Package Manager] Cannot connect to Unity Package Manager local server
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.401 seconds
+Domain Reload Profiling: 846ms
+	BeginReloadAssembly (156ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (21ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (52ms)
+	RebuildCommonClasses (24ms)
+	RebuildNativeTypeToScriptingClass (9ms)
+	initialDomainReloadingComplete (17ms)
+	LoadAllAssembliesAndSetupDomain (239ms)
+		LoadAssemblies (174ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (107ms)
+			TypeCache.Refresh (9ms)
+				TypeCache.ScanAssembly (0ms)
+			BuildScriptInfoCaches (86ms)
+			ResolveRequiredComponents (7ms)
+	FinalizeReload (401ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (285ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (5ms)
+			SetLoadedEditorAssemblies (3ms)
+			BeforeProcessingInitializeOnLoad (84ms)
+			ProcessInitializeOnLoadAttributes (166ms)
+			ProcessInitializeOnLoadMethodAttributes (26ms)
+			AfterProcessingInitializeOnLoad (1ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (7ms)
+WARNING: Shader Unsupported: 'Universal Render Pipeline/VR/SpatialMapping/Wireframe' - All subshaders removed
+WARNING: Shader Did you use #pragma only_renderers and omit this platform?
+WARNING: Shader If subshaders removal was intentional, you may have forgotten turning Fallback off?
+WARNING: Shader Unsupported: 'Universal Render Pipeline/VR/SpatialMapping/Wireframe' - All subshaders removed
+WARNING: Shader Did you use #pragma only_renderers and omit this platform?
+WARNING: Shader If subshaders removal was intentional, you may have forgotten turning Fallback off?
+Refreshing native plugins compatible for Editor in 0.22 ms, found 1 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Unloading 15 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 5770 unused Assets / (4.2 MB). Loaded Objects now: 6578.
+Memory consumption went from 155.2 MB to 151.0 MB.
+Total: 6.383542 ms (FindLiveObjects: 0.416208 ms CreateObjectMapping: 0.266042 ms MarkObjects: 4.116458 ms  DeleteObjects: 1.584417 ms)
+
+Prepare: number of updated asset objects reloaded= 0
+========================================================================
+Received Import Request.
+  Time since last request: 391.160211 seconds.
+  path: Assets/Other/Terrain Layer Dirt.terrainlayer
+  artifactKey: Guid(10d19ab68ffe04644b9523ae8ebff5fc) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Other/Terrain Layer Dirt.terrainlayer using Guid(10d19ab68ffe04644b9523ae8ebff5fc) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '2ee775dfe8f7952ec47952967ffba6b4') in 0.030273833 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 2
+
+========================================================================
+Received Import Request.
+  Time since last request: 23.693644 seconds.
+  path: Assets/Other/Terrain Layer Ground Stone.terrainlayer
+  artifactKey: Guid(c2d495f83df4e414bbd73a60633875ef) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Other/Terrain Layer Ground Stone.terrainlayer using Guid(c2d495f83df4e414bbd73a60633875ef) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '356f05a47b5c0621f4512d5ced9572f6') in 0.004316583 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 2
+
+========================================================================
+Received Import Request.
+  Time since last request: 8.626059 seconds.
+  path: Assets/Textures/T_ClickArea.png
+  artifactKey: Guid(9afc12a4ec1814a1b9949650db65fcd3) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Textures/T_ClickArea.png using Guid(9afc12a4ec1814a1b9949650db65fcd3) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '5379acc730ce1885c413636237c7234c') in 0.020690042 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 4.654688 seconds.
+  path: Assets/Textures/T_Smoke.png
+  artifactKey: Guid(f4cdcd31675bb4defb1cee48b1749668) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Textures/T_Smoke.png using Guid(f4cdcd31675bb4defb1cee48b1749668) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'a4bf0b9b1345c599812d355a332be60e') in 0.007531709 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 618.870800 seconds.
+  path: Assets/Textures/ground_tiles_23_basecolor_1k.png
+  artifactKey: Guid(173b5abfb550a4676b31ae35d6bff37b) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Textures/ground_tiles_23_basecolor_1k.png using Guid(173b5abfb550a4676b31ae35d6bff37b) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'daeca4c105410a1c21aacaa11502a8a1') in 0.006054459 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 2
+
+========================================================================
+Received Import Request.
+  Time since last request: 53.795760 seconds.
+  path: Assets/Textures/ground_tiles_23_normal_dx_1k.png
+  artifactKey: Guid(0b3775cc1c3404e8dbafec51e16eda85) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Textures/ground_tiles_23_normal_dx_1k.png using Guid(0b3775cc1c3404e8dbafec51e16eda85) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '81d12288d86e2d2f1ecdc7d82940e525') in 0.005296709 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 2
+
+========================================================================
+Received Import Request.
+  Time since last request: 3.510814 seconds.
+  path: Assets/Textures/ground_tiles_23_normal_dx_1k.png
+  artifactKey: Guid(0b3775cc1c3404e8dbafec51e16eda85) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Textures/ground_tiles_23_normal_dx_1k.png using Guid(0b3775cc1c3404e8dbafec51e16eda85) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'a22ef237b6ad702cc02089de9ae6c8b3') in 0.012551792 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 2
+
+========================================================================
+Received Prepare
+Begin MonoManager ReloadAssembly
+[Licensing::Client] Successfully resolved entitlement details
+Thread 0x16d99f000 may have been prematurely finalized
+- Loaded All Assemblies, in  0.356 seconds
+Refreshing native plugins compatible for Editor in 0.18 ms, found 1 plugins.
+Native extension for Android target not found
+Native extension for OSXStandalone target not found
+[Package Manager] Failed to launch server process. Reason: Unity was launched with the -noUpm command-line argument
+[Package Manager] Unable to send message (not connected to server process).
+[Package Manager] Cannot connect to Unity Package Manager local server
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.377 seconds
+Domain Reload Profiling: 735ms
+	BeginReloadAssembly (90ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (3ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (22ms)
+	RebuildCommonClasses (22ms)
+	RebuildNativeTypeToScriptingClass (8ms)
+	initialDomainReloadingComplete (11ms)
+	LoadAllAssembliesAndSetupDomain (226ms)
+		LoadAssemblies (152ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (103ms)
+			TypeCache.Refresh (6ms)
+				TypeCache.ScanAssembly (0ms)
+			BuildScriptInfoCaches (88ms)
+			ResolveRequiredComponents (7ms)
+	FinalizeReload (378ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (278ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (5ms)
+			SetLoadedEditorAssemblies (3ms)
+			BeforeProcessingInitializeOnLoad (79ms)
+			ProcessInitializeOnLoadAttributes (165ms)
+			ProcessInitializeOnLoadMethodAttributes (26ms)
+			AfterProcessingInitializeOnLoad (1ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (6ms)
+WARNING: Shader Unsupported: 'Universal Render Pipeline/VR/SpatialMapping/Wireframe' - All subshaders removed
+WARNING: Shader Did you use #pragma only_renderers and omit this platform?
+WARNING: Shader If subshaders removal was intentional, you may have forgotten turning Fallback off?
+WARNING: Shader Unsupported: 'Universal Render Pipeline/VR/SpatialMapping/Wireframe' - All subshaders removed
+WARNING: Shader Did you use #pragma only_renderers and omit this platform?
+WARNING: Shader If subshaders removal was intentional, you may have forgotten turning Fallback off?
+Refreshing native plugins compatible for Editor in 0.21 ms, found 1 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Unloading 15 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 5769 unused Assets / (3.6 MB). Loaded Objects now: 6587.
+Memory consumption went from 148.7 MB to 145.0 MB.
+Total: 5.657875 ms (FindLiveObjects: 0.380042 ms CreateObjectMapping: 0.257667 ms MarkObjects: 3.696958 ms  DeleteObjects: 1.322917 ms)
+
+Prepare: number of updated asset objects reloaded= 0
+========================================================================
+Received Import Request.
+  Time since last request: 560.445402 seconds.
+  path: Assets/Textures/ground_tiles_23_normal_dx_1k.png
+  artifactKey: Guid(0b3775cc1c3404e8dbafec51e16eda85) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Textures/ground_tiles_23_normal_dx_1k.png using Guid(0b3775cc1c3404e8dbafec51e16eda85) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '22c80fe4542f47da8d9af50d8463b868') in 0.119164792 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 5.378120 seconds.
+  path: Assets/Materials-Shaders/S_CharacterBlob.shadergraph
+  artifactKey: Guid(19c05be8735a54767b100239ab9557e0) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Materials-Shaders/S_CharacterBlob.shadergraph using Guid(19c05be8735a54767b100239ab9557e0) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '10f694a4157de4cd25d36e7c336401ea') in 2.319092542 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 6
+
+========================================================================
+Received Import Request.
+  Time since last request: 3.224285 seconds.
+  path: Assets/Materials-Shaders/S_CharacterBlob.shadergraph
+  artifactKey: Guid(19c05be8735a54767b100239ab9557e0) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_CharacterBlob.shadergraph using Guid(19c05be8735a54767b100239ab9557e0) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'd978b0a1e5534c29d50364b821e5eeaa') in 0.011761791 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 5
+
+========================================================================
+Received Import Request.
+  Time since last request: 9.930855 seconds.
+  path: Assets/Materials-Shaders/M_CharacterBlob.mat
+  artifactKey: Guid(51f290d65cdc44366b454b96e8cd27ed) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/M_CharacterBlob.mat using Guid(51f290d65cdc44366b454b96e8cd27ed) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '16a1c603ffd9855b13ec9addd5d5690b') in 0.003926834 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 6
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000050 seconds.
+  path: Assets/Other/Terrain Layer Ground Stone.terrainlayer
+  artifactKey: Guid(c2d495f83df4e414bbd73a60633875ef) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Other/Terrain Layer Ground Stone.terrainlayer using Guid(c2d495f83df4e414bbd73a60633875ef) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '7527b6560fa9a12317ec24f363e3b7c2') in 0.011831042 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000056 seconds.
+  path: Assets/Materials-Shaders/M_GroundStylized.mat
+  artifactKey: Guid(90527527877f549c586436c98eb1cef4) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/M_GroundStylized.mat using Guid(90527527877f549c586436c98eb1cef4) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '2344fd78d157b82beeae95d45851cd9f') in 0.005882 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 6
+
+========================================================================
+Received Import Request.
+  Time since last request: 140.434136 seconds.
+  path: Assets/Materials-Shaders/S_CharacterBlob.shadergraph
+  artifactKey: Guid(19c05be8735a54767b100239ab9557e0) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Materials-Shaders/S_CharacterBlob.shadergraph using Guid(19c05be8735a54767b100239ab9557e0) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '7864554aa5f74c48f44725de2e01689a') in 2.787400709 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 5
+
+========================================================================
+Received Import Request.
+  Time since last request: 1.995566 seconds.
+  path: Assets/Materials-Shaders/S_CharacterBlob.shadergraph
+  artifactKey: Guid(19c05be8735a54767b100239ab9557e0) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_CharacterBlob.shadergraph using Guid(19c05be8735a54767b100239ab9557e0) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '40117cebb5c72abac05746ec9a63b1f1') in 0.004861 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 5
+
+========================================================================
+Received Import Request.
+  Time since last request: 8.700062 seconds.
+  path: Assets/Materials-Shaders/S_CharacterBlob.shadergraph
+  artifactKey: Guid(19c05be8735a54767b100239ab9557e0) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Materials-Shaders/S_CharacterBlob.shadergraph using Guid(19c05be8735a54767b100239ab9557e0) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '68af3d11e353c2e126936b06ee3400d4') in 2.861793209 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 5
+
+========================================================================
+Received Import Request.
+  Time since last request: 74.515233 seconds.
+  path: Assets/Materials-Shaders/M_CharacterBlob.mat
+  artifactKey: Guid(51f290d65cdc44366b454b96e8cd27ed) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/M_CharacterBlob.mat using Guid(51f290d65cdc44366b454b96e8cd27ed) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'cc64979725c08ffdf56027fc33dda981') in 0.004278667 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 6
+
+========================================================================
+Received Import Request.
+  Time since last request: 39.612945 seconds.
+  path: Assets/Materials-Shaders/M_CharacterBlob.mat
+  artifactKey: Guid(51f290d65cdc44366b454b96e8cd27ed) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/M_CharacterBlob.mat using Guid(51f290d65cdc44366b454b96e8cd27ed) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'd36adfd46b902afc75987a825aa1451e') in 0.004108084 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 6
+
+========================================================================
+Received Import Request.
+  Time since last request: 156.905632 seconds.
+  path: Assets/Materials-Shaders/S_CharacterBlob.shadergraph
+  artifactKey: Guid(19c05be8735a54767b100239ab9557e0) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/S_CharacterBlob.shadergraph using Guid(19c05be8735a54767b100239ab9557e0) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: 'd737e0425fa5eb215fc3d3fd29d945df') in 0.123716958 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 5
+
+========================================================================
+Received Import Request.
+  Time since last request: 1277.684405 seconds.
+  path: Assets/Models/Tree.fbx
+  artifactKey: Guid(5b95ac28e04d74343b55bd02fc80b04c) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Models/Tree.fbx using Guid(5b95ac28e04d74343b55bd02fc80b04c) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '2117ab4879e383530eb8c7343272f82d') in 0.041977375 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 9
+
+========================================================================
+Received Import Request.
+  Time since last request: 101.947953 seconds.
+  path: Assets/Materials-Shaders/M_CharacterBlob.mat
+  artifactKey: Guid(51f290d65cdc44366b454b96e8cd27ed) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/M_CharacterBlob.mat using Guid(51f290d65cdc44366b454b96e8cd27ed) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '09d4a5c68dcbf4517d5b81c0df8b78a6') in 0.005055459 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 6
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000031 seconds.
+  path: Assets/Materials-Shaders/BasicLit/M_BasicYellow 1.mat
+  artifactKey: Guid(1bb5df9d2539d49c49aa581128871959) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/BasicLit/M_BasicYellow 1.mat using Guid(1bb5df9d2539d49c49aa581128871959) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '1ab9cc283428c325fb1a37125840c223') in 0.002888292 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 6.611583 seconds.
+  path: Assets/Materials-Shaders/BasicLit/M_Emmisive light.mat
+  artifactKey: Guid(1bb5df9d2539d49c49aa581128871959) Importer(2089858483,192608db42251d675da83286b1cce702)
+Start importing Assets/Materials-Shaders/BasicLit/M_Emmisive light.mat using Guid(1bb5df9d2539d49c49aa581128871959) Importer(2089858483,192608db42251d675da83286b1cce702) (ScriptedImporter) -> (artifact id: '432acdfaf494cd81e6403638f9201902') in 0.006536416 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 128.354219 seconds.
+  path: Assets/Other/Terrain Layer Ground Stone.terrainlayer
+  artifactKey: Guid(c2d495f83df4e414bbd73a60633875ef) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Other/Terrain Layer Ground Stone.terrainlayer using Guid(c2d495f83df4e414bbd73a60633875ef) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '0fa3a0b701f5b30deacf5e293eb61767') in 0.012020125 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Prepare
+Begin MonoManager ReloadAssembly
+[Licensing::Client] Successfully resolved entitlement details
+Thread 0x16d563000 may have been prematurely finalized
+- Loaded All Assemblies, in  0.391 seconds
+Refreshing native plugins compatible for Editor in 0.24 ms, found 1 plugins.
+Native extension for Android target not found
+Native extension for OSXStandalone target not found
+[Package Manager] Failed to launch server process. Reason: Unity was launched with the -noUpm command-line argument
+[Package Manager] Unable to send message (not connected to server process).
+[Package Manager] Cannot connect to Unity Package Manager local server
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.378 seconds
+Domain Reload Profiling: 772ms
+	BeginReloadAssembly (124ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (13ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (42ms)
+	RebuildCommonClasses (23ms)
+	RebuildNativeTypeToScriptingClass (9ms)
+	initialDomainReloadingComplete (13ms)
+	LoadAllAssembliesAndSetupDomain (224ms)
+		LoadAssemblies (152ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (104ms)
+			TypeCache.Refresh (7ms)
+				TypeCache.ScanAssembly (0ms)
+			BuildScriptInfoCaches (88ms)
+			ResolveRequiredComponents (7ms)
+	FinalizeReload (378ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (276ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (5ms)
+			SetLoadedEditorAssemblies (3ms)
+			BeforeProcessingInitializeOnLoad (81ms)
+			ProcessInitializeOnLoadAttributes (160ms)
+			ProcessInitializeOnLoadMethodAttributes (26ms)
+			AfterProcessingInitializeOnLoad (1ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (7ms)
+WARNING: Shader Unsupported: 'Universal Render Pipeline/VR/SpatialMapping/Wireframe' - All subshaders removed
+WARNING: Shader Did you use #pragma only_renderers and omit this platform?
+WARNING: Shader If subshaders removal was intentional, you may have forgotten turning Fallback off?
+WARNING: Shader Unsupported: 'Universal Render Pipeline/VR/SpatialMapping/Wireframe' - All subshaders removed
+WARNING: Shader Did you use #pragma only_renderers and omit this platform?
+WARNING: Shader If subshaders removal was intentional, you may have forgotten turning Fallback off?
+Refreshing native plugins compatible for Editor in 0.21 ms, found 1 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Unloading 16 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 5771 unused Assets / (4.1 MB). Loaded Objects now: 6611.
+Memory consumption went from 149.5 MB to 145.5 MB.
+Total: 5.673250 ms (FindLiveObjects: 0.310500 ms CreateObjectMapping: 0.199250 ms MarkObjects: 3.773958 ms  DeleteObjects: 1.389250 ms)
+
+Prepare: number of updated asset objects reloaded= 0

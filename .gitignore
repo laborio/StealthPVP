@@ -1,7 +1,18 @@
-# This .gitignore file should be placed at the root of your Unity project directory
-#
-# Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore
-#
+# Blender specific files
+*.blend[0-9]*
+
+# Cinema 4D backup files
+*.*@*
+*.gi
+*.gi2
+
+# Houdini backup files
+*_bak*.hip
+*_bak*.hipnc
+
+# Other files
+*.DS_Store
+
 .utmp/
 /[Ll]ibrary/
 /[Tt]emp/
