@@ -980,12 +980,17 @@ MonoBehaviour:
   dashCooldown: 1
   groundProbeRadius: 0.2
   groundProbeDistance: 0.2
+  wallJumpUpVelocity: 23
+  wallJumpHorizontalSpeed: 15
+  wallContactLinger: 0.15
+  wallJumpCooldown: 0
   animator: {fileID: 2600605261231814864}
   walkingBoolName: isWalking
   idleBoolName: isIdle
   runningBoolName: isRunning
   jumpingBoolName: isJumping
   fallingBoolName: isFalling
+  groundedStateLinger: 0.12
 --- !u!1 &5631832183318855960
 GameObject:
   m_ObjectHideFlags: 0
@@ -1187,7 +1192,7 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6318210828941389348}
   serializedVersion: 8
-  lengthInSec: 5
+  lengthInSec: 1
   simulationSpeed: 1
   stopAction: 0
   cullingMode: 0
@@ -1196,7 +1201,7 @@ ParticleSystem:
   emitterVelocityMode: 0
   looping: 1
   prewarm: 0
-  playOnAwake: 0
+  playOnAwake: 1
   useUnscaledTime: 0
   autoRandomSeed: 1
   startDelay:
