@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f22a943ec068ae74dab9ae5db8bdc06b
+timeCreated: 1505862140
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 100723
+  packageName: Monsters - Night Crawler
+  packageVersion: 1.3.2
+  assetPath: Assets/Polygonmaker/Monsters Series/Monsters - Night Crawler/Characters/NightCrawler_01.prefab
+  uploadId: 742758

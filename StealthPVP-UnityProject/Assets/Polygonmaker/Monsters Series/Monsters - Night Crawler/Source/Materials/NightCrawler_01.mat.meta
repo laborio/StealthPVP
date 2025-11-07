@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 1ec557323d7bafb4a8db34bd8952f57f
+timeCreated: 1505521822
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 100723
+  packageName: Monsters - Night Crawler
+  packageVersion: 1.3.2
+  assetPath: Assets/Polygonmaker/Monsters Series/Monsters - Night Crawler/Source/Materials/NightCrawler_01.mat
+  uploadId: 742758
