@@ -32,6 +32,11 @@ public class SimpleCharacterController : MonoBehaviour
     [SerializeField] private float dashCooldown = 1f;
     [SerializeField] private float groundProbeRadius = 0.2f;
     [SerializeField] private float groundProbeDistance = 0.25f;
+    [Header("Wall Jump")]
+    [SerializeField] private float wallJumpUpVelocity = 7.5f;
+    [SerializeField] private float wallJumpHorizontalSpeed = 6f;
+    [SerializeField, Range(0f, 0.5f)] private float wallContactLinger = 0.15f;
+    [SerializeField, Range(0f, 1f)] private float wallJumpCooldown = 0.2f;
 
     [Header("Animation")]
     [SerializeField] private Animator animator;
@@ -40,6 +45,8 @@ public class SimpleCharacterController : MonoBehaviour
     [SerializeField] private string runningBoolName = "isRunning";
     [SerializeField] private string jumpingBoolName = "isJumping";
     [SerializeField] private string fallingBoolName = "isFalling";
+    [Header("State Smoothing")]
+    [SerializeField, Range(0f, 0.5f)] private float groundedStateLinger = 0.12f;
 
     private CharacterController _characterController;
     private Camera _camera;
@@ -56,6 +63,10 @@ public class SimpleCharacterController : MonoBehaviour
     private float _dashTimer;
     private float _dashCooldownTimer;
     private bool _isDashing;
+    private float _groundedStateTimer;
+    private float _wallContactTimer;
+    private Vector3 _wallNormal;
+    private float _wallJumpCooldownTimer;
 
     private void Awake()
     {
@@ -79,6 +90,11 @@ public class SimpleCharacterController : MonoBehaviour
         bool hasMovementInput = moveDirection.sqrMagnitude > 0.0001f;
         bool wantsToRun = Input.GetKey(runKey);
         float deltaTime = Time.deltaTime;
+        _wallContactTimer = Mathf.Max(_wallContactTimer - deltaTime, 0f);
+        if (_wallJumpCooldownTimer > 0f)
+        {
+            _wallJumpCooldownTimer = Mathf.Max(_wallJumpCooldownTimer - deltaTime, 0f);
+        }
 
         Vector3 desiredPlanarVelocity = Vector3.zero;
 
@@ -111,6 +127,7 @@ public class SimpleCharacterController : MonoBehaviour
         if (isGrounded)
         {
             _coyoteTimer = coyoteTime;
+            _groundedStateTimer = groundedStateLinger;
             if (_verticalVelocity < 0f)
             {
                 _verticalVelocity = groundedGravity;
@@ -123,7 +140,9 @@ public class SimpleCharacterController : MonoBehaviour
         else
         {
             _coyoteTimer = Mathf.Max(_coyoteTimer - deltaTime, 0f);
+            _groundedStateTimer = Mathf.Max(_groundedStateTimer - deltaTime, 0f);
         }
+        bool groundedForAnimation = isGrounded || _groundedStateTimer > 0f;
 
         if (Input.GetKeyDown(jumpKey))
         {
@@ -181,7 +200,8 @@ public class SimpleCharacterController : MonoBehaviour
             _currentPlanarVelocity = Vector3.Lerp(_currentPlanarVelocity, targetPlanarVelocity, lerpFactor);
         }
 
-        if (_jumpBufferTimer > 0f && _coyoteTimer > 0f)
+        bool bufferedJumpRequested = _jumpBufferTimer > 0f;
+        if (bufferedJumpRequested && _coyoteTimer > 0f)
         {
             _verticalVelocity = jumpVelocity;
             Vector3 launchVelocity = _currentPlanarVelocity;
@@ -197,6 +217,40 @@ public class SimpleCharacterController : MonoBehaviour
             _isFalling = false;
             _jumpBufferTimer = 0f;
             _coyoteTimer = 0f;
+        }
+        else
+        {
+            bool canWallJump = !isGrounded && _wallContactTimer > 0f && _wallJumpCooldownTimer <= 0f;
+            if (bufferedJumpRequested && canWallJump)
+            {
+                Vector3 planarIncoming = _currentPlanarVelocity;
+                planarIncoming.y = 0f;
+                if (planarIncoming.sqrMagnitude < 0.0001f)
+                {
+                    planarIncoming = transform.forward;
+                }
+
+                Vector3 bounceDirection = planarIncoming.sqrMagnitude > 0.0001f && _wallNormal.sqrMagnitude > 0.0001f
+                    ? Vector3.Reflect(planarIncoming.normalized, _wallNormal)
+                    : (_wallNormal.sqrMagnitude > 0.0001f ? -_wallNormal : -transform.forward);
+
+                bounceDirection.y = 0f;
+                if (bounceDirection.sqrMagnitude > 0.0001f)
+                {
+                    Vector3 normalizedBounce = bounceDirection.normalized;
+                    _currentPlanarVelocity = normalizedBounce * wallJumpHorizontalSpeed;
+                    transform.rotation = Quaternion.LookRotation(normalizedBounce, Vector3.up);
+                }
+                _verticalVelocity = wallJumpUpVelocity;
+                _isJumping = true;
+                _isFalling = false;
+                _jumpBufferTimer = 0f;
+                _coyoteTimer = 0f;
+                _wallContactTimer = 0f;
+                _wallJumpCooldownTimer = wallJumpCooldown;
+                _isDashing = false;
+                _hasMoveTarget = false;
+            }
         }
 
         _verticalVelocity += gravity * deltaTime;
@@ -216,22 +270,25 @@ public class SimpleCharacterController : MonoBehaviour
 
         _isRunning = wantsToRun && planarSpeed > 0.1f;
 
-        if (!isGrounded)
+        bool consideredAirborne = !groundedForAnimation;
+        if (consideredAirborne)
         {
-            _isFalling = _verticalVelocity < -0.1f;
-            if (_isFalling)
+            bool nowFalling = _verticalVelocity < -0.1f;
+            _isFalling = nowFalling;
+            if (nowFalling)
             {
                 _isJumping = false;
             }
         }
-        else if (planarSpeed <= 0.1f)
+        else if (isGrounded)
         {
             _isJumping = false;
             _isFalling = false;
         }
 
-        bool isWalking = planarSpeed > 0.1f && !_isRunning && !_isDashing;
-        bool isRunningEffective = _isRunning || _isDashing;
+        bool isAirborne = _isJumping || _isFalling;
+        bool isWalking = !isAirborne && planarSpeed > 0.1f && !_isRunning && !_isDashing;
+        bool isRunningEffective = !isAirborne && (_isRunning || _isDashing);
         UpdateAnimator(isWalking, isRunningEffective, _isJumping, _isFalling);
     }
 
@@ -331,6 +388,34 @@ public class SimpleCharacterController : MonoBehaviour
         }
     }
 
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if (!_characterController || !_characterController.enabled || wallContactLinger <= 0f)
+        {
+            return;
+        }
+
+        if (_characterController.isGrounded)
+        {
+            return;
+        }
+
+        if (!hit.collider || !hit.collider.CompareTag("Wall"))
+        {
+            return;
+        }
+
+        Vector3 normal = hit.normal;
+        normal.y = 0f;
+        if (normal.sqrMagnitude < 0.0001f)
+        {
+            return;
+        }
+
+        _wallNormal = normal.normalized;
+        _wallContactTimer = wallContactLinger;
+    }
+
     private void OnDisable()
     {
         _verticalVelocity = 0f;
@@ -340,6 +425,10 @@ public class SimpleCharacterController : MonoBehaviour
         _coyoteTimer = 0f;
         _jumpBufferTimer = 0f;
         _currentPlanarVelocity = Vector3.zero;
+        _groundedStateTimer = 0f;
+        _wallContactTimer = 0f;
+        _wallJumpCooldownTimer = 0f;
+        _wallNormal = Vector3.zero;
         if (animator)
         {
             animator.SetBool(walkingBoolName, false);
@@ -375,5 +464,10 @@ public class SimpleCharacterController : MonoBehaviour
         airControl = Mathf.Clamp(airControl, 0f, 5f);
         groundProbeRadius = Mathf.Max(0f, groundProbeRadius);
         groundProbeDistance = Mathf.Max(0f, groundProbeDistance);
+        groundedStateLinger = Mathf.Clamp(groundedStateLinger, 0f, 0.5f);
+        wallJumpUpVelocity = Mathf.Max(0f, wallJumpUpVelocity);
+        wallJumpHorizontalSpeed = Mathf.Max(0f, wallJumpHorizontalSpeed);
+        wallContactLinger = Mathf.Clamp(wallContactLinger, 0f, 0.5f);
+        wallJumpCooldown = Mathf.Clamp(wallJumpCooldown, 0f, 1f);
     }
 }
