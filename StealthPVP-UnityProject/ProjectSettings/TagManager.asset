@@ -9,6 +9,8 @@ TagManager:
   - WallPoint
   - WallStandArea
   - StopClimb
+  - Bench
+  - BenchSitPoint
   layers:
   - Default
   - TransparentFX

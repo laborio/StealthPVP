@@ -4,7 +4,7 @@ using UnityEngine;
 /// Lightweight movement controller that drives a CharacterController with walking, running, jumping, and click-to-move support.
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
-public class SimpleCharacterController : MonoBehaviour
+public partial class SimpleCharacterController : MonoBehaviour
 {
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 4f;
@@ -38,15 +38,10 @@ public class SimpleCharacterController : MonoBehaviour
     [SerializeField, Range(0f, 0.5f)] private float wallContactLinger = 0.15f;
     [SerializeField, Range(0f, 1f)] private float wallJumpCooldown = 0.2f;
 
-    [Header("Animation")]
-    [SerializeField] private Animator animator;
-    [SerializeField] private string walkingBoolName = "isWalking";
-    [SerializeField] private string idleBoolName = "isIdle";
-    [SerializeField] private string runningBoolName = "isRunning";
-    [SerializeField] private string jumpingBoolName = "isJumping";
-    [SerializeField] private string fallingBoolName = "isFalling";
     [Header("State Smoothing")]
     [SerializeField, Range(0f, 0.5f)] private float groundedStateLinger = 0.12f;
+
+    partial void OnBenchAwake();
 
     private CharacterController _characterController;
     private Camera _camera;
@@ -67,28 +62,37 @@ public class SimpleCharacterController : MonoBehaviour
     private float _wallContactTimer;
     private Vector3 _wallNormal;
     private float _wallJumpCooldownTimer;
+    [SerializeField] private CharacterAnimations characterAnimations;
 
     private void Awake()
     {
         _characterController = GetComponent<CharacterController>();
 
-        if (!animator)
-        {
-            animator = GetComponentInChildren<Animator>();
-        }
-
         _camera = Camera.main;
         _cameraTransform = _camera ? _camera.transform : null;
+        if (!characterAnimations)
+        {
+            characterAnimations = GetComponentInChildren<CharacterAnimations>();
+        }
+        OnBenchAwake();
     }
 
     private void Update()
     {
         HandleClickToMove();
 
-        Vector2 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        bool isGrounded = IsGrounded();
+        Vector2 movementInputRaw = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        bool requestedMovement = movementInputRaw.sqrMagnitude > 0.0001f;
+        HandleBenchInput(requestedMovement, isGrounded);
+
+        bool seatingLocked = _seatingState != SeatingState.Standing;
+        bool movingToSeat = _seatingState == SeatingState.MovingToSeat;
+        bool walkOverrideActive = movingToSeat;
+        Vector2 input = seatingLocked ? Vector2.zero : movementInputRaw;
         Vector3 moveDirection = ResolveMoveDirection(input);
         bool hasMovementInput = moveDirection.sqrMagnitude > 0.0001f;
-        bool wantsToRun = Input.GetKey(runKey);
+        bool wantsToWalk = Input.GetKey(runKey);
         float deltaTime = Time.deltaTime;
         _wallContactTimer = Mathf.Max(_wallContactTimer - deltaTime, 0f);
         if (_wallJumpCooldownTimer > 0f)
@@ -98,32 +102,60 @@ public class SimpleCharacterController : MonoBehaviour
 
         Vector3 desiredPlanarVelocity = Vector3.zero;
 
-        if (hasMovementInput)
+        if (movingToSeat)
         {
-            moveDirection.Normalize();
-            float speed = moveSpeed * (wantsToRun ? runMultiplier : 1f);
-            desiredPlanarVelocity = moveDirection * speed;
-            _hasMoveTarget = false;
-        }
-        else if (_hasMoveTarget)
-        {
-            Vector3 toTarget = _moveTarget - transform.position;
-            toTarget.y = 0f;
-            float remainingDistance = toTarget.magnitude;
+            Vector3 toSeat = _sitTargetPosition - transform.position;
+            toSeat.y = 0f;
+            float sqrDistance = toSeat.sqrMagnitude;
 
-            if (remainingDistance <= stopDistance)
+            if (sqrDistance <= seatSnapDistance * seatSnapDistance)
             {
-                _hasMoveTarget = false;
+                SnapToSeatPoint();
+                hasMovementInput = false;
             }
             else
             {
-                float speed = moveSpeed * (wantsToRun ? runMultiplier : 1f);
-                desiredPlanarVelocity = toTarget.normalized * speed;
+                Vector3 approachDirection = toSeat.normalized;
+                float speed = Mathf.Max(benchApproachSpeed, 0.01f);
+                desiredPlanarVelocity = approachDirection * speed;
                 hasMovementInput = true;
+                _hasMoveTarget = false;
+            }
+        }
+        else
+        {
+            if (seatingLocked)
+            {
+                _hasMoveTarget = false;
+                hasMovementInput = false;
+            }
+
+            if (hasMovementInput)
+            {
+                moveDirection.Normalize();
+                float speed = moveSpeed * ((wantsToWalk || walkOverrideActive) ? 1f : runMultiplier);
+                desiredPlanarVelocity = moveDirection * speed;
+                _hasMoveTarget = false;
+            }
+            else if (_hasMoveTarget)
+            {
+                Vector3 toTarget = _moveTarget - transform.position;
+                toTarget.y = 0f;
+                float remainingDistance = toTarget.magnitude;
+
+                if (remainingDistance <= stopDistance)
+                {
+                    _hasMoveTarget = false;
+                }
+                else
+                {
+                    float speed = moveSpeed * ((wantsToWalk || walkOverrideActive) ? 1f : runMultiplier);
+                    desiredPlanarVelocity = toTarget.normalized * speed;
+                    hasMovementInput = true;
+                }
             }
         }
 
-        bool isGrounded = IsGrounded();
         if (isGrounded)
         {
             _coyoteTimer = coyoteTime;
@@ -144,36 +176,52 @@ public class SimpleCharacterController : MonoBehaviour
         }
         bool groundedForAnimation = isGrounded || _groundedStateTimer > 0f;
 
-        if (Input.GetKeyDown(jumpKey))
+        if (!seatingLocked)
         {
-            _jumpBufferTimer = jumpBufferTime;
+            if (Input.GetKeyDown(jumpKey))
+            {
+                _jumpBufferTimer = jumpBufferTime;
+            }
+            else
+            {
+                _jumpBufferTimer = Mathf.Max(_jumpBufferTimer - deltaTime, 0f);
+            }
         }
         else
         {
-            _jumpBufferTimer = Mathf.Max(_jumpBufferTimer - deltaTime, 0f);
+            _jumpBufferTimer = 0f;
         }
 
-        if (_dashCooldownTimer > 0f)
+        if (seatingLocked)
         {
-            _dashCooldownTimer = Mathf.Max(_dashCooldownTimer - deltaTime, 0f);
+            _dashCooldownTimer = 0f;
+            _dashTimer = 0f;
+            _isDashing = false;
         }
-
-        if (!_isDashing && _dashCooldownTimer <= 0f && Input.GetKeyDown(dashKey))
+        else
         {
-            Vector3 forward = transform.forward;
-            forward.y = 0f;
-            if (forward.sqrMagnitude < 0.0001f)
+            if (_dashCooldownTimer > 0f)
             {
-                forward = Vector3.forward;
+                _dashCooldownTimer = Mathf.Max(_dashCooldownTimer - deltaTime, 0f);
             }
-            forward.Normalize();
 
-            float speed = moveSpeed * runMultiplier * dashSpeedMultiplier;
-            _currentPlanarVelocity = forward * speed;
-            _dashTimer = dashDuration;
-            _dashCooldownTimer = dashCooldown;
-            _isDashing = true;
-            _hasMoveTarget = false;
+            if (!_isDashing && _dashCooldownTimer <= 0f && Input.GetKeyDown(dashKey))
+            {
+                Vector3 forward = transform.forward;
+                forward.y = 0f;
+                if (forward.sqrMagnitude < 0.0001f)
+                {
+                    forward = Vector3.forward;
+                }
+                forward.Normalize();
+
+                float speed = moveSpeed * runMultiplier * dashSpeedMultiplier;
+                _currentPlanarVelocity = forward * speed;
+                _dashTimer = dashDuration;
+                _dashCooldownTimer = dashCooldown;
+                _isDashing = true;
+                _hasMoveTarget = false;
+            }
         }
 
         if (_isDashing)
@@ -253,7 +301,14 @@ public class SimpleCharacterController : MonoBehaviour
             }
         }
 
-        _verticalVelocity += gravity * deltaTime;
+        if (seatingLocked)
+        {
+            _verticalVelocity = 0f;
+        }
+        else
+        {
+            _verticalVelocity += gravity * deltaTime;
+        }
 
         Vector3 motion = _currentPlanarVelocity;
         motion.y = _verticalVelocity;
@@ -268,7 +323,8 @@ public class SimpleCharacterController : MonoBehaviour
             transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
         }
 
-        _isRunning = wantsToRun && planarSpeed > 0.1f;
+        bool allowRunningAnimation = !walkOverrideActive;
+        _isRunning = allowRunningAnimation && !wantsToWalk && planarSpeed > 0.1f;
 
         bool consideredAirborne = !groundedForAnimation;
         if (consideredAirborne)
@@ -289,7 +345,20 @@ public class SimpleCharacterController : MonoBehaviour
         bool isAirborne = _isJumping || _isFalling;
         bool isWalking = !isAirborne && planarSpeed > 0.1f && !_isRunning && !_isDashing;
         bool isRunningEffective = !isAirborne && (_isRunning || _isDashing);
-        UpdateAnimator(isWalking, isRunningEffective, _isJumping, _isFalling);
+
+        characterAnimations?.ApplyLocomotion(new CharacterLocomotionAnimationData
+        {
+            IsWalking = isWalking,
+            IsRunning = isRunningEffective,
+            IsJumping = _isJumping,
+            IsFalling = _isFalling,
+            PlanarSpeed = planarSpeed,
+            WalkSpeed = moveSpeed,
+            RunSpeed = moveSpeed * runMultiplier,
+            JumpAnimationSpeed = 1f
+        });
+        UpdateSeatingState(deltaTime);
+        ProcessBenchCollisionRestore(deltaTime);
     }
 
     private bool IsGrounded()
@@ -319,9 +388,13 @@ public class SimpleCharacterController : MonoBehaviour
         return Physics.SphereCast(origin, groundProbeRadius, Vector3.down, out _, distance, mask, QueryTriggerInteraction.Ignore);
     }
 
+
+
+
+
     private void HandleClickToMove()
     {
-        if (!Input.GetMouseButtonDown(1))
+        if (_seatingState != SeatingState.Standing || !Input.GetMouseButtonDown(1))
         {
             return;
         }
@@ -365,28 +438,6 @@ public class SimpleCharacterController : MonoBehaviour
         return new Vector3(input.x, 0f, input.y);
     }
 
-    private void UpdateAnimator(bool isWalking, bool isRunning, bool isJumping, bool isFalling)
-    {
-        if (!animator)
-        {
-            return;
-        }
-
-        animator.SetBool(walkingBoolName, isWalking);
-        animator.SetBool(idleBoolName, !isWalking && !isRunning && !isJumping && !isFalling);
-        if (!string.IsNullOrEmpty(runningBoolName))
-        {
-            animator.SetBool(runningBoolName, isRunning);
-        }
-        if (!string.IsNullOrEmpty(jumpingBoolName))
-        {
-            animator.SetBool(jumpingBoolName, isJumping);
-        }
-        if (!string.IsNullOrEmpty(fallingBoolName))
-        {
-            animator.SetBool(fallingBoolName, isFalling);
-        }
-    }
 
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
@@ -429,23 +480,10 @@ public class SimpleCharacterController : MonoBehaviour
         _wallContactTimer = 0f;
         _wallJumpCooldownTimer = 0f;
         _wallNormal = Vector3.zero;
-        if (animator)
-        {
-            animator.SetBool(walkingBoolName, false);
-            animator.SetBool(idleBoolName, true);
-            if (!string.IsNullOrEmpty(runningBoolName))
-            {
-                animator.SetBool(runningBoolName, false);
-            }
-            if (!string.IsNullOrEmpty(jumpingBoolName))
-            {
-                animator.SetBool(jumpingBoolName, false);
-            }
-            if (!string.IsNullOrEmpty(fallingBoolName))
-            {
-                animator.SetBool(fallingBoolName, false);
-            }
-        }
+        CancelSeatingSequence();
+        _activeBench = null;
+        ClearBenchTracking();
+        characterAnimations?.ResetStates();
         _hasMoveTarget = false;
     }
 
@@ -469,5 +507,9 @@ public class SimpleCharacterController : MonoBehaviour
         wallJumpHorizontalSpeed = Mathf.Max(0f, wallJumpHorizontalSpeed);
         wallContactLinger = Mathf.Clamp(wallContactLinger, 0f, 0.5f);
         wallJumpCooldown = Mathf.Clamp(wallJumpCooldown, 0f, 1f);
+        benchApproachSpeed = Mathf.Max(0.1f, benchApproachSpeed);
+        seatSnapDistance = Mathf.Clamp(seatSnapDistance, 0.01f, 1f);
+        benchAlignmentSpeed = Mathf.Max(0f, benchAlignmentSpeed);
+        standToSitAnimSpeed = Mathf.Max(0.1f, standToSitAnimSpeed);
     }
 }
