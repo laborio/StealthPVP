@@ -14,14 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerConfigSO
   DefaultSpeed: 10
   WalkSpeed: 5
-  Acceleration: 10
-  Deceleration: 10
   RotationSpeed: 15
-  RotateTowardMovement: 1
   Gravity: -20
   GroundedGravity: -2
-  MaxFallSpeed: -20
   GroundCheckDistance: 0.2
   GroundMask:
     serializedVersion: 2
     m_Bits: 8
+  JumpHeight: 2
+  JumpCooldown: 0.5

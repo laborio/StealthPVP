@@ -529,9 +529,9 @@ GameObject:
   m_Component:
   - component: {fileID: 5849500018598206597}
   - component: {fileID: 3388929815212096309}
+  - component: {fileID: 858365322186054579}
   - component: {fileID: 1272320032293981456}
   - component: {fileID: 2109218842190350354}
-  - component: {fileID: 858365322186054579}
   m_Layer: 0
   m_Name: PlayerTest
   m_TagString: Untagged
@@ -619,6 +619,31 @@ MonoBehaviour:
   m_DefaultActionMap: PlayerMovement
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 8267024014869953775}
+--- !u!114 &858365322186054579
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7954588561785396622}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 2521336064
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &1272320032293981456
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -631,6 +656,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08fee99c356c807439b2dcb34421194a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InputManager
+  ShowTopMostFoldoutHeaderGroup: 1
   _Player: {fileID: 0}
   _PlayerInput: {fileID: 3388929815212096309}
 --- !u!114 &2109218842190350354
@@ -645,36 +671,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 664cdb58869dc784eb46b018d532da88, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CustomPlayerController
+  ShowTopMostFoldoutHeaderGroup: 1
   _PlayerConfig: {fileID: 11400000, guid: 9b22d11b0a1c2fb49a3a36e706f6e541, type: 2}
   _PlayerInputs: {fileID: 1272320032293981456}
   _CharacterController: {fileID: 3795333157654262966}
   _PlayerRoot: {fileID: 3539950743473349084}
   _PlayerCam: {fileID: 8301130922892297373}
---- !u!114 &858365322186054579
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7954588561785396622}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 0
-  InScenePlacedSourceGlobalObjectIdHash: 0
-  DeferredDespawnTick: 0
-  Ownership: 1
-  AlwaysReplicateAsRoot: 0
-  SynchronizeTransform: 1
-  ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
-  SpawnWithObservers: 1
-  DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
-  SyncOwnerTransformWhenParented: 1
-  AllowOwnerToParent: 0
+  _IsoPlayerCam: {fileID: 1364225817778195130}
 --- !u!1 &8226852333398073924
 GameObject:
   m_ObjectHideFlags: 0
@@ -685,6 +688,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3539950743473349084}
   - component: {fileID: 3795333157654262966}
+  - component: {fileID: 3521843327938351934}
   m_Layer: 0
   m_Name: Root
   m_TagString: Untagged
@@ -734,3 +738,49 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3521843327938351934
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8226852333398073924}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 0
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
