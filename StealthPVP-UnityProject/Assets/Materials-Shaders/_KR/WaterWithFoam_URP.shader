@@ -7,6 +7,13 @@ Shader "Custom/WaterWithFoam_URP"
         _FoamDistance ("Foam Distance", Range(0, 2)) = 0.5
         _FoamIntensity ("Foam Intensity", Range(0, 1)) = 1.0
         
+        // Normal map
+        _NormalMap ("Normal Map", 2D) = "bump" {}
+        _NormalStrength ("Normal Strength", Range(0, 20)) = 1.0
+        _NormalScale ("Normal Tiling", Float) = 1.0
+        _NormalSpeed ("Normal Scroll Speed", Vector) = (0.1, 0.1, 0, 0)
+        _NormalSpeed2 ("Second Normal Scroll Speed", Vector) = (-0.08, 0.05, 0, 0)
+        
         // Wave properties
         _WaveSpeed ("Wave Speed", Range(0, 2)) = 0.5
         _WaveAmplitude ("Wave Amplitude", Range(0, 0.1)) = 0.02
@@ -53,6 +60,7 @@ Shader "Custom/WaterWithFoam_URP"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
+                float4 tangentOS : TANGENT;
                 float2 uv : TEXCOORD0;
             };
             
@@ -63,14 +71,23 @@ Shader "Custom/WaterWithFoam_URP"
                 float4 screenPos : TEXCOORD1;
                 float3 positionWS : TEXCOORD2;
                 float3 normalWS : TEXCOORD3;
-                float fogFactor : TEXCOORD4;
+                float4 tangentWS : TEXCOORD4;
+                float3 bitangentWS : TEXCOORD5;
+                float fogFactor : TEXCOORD6;
             };
+            
+            TEXTURE2D(_NormalMap);
+            SAMPLER(sampler_NormalMap);
             
             CBUFFER_START(UnityPerMaterial)
                 float4 _WaterColor;
                 float4 _FoamColor;
                 float _FoamDistance;
                 float _FoamIntensity;
+                float _NormalStrength;
+                float _NormalScale;
+                float4 _NormalSpeed;
+                float4 _NormalSpeed2;
                 float _WaveSpeed;
                 float _WaveAmplitude;
                 float _WaveFrequency;
@@ -106,6 +123,11 @@ Shader "Custom/WaterWithFoam_URP"
                 // Transform normal to world space
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 
+                // Calculate tangent and bitangent for normal mapping
+                output.tangentWS = float4(TransformObjectToWorldDir(input.tangentOS.xyz), input.tangentOS.w);
+                float3 bitangent = cross(input.normalOS, input.tangentOS.xyz) * input.tangentOS.w;
+                output.bitangentWS = TransformObjectToWorldDir(bitangent);
+                
                 // Calculate fog
                 output.fogFactor = ComputeFogFactor(output.positionCS.z);
                 
@@ -128,17 +150,36 @@ Shader "Custom/WaterWithFoam_URP"
                 float depthFactor = saturate(depthDifference / _DepthTransparency);
                 float waterAlpha = lerp(_ShallowAlpha, _DeepAlpha, depthFactor);
                 
+                // Sample normal map twice with different UVs and speeds for animation
+                float2 uv1 = input.positionWS.xz * _NormalScale + _NormalSpeed.xy * _Time.y;
+                float2 uv2 = input.positionWS.xz * _NormalScale * 0.8 + _NormalSpeed2.xy * _Time.y;
+                
+                float3 normalMap1 = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uv1));
+                float3 normalMap2 = UnpackNormal(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, uv2));
+                
+                // Blend the two normal maps
+                float3 blendedNormal = normalize(normalMap1 + normalMap2);
+                blendedNormal.xy *= _NormalStrength;
+                blendedNormal = normalize(blendedNormal);
+                
+                // Transform normal from tangent space to world space
+                float3 tangent = normalize(input.tangentWS.xyz);
+                float3 bitangent = normalize(input.bitangentWS);
+                float3 normal = normalize(input.normalWS);
+                float3x3 tangentToWorld = float3x3(tangent, bitangent, normal);
+                float3 worldNormal = normalize(mul(blendedNormal, tangentToWorld));
+                
                 // Mix water color with foam (simple opaque foam)
                 half4 finalColor = lerp(_WaterColor, _FoamColor, foam);
                 
                 // Apply depth-based transparency (foam stays opaque)
                 finalColor.a = lerp(waterAlpha, 1.0, foam);
                 
-                // Simple specular highlight
+                // Simple specular highlight using the normal mapped surface
                 Light mainLight = GetMainLight();
                 float3 viewDir = normalize(_WorldSpaceCameraPos - input.positionWS);
                 float3 halfVector = normalize(mainLight.direction + viewDir);
-                float NdotH = saturate(dot(input.normalWS, halfVector));
+                float NdotH = saturate(dot(worldNormal, halfVector));
                 float specular = pow(NdotH, _Smoothness * 128.0) * _Smoothness;
                 
                 // Add specular to color
