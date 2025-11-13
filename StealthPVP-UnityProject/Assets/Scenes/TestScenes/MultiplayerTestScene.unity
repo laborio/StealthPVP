@@ -366,6 +366,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 985604502851506533, guid: 30aa3db2f2e7b3942bf7f02fe8124165, type: 3}
+      propertyPath: ConnectionData.ServerListenAddress
+      value: 127.0.0.1
+      objectReference: {fileID: 0}
     - target: {fileID: 7651353494809887555, guid: 30aa3db2f2e7b3942bf7f02fe8124165, type: 3}
       propertyPath: m_Name
       value: NetworkManager
