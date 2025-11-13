@@ -94,6 +94,7 @@ Material:
     - _Blend: 0
     - _BlendModePreserveSpecular: 0
     - _CastShadows: 1
+    - _Color_Multiplier: 1
     - _Cull: 2
     - _DstBlend: 0
     - _DstBlendAlpha: 0
@@ -113,6 +114,7 @@ Material:
     - _SrcBlendAlpha: 1
     - _Surface: 0
     - _UV_Rotation: 1.57
+    - _Use_Original_Color: 0
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZTest: 4
@@ -128,7 +130,7 @@ Material:
     - _GrassColor: {r: 0.6415094, g: 0.6415094, b: 0.6415094, a: 0}
     - _Grass_Color: {r: 0, g: 0, b: 0, a: 1}
     - _Grass_tiling: {r: 16, g: 16, b: 0, a: 0}
-    - _MainColor: {r: 0.6760413, g: 0.6774144, b: 0.6792453, a: 0}
+    - _MainColor: {r: 0.7264151, g: 0.67070097, b: 0.58592916, a: 0}
     - _SpecularColor: {r: 0, g: 0, b: 0, a: 0}
     - _Tex_tiling: {r: 9, g: 3, b: 0, a: 0}
     - _Tiling: {r: 2, g: 2, b: 0, a: 0}

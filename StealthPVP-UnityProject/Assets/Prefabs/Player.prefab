@@ -894,7 +894,7 @@ Transform:
   m_GameObject: {fileID: 4140250899103298247}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 0.015, z: 0}
+  m_LocalPosition: {x: 0, y: 0.03, z: 0}
   m_LocalScale: {x: 1.84, y: 1.84, z: 1.84}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -1199,7 +1199,7 @@ CharacterController:
   m_StepOffset: 0.5
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 0.82, z: 0}
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!114 &1358479111065527026
 MonoBehaviour:
   m_ObjectHideFlags: 0
