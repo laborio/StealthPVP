@@ -29,10 +29,24 @@ public class CustomPlayerController : NetworkBehaviour
 
     private Vector2 _input;
 
-    private NetworkVariable<Vector3> _networkPosition = new NetworkVariable<Vector3>();
-    private NetworkVariable<Quaternion> _networkRotation = new NetworkVariable<Quaternion>();
-
+    //jump
     private float _lastJumpTime = -999f;
+    private float _lastGroundedTime = -999f;
+    private float _jumpBufferTimer = 0f;
+    private bool _wasGroundedLastFrame = false;
+    private bool _isLanding = false;
+    private float _landingStartTime = 0f;
+    private bool _jumpConsumed = false;
+
+    private enum JumpPhase
+    {
+        Grounded,
+        Rising,
+        Apex,
+        Falling
+    }
+
+    private JumpPhase _currentJumpPhase = JumpPhase.Grounded;
 
     #endregion
 
@@ -46,13 +60,9 @@ public class CustomPlayerController : NetworkBehaviour
         {
             _PlayerCam.gameObject.SetActive(false);
             _IsoPlayerCam.gameObject.SetActive(false);
-            //enabled = false; à remettre si on fait client side
-            //return;
-        }
 
-        else
-        {
-            enabled = true;
+            _CharacterController.enabled = false;
+            enabled = false;
         }
     }
 
@@ -61,9 +71,68 @@ public class CustomPlayerController : NetworkBehaviour
         if (!IsOwner)
             return;
 
-        HandleMovement();
+        HandleGroundDetection();
+        HandleJumpInput();
         HandleJump();
         HandleGravity();
+        HandleMovement();
+
+        if (_jumpBufferTimer > 0)
+        {
+            _jumpBufferTimer -= Time.deltaTime;
+        }
+    }
+
+    #endregion
+
+    #region Ground Detection
+
+    private void HandleGroundDetection()
+    {
+        bool isGroundedNow = _CharacterController.isGrounded;
+
+        if (isGroundedNow)
+        {
+            _lastGroundedTime = Time.time;
+            _currentJumpPhase = JumpPhase.Grounded;
+            _jumpConsumed = false;
+        }
+
+        if (!_wasGroundedLastFrame && isGroundedNow)
+        {
+            OnLanded();
+        }
+
+        _wasGroundedLastFrame = isGroundedNow;
+    }
+
+    private void OnLanded()
+    {
+        _isLanding = true;
+        _landingStartTime = Time.time;
+        _currentJumpPhase = JumpPhase.Grounded;
+    }
+
+    private bool IsInCoyoteTime()
+    {
+        return !_CharacterController.isGrounded && Time.time - _lastGroundedTime <= _PlayerConfig.CoyoteTime;
+    }
+
+    #endregion
+
+    #region Jump Input Handling
+
+    private void HandleJumpInput()
+    {
+        if (_PlayerInputs.IsJumping)
+        {
+            if (_jumpBufferTimer <= 0 && (_CharacterController.isGrounded || IsInCoyoteTime()))
+            {
+                _jumpBufferTimer = _PlayerConfig.JumpBufferTime;
+            }
+
+            _PlayerInputs.ResetJump();
+        }
     }
 
     #endregion
@@ -73,35 +142,52 @@ public class CustomPlayerController : NetworkBehaviour
     {
         _input = _PlayerInputs.MoveInput;
 
-        if (_input.sqrMagnitude < .01f)
-            return;
+        Vector3 horizontalMove = Vector3.zero;
 
-        //mouvements
-        _cameraForwardAxis = _PlayerCam.forward;
-        _cameraRightAxis = _PlayerCam.right;
+        if (_input.sqrMagnitude >= .01f)
+        {
+            _cameraForwardAxis = _PlayerCam.forward;
+            _cameraRightAxis = _PlayerCam.right;
 
-        _cameraForwardAxis.y = 0;
-        _cameraRightAxis.y = 0;
-        _cameraForwardAxis.Normalize();
-        _cameraRightAxis.Normalize();
+            _cameraForwardAxis.y = 0;
+            _cameraRightAxis.y = 0;
+            _cameraForwardAxis.Normalize();
+            _cameraRightAxis.Normalize();
 
-        _moveDirection = (_cameraForwardAxis * _input.y + _cameraRightAxis * _input.x).normalized;
+            _moveDirection = (_cameraForwardAxis * _input.y + _cameraRightAxis * _input.x).normalized;
 
-        _currentSpeed = _PlayerInputs.IsWalking ? _PlayerConfig.WalkSpeed : _PlayerConfig.DefaultSpeed;
+            float speedMultiplier = 1f;
 
-        MoveAndRotateServerRpc(_moveDirection, _currentSpeed); //à enelevr si on veut faire client side
+            if (!_CharacterController.isGrounded)
+            {
+                speedMultiplier *= _PlayerConfig.AirControlMultiplier;
+            }
 
-        //_CharacterController.Move(_moveDirection * _PlayerConfig.RotationSpeed * Time.deltaTime); // à remettre si on veut faire client side
-        //HandleRotation(_moveDirection, _PlayerConfig.RotationSpeed);
+            if (_isLanding && Time.time - _landingStartTime < _PlayerConfig.LandingDuration)
+            {
+                speedMultiplier *= (1f - _PlayerConfig.LandingSpeedReduction);
+            }
+            else if (_isLanding)
+            {
+                _isLanding = false;
+            }
 
-        //_networkPosition.Value = _moveDirection * _currentSpeed * Time.deltaTime;
-        //_networkRotation.Value = _targetRotation;
+            _currentSpeed = _PlayerInputs.IsWalking ? _PlayerConfig.WalkSpeed : _PlayerConfig.DefaultSpeed;
+            _currentSpeed *= speedMultiplier;
+
+            horizontalMove = _moveDirection * _currentSpeed * Time.deltaTime;
+
+            HandleRotation(_moveDirection, _PlayerConfig.RotationSpeed);
+        }
+
+        Vector3 totalMove = horizontalMove + (_velocity * Time.deltaTime);
+
+        _CharacterController.Move(totalMove);
     }
 
 
     private void HandleRotation(Vector3 p_moveDir, float p_rotationSpeed)
     {
-        //rotation
         if (p_moveDir.sqrMagnitude > .01f)
         {
             _targetRotation = Quaternion.LookRotation(p_moveDir);
@@ -119,38 +205,89 @@ public class CustomPlayerController : NetworkBehaviour
             _velocity.y = _PlayerConfig.GroundedGravity;
         }
 
-        _velocity.y += _PlayerConfig.Gravity * Time.deltaTime;
-        //_CharacterController.Move(_velocity * Time.deltaTime); //à remettre si on veut client side
+        float gravityMultiplier = GetGravityMultiplier();
+        float effectiveGravity = _PlayerConfig.Gravity * gravityMultiplier;
 
-        ApplyGravityServerRpc(_velocity); //à enlever si on veut client side
+        _velocity.y += effectiveGravity * Time.deltaTime;
+    }
+
+    private float GetGravityMultiplier()
+    {
+        if (_CharacterController.isGrounded)
+        {
+            return 1f;
+        }
+
+        if (_velocity.y > 0)
+        {
+            if (_velocity.y < _PlayerConfig.ApexThreshold)
+            {
+                _currentJumpPhase = JumpPhase.Apex;
+                return _PlayerConfig.ApexGravityMultiplier;
+            }
+            else
+            {
+                _currentJumpPhase = JumpPhase.Rising;
+                return _PlayerConfig.JumpRiseGravityMultiplier;
+            }
+        }
+        else
+        {
+            _currentJumpPhase = JumpPhase.Falling;
+            return _PlayerConfig.JumpFallGravityMultiplier;
+        }
     }
 
     private void HandleJump()
     {
-        if (_PlayerInputs.IsJumping && _CharacterController.isGrounded && Time.time >= _lastJumpTime + _PlayerConfig.JumpCooldown)
+        bool canJump = CanPerformJump();
+
+        if (canJump && Time.time >= _lastJumpTime + _PlayerConfig.JumpCooldown)
         {
-            _velocity.y = Mathf.Sqrt(_PlayerConfig.JumpHeight * -2f * _PlayerConfig.Gravity);
-            _lastJumpTime = Time.time;
-            _PlayerInputs.ResetJump();
+            PerformJump();
         }
     }
 
+    private bool CanPerformJump()
+    {
+        bool jumpBuffered = _jumpBufferTimer > 0;
+        bool onGroundOrCoyote = _CharacterController.isGrounded || IsInCoyoteTime();
+
+        return jumpBuffered && onGroundOrCoyote && !_jumpConsumed;
+    }
+
+    private void PerformJump()
+    {
+        float jumpVelocity = Mathf.Sqrt(_PlayerConfig.JumpHeight * -2f * _PlayerConfig.Gravity);
+
+        _velocity.y = jumpVelocity;
+
+        _lastJumpTime = Time.time;
+        _currentJumpPhase = JumpPhase.Rising;
+
+        _jumpConsumed = true;
+        _jumpBufferTimer = 0f;
+    }
 
     #endregion 
 
-    #region RPC
+    #region Debug (Optional)
 
-    [ServerRpc]
-    private void MoveAndRotateServerRpc(Vector3 p_moveDir, float p_speed)
+    private void OnGUI()
     {
-        _CharacterController.Move(p_moveDir * p_speed * Time.deltaTime);
-        HandleRotation(p_moveDir, _PlayerConfig.RotationSpeed);
-    }
+        if (!IsOwner) return;
 
-    [ServerRpc]
-    private void ApplyGravityServerRpc(Vector3 p_velocity)
-    {
-        _CharacterController.Move(_velocity * Time.deltaTime);
+        GUILayout.BeginArea(new Rect(10, 10, 350, 280));
+        GUILayout.Label($"=== CLIENT-SIDE MOVEMENT ===");
+        GUILayout.Label($"Jump Phase: {_currentJumpPhase}");
+        GUILayout.Label($"Velocity Y: {_velocity.y:F2}");
+        GUILayout.Label($"Grounded: {_CharacterController.isGrounded}");
+        GUILayout.Label($"Coyote Time: {IsInCoyoteTime()}");
+        GUILayout.Label($"Jump Buffer: {_jumpBufferTimer:F2}s");
+        GUILayout.Label($"Jump Consumed: {_jumpConsumed}");
+        GUILayout.Label($"Landing: {_isLanding}");
+        GUILayout.Label($"Gravity Mult: {GetGravityMultiplier():F2}x");
+        GUILayout.EndArea();
     }
 
     #endregion

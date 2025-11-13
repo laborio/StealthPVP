@@ -631,7 +631,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2521336064
+  GlobalObjectIdHash: 89279088
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -675,9 +675,9 @@ MonoBehaviour:
   _PlayerConfig: {fileID: 11400000, guid: 9b22d11b0a1c2fb49a3a36e706f6e541, type: 2}
   _PlayerInputs: {fileID: 1272320032293981456}
   _CharacterController: {fileID: 3795333157654262966}
+  _IsoPlayerCam: {fileID: 1364225817778195130}
   _PlayerRoot: {fileID: 3539950743473349084}
   _PlayerCam: {fileID: 8301130922892297373}
-  _IsoPlayerCam: {fileID: 1364225817778195130}
 --- !u!1 &8226852333398073924
 GameObject:
   m_ObjectHideFlags: 0
@@ -688,7 +688,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3539950743473349084}
   - component: {fileID: 3795333157654262966}
-  - component: {fileID: 3521843327938351934}
+  - component: {fileID: 3002009891751291163}
   m_Layer: 0
   m_Name: Root
   m_TagString: Untagged
@@ -738,7 +738,7 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &3521843327938351934
+--- !u!114 &3002009891751291163
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -747,11 +747,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 8226852333398073924}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Script: {fileID: 11500000, guid: e713d3035dd970a48b97e7dc1694b236, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
+  m_EditorClassIdentifier: Assembly-CSharp::ClientNetworkTransform
   ShowTopMostFoldoutHeaderGroup: 1
-  NetworkTransformExpanded: 0
+  NetworkTransformExpanded: 1
   AutoOwnerAuthorityTickOffset: 1
   PositionInterpolationType: 0
   RotationInterpolationType: 0

@@ -15,11 +15,20 @@ MonoBehaviour:
   DefaultSpeed: 10
   WalkSpeed: 5
   RotationSpeed: 15
-  Gravity: -20
+  AirControlMultiplier: 0.9
+  Gravity: -30
   GroundedGravity: -2
   GroundCheckDistance: 0.2
   GroundMask:
     serializedVersion: 2
     m_Bits: 8
-  JumpHeight: 2
-  JumpCooldown: 0.5
+  JumpHeight: 2.5
+  JumpCooldown: 0.1
+  JumpRiseGravityMultiplier: 1
+  ApexGravityMultiplier: 0.6
+  JumpFallGravityMultiplier: 1.8
+  ApexThreshold: 3
+  CoyoteTime: 0.15
+  JumpBufferTime: 0.125
+  LandingDuration: 0.1
+  LandingSpeedReduction: 0.3
