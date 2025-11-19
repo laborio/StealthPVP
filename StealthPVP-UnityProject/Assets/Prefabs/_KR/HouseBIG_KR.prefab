@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7075894807595408127}
   - component: {fileID: 1863239778538876352}
   - component: {fileID: 2048245456173691827}
-  - component: {fileID: 2981926836800604073}
+  - component: {fileID: 2274726009402527788}
   m_Layer: 8
   m_Name: HouseBIG_KR
   m_TagString: Wall
@@ -29,7 +29,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 94.23, y: 5, z: 35.77}
-  m_LocalScale: {x: 2.5, y: 2.5, z: 2.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
@@ -94,7 +94,7 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &2981926836800604073
+--- !u!65 &2274726009402527788
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -113,5 +113,5 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 3.25, y: 3.6047528, z: 3.25}
-  m_Center: {x: -0.020286923, y: 1.8023764, z: 0.0034191022}
+  m_Size: {x: 8.000002, y: 8.7703495, z: 8.000002}
+  m_Center: {x: -0.04988432, y: 4.3851748, z: 0.0084376335}

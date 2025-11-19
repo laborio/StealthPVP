@@ -54,6 +54,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: 33581d627662c4abb81b420850f07fe6, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _MainRoughnessMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 2800000, guid: e0040c4b033dd403fb70caa949db6f04, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -125,16 +129,18 @@ Material:
     m_Colors:
     - _BorderColor: {r: 0.3962264, g: 0.23216242, b: 0.08410467, a: 0}
     - _Border_Color: {r: 0, g: 0.33962262, b: 0.0028882024, a: 1}
+    - _Color: {r: 0.01495195, g: 0.45283014, b: 0.079117425, a: 0}
     - _DirtColor: {r: 0.3301887, g: 0.091418676, b: 0, a: 0}
     - _DirtTiling: {r: 15, g: 8, b: 0, a: 0}
     - _GrassColor: {r: 0.6415094, g: 0.6415094, b: 0.6415094, a: 0}
     - _Grass_Color: {r: 0, g: 0, b: 0, a: 1}
     - _Grass_tiling: {r: 16, g: 16, b: 0, a: 0}
-    - _MainColor: {r: 0.764151, g: 0.764151, b: 0.764151, a: 0}
+    - _MainColor: {r: 0.764151, g: 0.764151, b: 0.764151, a: 0.5}
     - _SpecularColor: {r: 0, g: 0, b: 0, a: 0}
     - _Tex_tiling: {r: 9, g: 3, b: 0, a: 0}
     - _Tiling: {r: 2, g: 2, b: 0, a: 0}
     - _Top_Color: {r: 0.010679956, g: 0.4528302, b: 0.13700864, a: 1}
+    - _UV_Scale: {r: 0, g: 0, b: 0, a: 0}
     - _Vector2_in: {r: 0, g: -2, b: 0, a: 0}
     - _Vector2_out: {r: 0, g: 1, b: 0, a: 0}
   m_BuildTextureStacks: []

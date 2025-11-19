@@ -40,6 +40,10 @@ public partial class SimpleCharacterController : MonoBehaviour
 
     [Header("State Smoothing")]
     [SerializeField, Range(0f, 0.5f)] private float groundedStateLinger = 0.12f;
+    [Header("Water Interaction")]
+    [SerializeField] private LayerMask waterLayerMask = 1 << 4;
+    [SerializeField, Range(0.1f, 1f)] private float waterMoveSpeedMultiplier = 0.6f;
+    [SerializeField, Range(0.1f, 1f)] private float waterJumpVelocityMultiplier = 0.6f;
 
     partial void OnBenchAwake();
 
@@ -62,6 +66,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     private float _wallContactTimer;
     private Vector3 _wallNormal;
     private float _wallJumpCooldownTimer;
+    private bool _isInWater;
     [SerializeField] private CharacterAnimations characterAnimations;
 
     private void Awake()
@@ -99,6 +104,9 @@ public partial class SimpleCharacterController : MonoBehaviour
         {
             _wallJumpCooldownTimer = Mathf.Max(_wallJumpCooldownTimer - deltaTime, 0f);
         }
+        _isInWater = DetectWater();
+        float waterSpeedMultiplier = _isInWater ? this.waterMoveSpeedMultiplier : 1f;
+        float waterJumpMultiplier = _isInWater ? this.waterJumpVelocityMultiplier : 1f;
 
         Vector3 desiredPlanarVelocity = Vector3.zero;
 
@@ -134,6 +142,7 @@ public partial class SimpleCharacterController : MonoBehaviour
             {
                 moveDirection.Normalize();
                 float speed = moveSpeed * ((wantsToWalk || walkOverrideActive) ? 1f : runMultiplier);
+                speed *= waterSpeedMultiplier;
                 desiredPlanarVelocity = moveDirection * speed;
                 _hasMoveTarget = false;
             }
@@ -150,6 +159,7 @@ public partial class SimpleCharacterController : MonoBehaviour
                 else
                 {
                     float speed = moveSpeed * ((wantsToWalk || walkOverrideActive) ? 1f : runMultiplier);
+                    speed *= waterSpeedMultiplier;
                     desiredPlanarVelocity = toTarget.normalized * speed;
                     hasMovementInput = true;
                 }
@@ -215,7 +225,7 @@ public partial class SimpleCharacterController : MonoBehaviour
                 }
                 forward.Normalize();
 
-                float speed = moveSpeed * runMultiplier * dashSpeedMultiplier;
+                float speed = moveSpeed * runMultiplier * dashSpeedMultiplier * waterSpeedMultiplier;
                 _currentPlanarVelocity = forward * speed;
                 _dashTimer = dashDuration;
                 _dashCooldownTimer = dashCooldown;
@@ -251,7 +261,7 @@ public partial class SimpleCharacterController : MonoBehaviour
         bool bufferedJumpRequested = _jumpBufferTimer > 0f;
         if (bufferedJumpRequested && _coyoteTimer > 0f)
         {
-            _verticalVelocity = jumpVelocity;
+            _verticalVelocity = jumpVelocity * waterJumpMultiplier;
             Vector3 launchVelocity = _currentPlanarVelocity;
             if (launchVelocity.sqrMagnitude < 0.0001f)
             {
@@ -286,10 +296,10 @@ public partial class SimpleCharacterController : MonoBehaviour
                 if (bounceDirection.sqrMagnitude > 0.0001f)
                 {
                     Vector3 normalizedBounce = bounceDirection.normalized;
-                    _currentPlanarVelocity = normalizedBounce * wallJumpHorizontalSpeed;
+                    _currentPlanarVelocity = normalizedBounce * wallJumpHorizontalSpeed * waterSpeedMultiplier;
                     transform.rotation = Quaternion.LookRotation(normalizedBounce, Vector3.up);
                 }
-                _verticalVelocity = wallJumpUpVelocity;
+                _verticalVelocity = wallJumpUpVelocity * waterJumpMultiplier;
                 _isJumping = true;
                 _isFalling = false;
                 _jumpBufferTimer = 0f;
@@ -511,5 +521,24 @@ public partial class SimpleCharacterController : MonoBehaviour
         seatSnapDistance = Mathf.Clamp(seatSnapDistance, 0.01f, 1f);
         benchAlignmentSpeed = Mathf.Max(0f, benchAlignmentSpeed);
         standToSitAnimSpeed = Mathf.Max(0.1f, standToSitAnimSpeed);
+        waterMoveSpeedMultiplier = Mathf.Clamp(waterMoveSpeedMultiplier, 0.1f, 1f);
+        waterJumpVelocityMultiplier = Mathf.Clamp(waterJumpVelocityMultiplier, 0.1f, 1f);
+    }
+
+    private bool DetectWater()
+    {
+        if (_characterController == null || waterLayerMask.value == 0)
+        {
+            return false;
+        }
+
+        Bounds bounds = _characterController.bounds;
+        float radius = Mathf.Max(0.01f, _characterController.radius * 0.95f);
+        Vector3 bottom = bounds.center;
+        bottom.y = bounds.min.y + radius;
+        Vector3 top = bounds.center;
+        top.y = bounds.max.y - radius;
+
+        return Physics.CheckCapsule(bottom, top, radius, waterLayerMask, QueryTriggerInteraction.Collide);
     }
 }
