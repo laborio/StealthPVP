@@ -9,10 +9,14 @@ Shader "Custom/WaterWithFoam_URP"
         
         // Normal map
         _NormalMap ("Normal Map", 2D) = "bump" {}
-        _NormalStrength ("Normal Strength", Range(0, 20)) = 1.0
+        _NormalStrength ("Normal Strength", Range(0, 2)) = 1.0
         _NormalScale ("Normal Tiling", Float) = 1.0
         _NormalSpeed ("Normal Scroll Speed", Vector) = (0.1, 0.1, 0, 0)
         _NormalSpeed2 ("Second Normal Scroll Speed", Vector) = (-0.08, 0.05, 0, 0)
+        
+        // Roughness map
+        _RoughnessMap ("Roughness Map", 2D) = "white" {}
+        _RoughnessStrength ("Roughness Strength", Range(0, 1)) = 1.0
         
         // Wave properties
         _WaveSpeed ("Wave Speed", Range(0, 2)) = 0.5
@@ -78,6 +82,8 @@ Shader "Custom/WaterWithFoam_URP"
             
             TEXTURE2D(_NormalMap);
             SAMPLER(sampler_NormalMap);
+            TEXTURE2D(_RoughnessMap);
+            SAMPLER(sampler_RoughnessMap);
             
             CBUFFER_START(UnityPerMaterial)
                 float4 _WaterColor;
@@ -88,6 +94,7 @@ Shader "Custom/WaterWithFoam_URP"
                 float _NormalScale;
                 float4 _NormalSpeed;
                 float4 _NormalSpeed2;
+                float _RoughnessStrength;
                 float _WaveSpeed;
                 float _WaveAmplitude;
                 float _WaveFrequency;
@@ -162,6 +169,15 @@ Shader "Custom/WaterWithFoam_URP"
                 blendedNormal.xy *= _NormalStrength;
                 blendedNormal = normalize(blendedNormal);
                 
+                // Sample roughness map (sample both layers and blend like normals)
+                float roughness1 = SAMPLE_TEXTURE2D(_RoughnessMap, sampler_RoughnessMap, uv1).r;
+                float roughness2 = SAMPLE_TEXTURE2D(_RoughnessMap, sampler_RoughnessMap, uv2).r;
+                float blendedRoughness = (roughness1 + roughness2) * 0.5;
+                
+                // Convert roughness to smoothness and apply strength
+                // Roughness map: white (1) = rough, black (0) = smooth
+                float smoothness = lerp(_Smoothness, _Smoothness * (1.0 - blendedRoughness), _RoughnessStrength);
+                
                 // Transform normal from tangent space to world space
                 float3 tangent = normalize(input.tangentWS.xyz);
                 float3 bitangent = normalize(input.bitangentWS);
@@ -175,12 +191,12 @@ Shader "Custom/WaterWithFoam_URP"
                 // Apply depth-based transparency (foam stays opaque)
                 finalColor.a = lerp(waterAlpha, 1.0, foam);
                 
-                // Simple specular highlight using the normal mapped surface
+                // Simple specular highlight using the normal mapped surface and roughness
                 Light mainLight = GetMainLight();
                 float3 viewDir = normalize(_WorldSpaceCameraPos - input.positionWS);
                 float3 halfVector = normalize(mainLight.direction + viewDir);
                 float NdotH = saturate(dot(worldNormal, halfVector));
-                float specular = pow(NdotH, _Smoothness * 128.0) * _Smoothness;
+                float specular = pow(NdotH, smoothness * 128.0) * smoothness;
                 
                 // Add specular to color
                 finalColor.rgb += specular * mainLight.color * 0.5;
