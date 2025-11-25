@@ -145,6 +145,7 @@ Material:
     - _GlossyReflections: 0
     - _Height_rotation: 0
     - _Invert_X_and_Z: 0
+    - _Invert_tiling_axis: 0
     - _Metallic: 0
     - _Noise_Contrast: 0.2
     - _Noise_Scale: 20
@@ -168,7 +169,9 @@ Material:
     - _UV1_for_normal: 0
     - _UV_Rotation: 0
     - _UV_Scale: 1.5
+    - _UV_Scale_Rotation: 0
     - _Use_Original_Color: 0
+    - _Use_Scalable_Texture: 0
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZTest: 4
@@ -195,6 +198,7 @@ Material:
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _Specular_Color: {r: 0.3018868, g: 0.06584456, b: 0.044143822, a: 1}
     - _Tiling: {r: 0.1, g: 0.1, b: 0, a: 0}
+    - _UV_Offset: {r: 1, g: 1, b: 0, a: 0}
     - _UV_Scale: {r: 0.5, g: 1, b: 0, a: 0}
     - _offset: {r: 1, g: 1, b: 0, a: 0}
   m_BuildTextureStacks: []

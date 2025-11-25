@@ -142,7 +142,7 @@ Material:
     - _Noise_Contrast: 0.2
     - _Noise_Scale: 20
     - _Noise_Shape: 0.5
-    - _Normal_Strength: 0.82
+    - _Normal_Strength: 0.5
     - _Normal_UV_Rotation: 0
     - _OcclusionStrength: 1
     - _Original_Color: 0
@@ -190,7 +190,7 @@ Material:
     - _Specular_Color: {r: 0.3018868, g: 0.06584456, b: 0.044143822, a: 1}
     - _Tiling: {r: 1, g: 1, b: 0, a: 0}
     - _UV_Offset: {r: 1, g: 1, b: 0, a: 0}
-    - _UV_Scale: {r: 1, g: 1, b: 0, a: 0}
+    - _UV_Scale: {r: 0.4, g: 0.39, b: 0, a: 0}
     - _offset: {r: 1, g: 1, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
