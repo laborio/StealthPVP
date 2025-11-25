@@ -182,7 +182,7 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _Height_offset: {r: 0, g: 0, b: 0, a: 0}
     - _Height_tiling: {r: 0, g: 0, b: 0, a: 0}
-    - _MainColor: {r: 0.25, g: 0.21478872, b: 0.19366196, a: 1}
+    - _MainColor: {r: 0.4392157, g: 0.40137556, b: 0.37772548, a: 1}
     - _Normal_Tiling: {r: 1, g: 1, b: 0, a: 0}
     - _Normal_offset: {r: 1, g: 1, b: 0, a: 0}
     - _Offset: {r: 0.65, g: 1.03, b: 0, a: 0}
