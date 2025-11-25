@@ -21,7 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: M_GroundTilesSquare
-  m_Shader: {fileID: -6465566751694194690, guid: a5b5f25da57824dfbb33a120f0b23b31, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 9dfe0aa26a3694fa39be86625d828401, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -47,6 +47,10 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Grass_Heightmap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _HeightMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -102,24 +106,35 @@ Material:
     - _Cull: 2
     - _DstBlend: 0
     - _DstBlendAlpha: 0
+    - _Face_axis_Y: 0
+    - _Face_axis_Z: 0
+    - _Front_face_light_factor: 1
     - _Height_Grass_Tex_Strength: 8
+    - _Height_rotation: 0
     - _Invert_X_and_Z: 0
+    - _Invert_tiling_axis: 0
     - _Metallic: 0
     - _Noise_Contrast: 0.79
     - _Noise_Scale: 89.06
     - _Noise_Shape: 0.61
     - _Normal_Grass_Tex_Strength: 2
-    - _Normal_Strength: 2
+    - _Normal_Strength: 0.5
+    - _Normal_UV_Rotation: 0
     - _Original_Color: 0
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _Smoothness: 0.73
+    - _Smoothness: 0
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
+    - _Strength: 0
     - _Surface: 0
+    - _Top_face_light_factor: 1
+    - _UV1_for_normal: 0
     - _UV_Rotation: 0
+    - _UV_Scale_Rotation: 0
     - _Use_Original_Color: 1
+    - _Use_Scalable_Texture: 1
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZTest: 4
@@ -127,6 +142,8 @@ Material:
     - _ZWriteControl: 0
     - _edge: 0
     - _step: 1.17
+    - _z_mask_edge_1: 0
+    - _z_mask_edge_2: 0
     m_Colors:
     - _BorderColor: {r: 0.3962264, g: 0.23216242, b: 0.08410467, a: 0}
     - _Border_Color: {r: 0, g: 0.33962262, b: 0.0028882024, a: 1}
@@ -135,14 +152,21 @@ Material:
     - _GrassColor: {r: 0.6415094, g: 0.6415094, b: 0.6415094, a: 0}
     - _Grass_Color: {r: 0, g: 0, b: 0, a: 1}
     - _Grass_tiling: {r: 16, g: 16, b: 0, a: 0}
-    - _MainColor: {r: 0.6886792, g: 0.6854307, b: 0.6854307, a: 0}
+    - _Height_offset: {r: 0, g: 0, b: 0, a: 0}
+    - _Height_tiling: {r: 0, g: 0, b: 0, a: 0}
+    - _MainColor: {r: 0.3679245, g: 0.3281528, b: 0.2724724, a: 0}
+    - _Normal_Tiling: {r: 1, g: 1, b: 0, a: 0}
+    - _Normal_offset: {r: 1, g: 1, b: 0, a: 0}
     - _Offset: {r: 1, g: 1, b: 0, a: 0}
     - _SpecularColor: {r: 0, g: 0, b: 0, a: 0}
+    - _Specular_Color: {r: 0.5019608, g: 0.5019608, b: 0.5019608, a: 1}
     - _Tex_tiling: {r: 9, g: 3, b: 0, a: 0}
     - _Tiling: {r: 4, g: 4, b: 0, a: 0}
     - _Top_Color: {r: 0.010679956, g: 0.4528302, b: 0.13700864, a: 1}
-    - _UV_Scale: {r: 0.75, g: 1, b: 0, a: 0}
+    - _UV_Offset: {r: 1, g: 1, b: 0, a: 0}
+    - _UV_Scale: {r: 0.5, g: 0.5, b: 0, a: 0}
     - _Vector2_in: {r: 0, g: -2, b: 0, a: 0}
     - _Vector2_out: {r: 0, g: 1, b: 0, a: 0}
+    - _offset: {r: 1, g: 1, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

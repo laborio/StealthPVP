@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &4576455010960630339
+--- !u!1 &8601970479079300448
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,47 +8,47 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4383828104884802685}
-  - component: {fileID: 9011435760233068428}
-  - component: {fileID: 4849127177237987537}
-  - component: {fileID: 982496294851903286}
-  m_Layer: 0
-  m_Name: WallCorner_KR
+  - component: {fileID: 8146519221358651196}
+  - component: {fileID: 3267474223699160744}
+  - component: {fileID: 2583021623570071483}
+  - component: {fileID: -8456815129149720998}
+  m_Layer: 9
+  m_Name: Rock_S
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4383828104884802685
+--- !u!4 &8146519221358651196
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4576455010960630339}
+  m_GameObject: {fileID: 8601970479079300448}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 51.12, y: 5, z: -0.35}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 92.27513, y: 10, z: 16.3415}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
---- !u!33 &9011435760233068428
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &3267474223699160744
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4576455010960630339}
-  m_Mesh: {fileID: -7486997559262704545, guid: 71955a7a3fcf64e448ab105142548b09, type: 3}
---- !u!23 &4849127177237987537
+  m_GameObject: {fileID: 8601970479079300448}
+  m_Mesh: {fileID: -1631260921947879673, guid: 26bde183c8b2347579c8c52869c37e28, type: 3}
+--- !u!23 &2583021623570071483
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4576455010960630339}
+  m_GameObject: {fileID: 8601970479079300448}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -64,12 +64,10 @@ MeshRenderer:
   m_SmallMeshCulling: 1
   m_ForceMeshLod: -1
   m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
+  m_RenderingLayerMask: 2
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 049710db166474687b38a7bba548a7f7, type: 2}
-  - {fileID: 2100000, guid: 049710db166474687b38a7bba548a7f7, type: 2}
-  - {fileID: 2100000, guid: 4fb486a1637844fdb8ce0845869d4e8c, type: 2}
+  - {fileID: 2100000, guid: b7d89bf84efbe4383ae360ec20bb0474, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -92,24 +90,30 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &982496294851903286
-BoxCollider:
+--- !u!205 &-8456815129149720998
+LODGroup:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4576455010960630339}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
+  m_GameObject: {fileID: 8601970479079300448}
+  serializedVersion: 2
+  m_LocalReferencePoint: {x: -0.0021823943, y: 0.04904596, z: 0.004770823}
+  m_Size: 0.23946495
+  m_FadeMode: 0
+  m_AnimateCrossFading: 0
+  m_LastLODIsBillboard: 0
+  m_LODs:
+  - screenRelativeHeight: 0.6
+    fadeTransitionWidth: 0
+    renderers:
+    - renderer: {fileID: 2583021623570071483}
+  - screenRelativeHeight: 0.3
+    fadeTransitionWidth: 0
+    renderers:
+    - renderer: {fileID: 2583021623570071483}
+  - screenRelativeHeight: 0.1
+    fadeTransitionWidth: 0
+    renderers:
+    - renderer: {fileID: 2583021623570071483}
   m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.1378598, y: 4.5879946, z: 1.1540875}
-  m_Center: {x: -0.03754378, y: 2.2939973, z: 0.01285899}

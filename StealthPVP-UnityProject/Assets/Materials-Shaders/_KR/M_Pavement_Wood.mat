@@ -21,7 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: M_Pavement_Wood
-  m_Shader: {fileID: -6465566751694194690, guid: a5b5f25da57824dfbb33a120f0b23b31, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 9dfe0aa26a3694fa39be86625d828401, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -63,6 +63,10 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _HeightMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -125,15 +129,21 @@ Material:
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnvironmentReflections: 1
+    - _Face_axis_Y: 0
+    - _Face_axis_Z: 0
+    - _Front_face_light_factor: 1
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
+    - _Height_rotation: 0
     - _Invert_X_and_Z: 0
+    - _Invert_tiling_axis: 1
     - _Metallic: 0
     - _Noise_Contrast: 0.2
     - _Noise_Scale: 20
     - _Noise_Shape: 0.5
     - _Normal_Strength: 0.82
+    - _Normal_UV_Rotation: 0
     - _OcclusionStrength: 1
     - _Original_Color: 0
     - _Parallax: 0.005
@@ -145,10 +155,15 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
+    - _Strength: 0
     - _Surface: 0
+    - _Top_face_light_factor: 1
+    - _UV1_for_normal: 0
     - _UV_Rotation: 1.57
     - _UV_Scale: 1.5
+    - _UV_Scale_Rotation: 90
     - _Use_Original_Color: 0
+    - _Use_Scalable_Texture: 1
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZTest: 4
@@ -156,6 +171,8 @@ Material:
     - _ZWriteControl: 0
     - _edge: 1
     - _step: 0.5
+    - _z_mask_edge_1: 0
+    - _z_mask_edge_2: 0
     m_Colors:
     - _BaseColor: {r: 0.5471698, g: 0.5471698, b: 0.5471698, a: 1}
     - _BorderColor: {r: 0.01495195, g: 0.45283014, b: 0.079117425, a: 0}
@@ -163,11 +180,17 @@ Material:
     - _DirtColor: {r: 0.01495195, g: 0.4528302, b: 0.07911745, a: 0}
     - _DirtTiling: {r: 1, g: 1, b: 0, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _MainColor: {r: 0.3137255, g: 0.20725355, b: 0.15121569, a: 1}
+    - _Height_offset: {r: 0, g: 0, b: 0, a: 0}
+    - _Height_tiling: {r: 0, g: 0, b: 0, a: 0}
+    - _MainColor: {r: 0.31372544, g: 0.19761637, b: 0.13741168, a: 0.5}
+    - _Normal_Tiling: {r: 1, g: 1, b: 0, a: 0}
+    - _Normal_offset: {r: 1, g: 1, b: 0, a: 0}
     - _Offset: {r: 0.65, g: 1.03, b: 0, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _Specular_Color: {r: 0.3018868, g: 0.06584456, b: 0.044143822, a: 1}
     - _Tiling: {r: 1, g: 1, b: 0, a: 0}
-    - _UV_Scale: {r: 0.5, g: 1, b: 0, a: 0}
+    - _UV_Offset: {r: 1, g: 1, b: 0, a: 0}
+    - _UV_Scale: {r: 1, g: 1, b: 0, a: 0}
+    - _offset: {r: 1, g: 1, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
