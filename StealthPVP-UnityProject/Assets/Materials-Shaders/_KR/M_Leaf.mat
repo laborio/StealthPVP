@@ -20,21 +20,22 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_GrassBlade
-  m_Shader: {fileID: -6465566751694194690, guid: cc1df61cbe1074f3e8f9b196a09d8236, type: 3}
+  m_Name: M_Leaf
+  m_Shader: {fileID: -6465566751694194690, guid: 9dfe0aa26a3694fa39be86625d828401, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
-  m_EnableInstancingVariants: 1
+  m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
+  m_CustomRenderQueue: 2000
   stringTagMap:
     RenderType: Opaque
   disabledShaderPasses:
   - MOTIONVECTORS
-  m_LockedProperties: _CastShadows
+  - SHADOWCASTER
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -79,7 +80,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 6a78d88969fa34b05ad89aa091bd54aa, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -123,17 +124,14 @@ Material:
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0
     - _AlphaToMask: 0
-    - _Amplitude: 128
-    - _BendValue: 0.5
-    - _Blade_height: 4
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
-    - _CastShadows: 1
+    - _CastShadows: 0
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _Color_Multiplier: 8
-    - _Cull: 0
+    - _Color_Multiplier: 0.73
+    - _Cull: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
@@ -149,7 +147,6 @@ Material:
     - _Height_rotation: 0
     - _Invert_X_and_Z: 0
     - _Invert_tiling_axis: 0
-    - _Low_bending_factor: 3.8
     - _Metallic: 0
     - _Noise_Contrast: 0.2
     - _Noise_Scale: 20
@@ -169,15 +166,13 @@ Material:
     - _SrcBlendAlpha: 1
     - _Strength: 0
     - _Surface: 0
-    - _Top_face_light_factor: 1
+    - _Top_face_light_factor: 0.87
     - _UV1_for_normal: 0
     - _UV_Rotation: 0
     - _UV_Scale: 1.5
     - _UV_Scale_Rotation: 0
     - _Use_Original_Color: 1
     - _Use_Scalable_Texture: 0
-    - _WaveFrequency: 0
-    - _WindSpeed: 2
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZTest: 4
@@ -190,28 +185,22 @@ Material:
     - _z_mask_edge_2: 0.9
     m_Colors:
     - _BaseColor: {r: 0.5471698, g: 0.5471698, b: 0.5471698, a: 1}
-    - _BendDirection: {r: 6, g: 0, b: 0, a: 0}
     - _BorderColor: {r: 0.01495195, g: 0.45283014, b: 0.079117425, a: 0}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.5471698, g: 0.5471698, b: 0.5471698, a: 1}
     - _DirtColor: {r: 0.01495195, g: 0.4528302, b: 0.07911745, a: 0}
     - _DirtTiling: {r: 1, g: 1, b: 0, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _Grass_Bot_Color: {r: 0.41141176, g: 0.461, b: 0.248479, a: 0}
-    - _Grass_Top_Color: {r: 0.4867652, g: 0.5754717, b: 0.2035867, a: 0}
     - _Height_offset: {r: 0, g: 0, b: 0, a: 0}
     - _Height_tiling: {r: 0, g: 0, b: 0, a: 0}
-    - _MainColor: {r: 1, g: 1, b: 1, a: 0.5}
+    - _MainColor: {r: 0.51083815, g: 0.54509795, b: 0.10980379, a: 0.5}
     - _Normal_Tiling: {r: 0.25, g: 0.25, b: 0, a: 0}
     - _Normal_offset: {r: 1, g: 1, b: 0, a: 0}
     - _Offset: {r: 0.65, g: 1.03, b: 0, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _Specular_Color: {r: 0.3018868, g: 0.06584456, b: 0.044143822, a: 1}
     - _Tiling: {r: 1, g: 1, b: 0, a: 0}
-    - _TreeInstanceColor: {r: 0.4866885, g: 0.61, b: 0.42029002, a: 0}
     - _UV_Offset: {r: 0, g: 0, b: 0, a: 0}
     - _UV_Scale: {r: 1, g: 1, b: 0, a: 0}
-    - _WindDirection: {r: 0, g: 0, b: 0, a: 0}
     - _offset: {r: 0, g: 0, b: 0, a: 0}
-    - _sine_wave: {r: 0, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

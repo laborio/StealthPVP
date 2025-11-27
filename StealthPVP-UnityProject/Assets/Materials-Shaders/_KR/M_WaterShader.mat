@@ -37,18 +37,18 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _DeepAlpha: 0.676
-    - _DepthTransparency: 5.27
-    - _FoamDistance: 1.555
-    - _FoamIntensity: 0.909
+    - _DeepAlpha: 0.54
+    - _DepthTransparency: 9.5
+    - _FoamDistance: 2
+    - _FoamIntensity: 0.75
     - _Glossiness: 0.8
     - _Metallic: 0
     - _NormalScale: 0.15
-    - _NormalStrength: 5.71
+    - _NormalStrength: 2
     - _RoughnessStrength: 0
-    - _ShallowAlpha: 0.478
-    - _Smoothness: 0.033
-    - _WaveAmplitude: 0.0027
+    - _ShallowAlpha: 0.58
+    - _Smoothness: 0.04
+    - _WaveAmplitude: 0
     - _WaveFrequency: 10
     - _WaveSpeed: 2
     m_Colors:
@@ -56,6 +56,6 @@ Material:
     - _FoamColor: {r: 0.6320754, g: 0.6320754, b: 0.6320754, a: 1}
     - _NormalSpeed: {r: 0.2, g: 0.05, b: 0.2, a: 0}
     - _NormalSpeed2: {r: 0.1, g: 0.05, b: 0.1, a: 0}
-    - _WaterColor: {r: 0.16113384, g: 0.6122253, b: 0.6698113, a: 0.8}
+    - _WaterColor: {r: 0.18823528, g: 0.5324931, b: 0.65882355, a: 0.8}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
