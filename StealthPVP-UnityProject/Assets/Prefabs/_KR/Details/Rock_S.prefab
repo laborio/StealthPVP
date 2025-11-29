@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 8146519221358651196}
   - component: {fileID: 3267474223699160744}
   - component: {fileID: 2583021623570071483}
-  - component: {fileID: -8456815129149720998}
   m_Layer: 9
   m_Name: Rock_S
   m_TagString: Untagged
@@ -90,22 +89,3 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!205 &-8456815129149720998
-LODGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8601970479079300448}
-  serializedVersion: 2
-  m_LocalReferencePoint: {x: -0.0021823943, y: 0.04904596, z: 0.004770823}
-  m_Size: 1
-  m_FadeMode: 0
-  m_AnimateCrossFading: 0
-  m_LastLODIsBillboard: 0
-  m_LODs:
-  - screenRelativeHeight: 0
-    fadeTransitionWidth: 0
-    renderers:
-    - renderer: {fileID: 2583021623570071483}
-  m_Enabled: 1

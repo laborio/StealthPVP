@@ -137,9 +137,10 @@ Material:
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnvironmentReflections: 1
+    - _Face_axis_X: 1
     - _Face_axis_Y: -1
     - _Face_axis_Z: -1
-    - _Front_face_light_factor: 2.5
+    - _Front_face_light_factor: 3.15
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
@@ -158,6 +159,7 @@ Material:
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
+    - _Side_face_light_factor: 2.5
     - _Smoothness: 0.1
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
