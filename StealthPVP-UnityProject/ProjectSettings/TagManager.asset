@@ -11,6 +11,7 @@ TagManager:
   - StopClimb
   - Bench
   - BenchSitPoint
+  - SpikeStrip
   layers:
   - Default
   - TransparentFX

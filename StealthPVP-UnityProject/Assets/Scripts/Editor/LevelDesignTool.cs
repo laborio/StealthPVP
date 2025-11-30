@@ -18,12 +18,13 @@ public class LevelDesignTool : EditorWindow
     public List<PrefabData> buildingPrefabs = new List<PrefabData>();
     public List<PrefabData> propPrefabs = new List<PrefabData>();
     public List<PrefabData> otherPrefabs = new List<PrefabData>();
+    public List<PrefabData> gameplayPrefabs = new List<PrefabData>();
 
     // Current state
     private enum EditorMode { SelectMode, NewSection, EditSection }
     private EditorMode currentMode = EditorMode.SelectMode;
 
-    private enum Category { None, Walls, Buildings, Props, Other, TerrainPaint, TerrainHeight }
+    private enum Category { None, Walls, Buildings, Props, Other, Gameplay, TerrainPaint, TerrainHeight }
     private Category currentCategory = Category.None;
 
     private GameObject currentSection;
@@ -211,6 +212,10 @@ public class LevelDesignTool : EditorWindow
         if (GUILayout.Button("Other", GUILayout.Height(35)))
         {
             SetCategory(Category.Other);
+        }
+        if (GUILayout.Button("Gameplay", GUILayout.Height(35)))
+        {
+            SetCategory(Category.Gameplay);
         }
         if (GUILayout.Button("Terrain Paint", GUILayout.Height(35)))
         {
@@ -465,6 +470,7 @@ public class LevelDesignTool : EditorWindow
         DrawPrefabListField("Buildings", buildingPrefabs);
         DrawPrefabListField("Props", propPrefabs);
         DrawPrefabListField("Other", otherPrefabs);
+        DrawPrefabListField("Gameplay", gameplayPrefabs);
     }
 
     void DrawPrefabListField(string label, List<PrefabData> list)
@@ -571,6 +577,7 @@ public class LevelDesignTool : EditorWindow
         GameObject buildingsContainer = CreateCategoryContainer(newSection, "Buildings");
         GameObject propsContainer = CreateCategoryContainer(newSection, "Props");
         GameObject otherContainer = CreateCategoryContainer(newSection, "Other");
+        GameObject gameplayContainer = CreateCategoryContainer(newSection, "Gameplay");
         
         Undo.RegisterCreatedObjectUndo(newSection, "Create Section for Reorganization");
         
@@ -594,6 +601,9 @@ public class LevelDesignTool : EditorWindow
                 case "Props":
                     targetContainer = propsContainer.transform;
                     break;
+                case "Gameplay":
+                    targetContainer = gameplayContainer.transform;
+                    break;
                 default:
                     targetContainer = otherContainer.transform;
                     break;
@@ -615,6 +625,7 @@ public class LevelDesignTool : EditorWindow
         Transform buildingsContainer = FindOrCreateContainer(targetSection, "Buildings");
         Transform propsContainer = FindOrCreateContainer(targetSection, "Props");
         Transform otherContainer = FindOrCreateContainer(targetSection, "Other");
+        Transform gameplayContainer = FindOrCreateContainer(targetSection, "Gameplay");
         
         // Categorize and move objects
         foreach (GameObject obj in objects)
@@ -639,6 +650,9 @@ public class LevelDesignTool : EditorWindow
                     break;
                 case "Props":
                     targetContainer = propsContainer;
+                    break;
+                case "Gameplay":
+                    targetContainer = gameplayContainer;
                     break;
                 default:
                     targetContainer = otherContainer;
@@ -669,7 +683,7 @@ public class LevelDesignTool : EditorWindow
         {
             string parentName = obj.transform.parent.name;
             if (parentName == "Walls" || parentName == "Buildings" || 
-                parentName == "Props" || parentName == "Other")
+                parentName == "Props" || parentName == "Other" || parentName == "Gameplay")
             {
                 return parentName;
             }
@@ -685,6 +699,8 @@ public class LevelDesignTool : EditorWindow
         else if (objName.Contains("prop") || objName.Contains("tree") || objName.Contains("rock") || 
                  objName.Contains("furniture") || objName.Contains("decoration"))
             return "Props";
+        else if (objName.Contains("spike") || objName.Contains("trap") || objName.Contains("gameplay"))
+            return "Gameplay";
         
         return "Other";
     }
@@ -1349,6 +1365,7 @@ public class LevelDesignTool : EditorWindow
         CreateCategoryContainer(currentSection, "Buildings");
         CreateCategoryContainer(currentSection, "Props");
         CreateCategoryContainer(currentSection, "Other");
+        CreateCategoryContainer(currentSection, "Gameplay");
 
         Undo.RegisterCreatedObjectUndo(currentSection, "Create Section");
         Selection.activeGameObject = currentSection;
@@ -1397,6 +1414,7 @@ public class LevelDesignTool : EditorWindow
             case Category.Buildings: return buildingPrefabs;
             case Category.Props: return propPrefabs;
             case Category.Other: return otherPrefabs;
+            case Category.Gameplay: return gameplayPrefabs;
             default: return new List<PrefabData>();
         }
     }

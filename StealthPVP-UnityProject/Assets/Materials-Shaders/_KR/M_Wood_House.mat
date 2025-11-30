@@ -140,6 +140,9 @@ Material:
     - _Face_axis_X: 1
     - _Face_axis_Y: -1
     - _Face_axis_Z: -1
+    - _Face_front_axis_X: 1
+    - _Face_front_axis_Z: -1
+    - _Face_top_axis_Y: 1
     - _Front_face_light_factor: 3.15
     - _GlossMapScale: 0
     - _Glossiness: 0
@@ -193,7 +196,7 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _Height_offset: {r: 0, g: 0, b: 0, a: 0}
     - _Height_tiling: {r: 0, g: 0, b: 0, a: 0}
-    - _MainColor: {r: 0.5176471, g: 0.3137255, b: 0.29411766, a: 1}
+    - _MainColor: {r: 0.517647, g: 0.31372482, b: 0.29411697, a: 0.5}
     - _Normal_Tiling: {r: 3, g: 3, b: 0, a: 0}
     - _Normal_offset: {r: 1, g: 1, b: 0, a: 0}
     - _Offset: {r: 0.65, g: 1.03, b: 0, a: 0}

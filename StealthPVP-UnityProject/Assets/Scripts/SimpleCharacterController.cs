@@ -89,7 +89,10 @@ public partial class SimpleCharacterController : MonoBehaviour
         bool isGrounded = IsGrounded();
         Vector2 movementInputRaw = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         bool requestedMovement = movementInputRaw.sqrMagnitude > 0.0001f;
-        HandleBenchInput(requestedMovement, isGrounded);
+        bool interactPressed = Input.GetKeyDown(interactKey);
+        HandleBenchInput(requestedMovement, interactPressed);
+        bool actionKeyAllowed = _seatingState == SeatingState.Standing;
+        HandleActionInput(interactPressed && actionKeyAllowed, isGrounded);
 
         bool seatingLocked = _seatingState != SeatingState.Standing;
         bool movingToSeat = _seatingState == SeatingState.MovingToSeat;
@@ -369,6 +372,7 @@ public partial class SimpleCharacterController : MonoBehaviour
         });
         UpdateSeatingState(deltaTime);
         ProcessBenchCollisionRestore(deltaTime);
+        UpdateActionHintDisplay(_seatingState == SeatingState.Standing, isGrounded);
     }
 
     private bool IsGrounded()
@@ -493,6 +497,7 @@ public partial class SimpleCharacterController : MonoBehaviour
         CancelSeatingSequence();
         _activeBench = null;
         ClearBenchTracking();
+        ClearContextActions();
         characterAnimations?.ResetStates();
         _hasMoveTarget = false;
     }

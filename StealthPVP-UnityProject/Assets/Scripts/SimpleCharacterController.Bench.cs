@@ -13,8 +13,59 @@ public partial class SimpleCharacterController
     [SerializeField] private float benchAlignmentSpeed = 720f;
     [SerializeField, Range(0.1f, 3f)] private float standToSitAnimSpeed = 1f;
     [SerializeField, Range(0f, 1f)] private float collisionRestoreDelay = 0.15f;
-    [Header("Bench UI")]
-    [SerializeField] private GameObject sitHintUI;
+    private sealed class BenchContextAction : IContextualAction
+    {
+        private readonly SimpleCharacterController _controller;
+        private Collider _benchCollider;
+
+        public BenchContextAction(SimpleCharacterController controller)
+        {
+            _controller = controller;
+        }
+
+        public int Priority => 100;
+        public bool IsBusy => _controller._seatingState != SeatingState.Standing;
+
+        public void SetBench(Collider bench)
+        {
+            _benchCollider = bench;
+        }
+
+        public void ClearBench()
+        {
+            _benchCollider = null;
+        }
+
+        public bool CanExecute(SimpleCharacterController player, bool isGrounded)
+        {
+            return _benchCollider && !IsBusy && isGrounded && _controller._activeBench == _benchCollider;
+        }
+
+        public bool ShouldShowHint(SimpleCharacterController player, bool isGrounded)
+        {
+            return !_controller._hintSuppressedUntilExit && CanExecute(player, isGrounded);
+        }
+
+        public bool TryExecute(SimpleCharacterController player, bool isGrounded)
+        {
+            if (!CanExecute(player, isGrounded))
+            {
+                return false;
+            }
+
+            _controller.BeginMoveToSeat();
+            return true;
+        }
+
+        public void OnEnterRange(SimpleCharacterController player)
+        {
+        }
+
+        public void OnExitRange(SimpleCharacterController player)
+        {
+            ClearBench();
+        }
+    }
 
     private enum SeatingState
     {
@@ -34,25 +85,19 @@ public partial class SimpleCharacterController
     private bool _pendingCollisionRestore;
     private float _collisionRestoreTimer;
     private bool _hintSuppressedUntilExit;
+    private BenchContextAction _benchContextAction;
 
     partial void OnBenchAwake()
     {
         _hintSuppressedUntilExit = false;
-        SetSitHintVisible(false);
+        _benchContextAction = new BenchContextAction(this);
     }
 
-    private void HandleBenchInput(bool movementRequested, bool isGrounded)
+    private void HandleBenchInput(bool movementRequested, bool interactPressed)
     {
-        bool interactPressed = Input.GetKeyDown(interactKey);
-        bool benchAvailable = _activeBench != null;
-
         switch (_seatingState)
         {
             case SeatingState.Standing:
-                if (interactPressed && benchAvailable && isGrounded)
-                {
-                    BeginMoveToSeat();
-                }
                 break;
             case SeatingState.MovingToSeat:
             case SeatingState.PlayingStandToSit:
@@ -149,7 +194,6 @@ public partial class SimpleCharacterController
         _sitTargetRotation = Quaternion.identity;
         ScheduleBenchCollisionRestore();
         characterAnimations?.SetSittingState(false, standToSitAnimSpeed);
-        RefreshSitHintVisibility();
     }
 
     private void UpdateSeatingState(float deltaTime)
@@ -366,8 +410,8 @@ public partial class SimpleCharacterController
         _pendingCollisionRestore = false;
         _collisionRestoreTimer = 0f;
         _hintSuppressedUntilExit = false;
-        SetSitHintVisible(false);
         characterAnimations?.SetSittingState(false, standToSitAnimSpeed);
+        _benchContextAction?.ClearBench();
     }
 
     private void ApplyBenchCollisionState(bool ignored)
@@ -417,42 +461,25 @@ public partial class SimpleCharacterController
     private void SuppressSitHintUntilExit()
     {
         _hintSuppressedUntilExit = true;
-        SetSitHintVisible(false);
-    }
-
-    private void RefreshSitHintVisibility()
-    {
-        if (!sitHintUI)
-        {
-            return;
-        }
-
-        bool shouldShow = !_hintSuppressedUntilExit && _seatingState == SeatingState.Standing && _activeBench;
-        SetSitHintVisible(shouldShow);
-    }
-
-    private void SetSitHintVisible(bool visible)
-    {
-        if (!sitHintUI || sitHintUI.activeSelf == visible)
-        {
-            return;
-        }
-
-        sitHintUI.SetActive(visible);
     }
 
     private void OnTriggerEnter(Collider other)
     {
+        HandleActionTriggerEnter(other);
+
         if (IsBenchCollider(other))
         {
             _activeBench = other;
             CacheBenchSitPoints(other);
-            RefreshSitHintVisibility();
+            _benchContextAction.SetBench(other);
+            AddManualContextAction(other, _benchContextAction);
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
+        HandleActionTriggerExit(other);
+
         if (!IsBenchCollider(other))
         {
             return;
