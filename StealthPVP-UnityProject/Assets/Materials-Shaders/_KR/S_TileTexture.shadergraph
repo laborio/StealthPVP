@@ -3474,7 +3474,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "15d09a03c90d4fefa765f0a0afb2b45e",
     "m_Id": 0,
-    "m_DisplayName": "Face axis Z",
+    "m_DisplayName": "Face front axis Z",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -4231,7 +4231,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "2783d3ca0ef347958e909054bea82d70",
     "m_Id": 0,
-    "m_DisplayName": "Face axis X",
+    "m_DisplayName": "Face front axis X",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -5864,7 +5864,7 @@
     "m_ObjectId": "4f8aaf62fd8746b18cc780bb94532b19",
     "m_Title": "Front Face fake color lighting",
     "m_Position": {
-        "x": 1481.0,
+        "x": 1481.00048828125,
         "y": -397.0
     }
 }
@@ -6300,10 +6300,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -1014.5001220703125,
-            "y": 1056.0001220703125,
+            "x": -974.0,
+            "y": 1041.0,
             "width": 208.0,
-            "height": 325.9998779296875
+            "height": 326.0
         }
     },
     "m_Slots": [
@@ -7028,7 +7028,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "643b1f19367e4959a4cb3fa5fb135f08",
     "m_Id": 0,
-    "m_DisplayName": "Face axis Y",
+    "m_DisplayName": "Face top axis Y",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -7807,10 +7807,10 @@
     "m_Guid": {
         "m_GuidSerialized": "5413beb4-20bb-44a1-98af-34e1f0f9c278"
     },
-    "m_Name": "Face axis Y",
+    "m_Name": "Face top axis Y",
     "m_DefaultRefNameVersion": 1,
-    "m_RefNameGeneratedByDisplayName": "Face axis Y",
-    "m_DefaultReferenceName": "_Face_axis_Y",
+    "m_RefNameGeneratedByDisplayName": "Face top axis Y",
+    "m_DefaultReferenceName": "_Face_top_axis_Y",
     "m_OverrideReferenceName": "",
     "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
@@ -7822,7 +7822,7 @@
     "m_Hidden": false,
     "m_PerRendererData": false,
     "m_customAttributes": [],
-    "m_Value": 0.0,
+    "m_Value": 1.0,
     "m_FloatType": 1,
     "m_RangeValues": {
         "x": -1.0,
@@ -9182,8 +9182,8 @@
     "m_ObjectId": "8ecfb10a1b6d40d2a2badb579d4507d4",
     "m_Title": "Top Face fake color lighting",
     "m_Position": {
-        "x": 3126.0,
-        "y": -685.0
+        "x": 3126.00048828125,
+        "y": -685.0000610351563
     }
 }
 
@@ -10007,10 +10007,10 @@
     "m_Guid": {
         "m_GuidSerialized": "edcfe9aa-179c-49b1-940a-816986ce4055"
     },
-    "m_Name": "Face axis Z",
+    "m_Name": "Face front axis Z",
     "m_DefaultRefNameVersion": 1,
-    "m_RefNameGeneratedByDisplayName": "Face axis Z",
-    "m_DefaultReferenceName": "_Face_axis_Z",
+    "m_RefNameGeneratedByDisplayName": "Face front axis Z",
+    "m_DefaultReferenceName": "_Face_front_axis_Z",
     "m_OverrideReferenceName": "",
     "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
@@ -10022,7 +10022,7 @@
     "m_Hidden": false,
     "m_PerRendererData": false,
     "m_customAttributes": [],
-    "m_Value": 0.0,
+    "m_Value": -1.0,
     "m_FloatType": 1,
     "m_RangeValues": {
         "x": -1.0,
@@ -13045,10 +13045,10 @@
     "m_Guid": {
         "m_GuidSerialized": "120340dc-9433-48bb-af0c-a6f1c08bd70f"
     },
-    "m_Name": "Face axis X",
+    "m_Name": "Face front axis X",
     "m_DefaultRefNameVersion": 1,
-    "m_RefNameGeneratedByDisplayName": "Face axis X",
-    "m_DefaultReferenceName": "_Face_axis_X",
+    "m_RefNameGeneratedByDisplayName": "Face front axis X",
+    "m_DefaultReferenceName": "_Face_front_axis_X",
     "m_OverrideReferenceName": "",
     "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
@@ -13060,7 +13060,7 @@
     "m_Hidden": false,
     "m_PerRendererData": false,
     "m_customAttributes": [],
-    "m_Value": 0.0,
+    "m_Value": 1.0,
     "m_FloatType": 1,
     "m_RangeValues": {
         "x": -1.0,
@@ -14372,10 +14372,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -1221.5001220703125,
-            "y": 861.0000610351563,
-            "width": 129.0,
-            "height": 118.0001220703125
+            "x": -1221.0,
+            "y": 882.0,
+            "width": 130.0,
+            "height": 118.0
         }
     },
     "m_Slots": [
