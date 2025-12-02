@@ -35,6 +35,9 @@ public class Teleporter : MonoBehaviour, IContextualAction
     private Transform _previousCameraTarget;
     private Transform _cameraTargetProxy;
     private bool _playerInRange;
+    private SimpleCharacterController _playerInTrigger;
+    private CharacterController _playerCharacterController;
+    private Collider _playerCollider;
 
     public int Priority => actionPriority;
     public bool IsBusy => _busy;
@@ -52,7 +55,12 @@ public class Teleporter : MonoBehaviour, IContextualAction
 
     public bool CanExecute(SimpleCharacterController player, bool isGrounded)
     {
-        return !_busy && _playerInRange && player && !player.IsTeleportLocked && twinTeleporter && isGrounded;
+        if (!ValidatePlayerRange(player))
+        {
+            return false;
+        }
+
+        return !_busy && !player.IsTeleportLocked && twinTeleporter && isGrounded;
     }
 
     public bool ShouldShowHint(SimpleCharacterController player, bool isGrounded)
@@ -79,11 +87,17 @@ public class Teleporter : MonoBehaviour, IContextualAction
     public void OnEnterRange(SimpleCharacterController player)
     {
         _playerInRange = true;
+        _playerInTrigger = player;
+        _playerCharacterController = player ? player.GetComponent<CharacterController>() : null;
+        _playerCollider = player ? player.GetComponent<Collider>() : null;
     }
 
     public void OnExitRange(SimpleCharacterController player)
     {
         _playerInRange = false;
+        _playerInTrigger = null;
+        _playerCharacterController = null;
+        _playerCollider = null;
     }
 
     private IEnumerator TeleportRoutine(SimpleCharacterController player)
@@ -91,6 +105,9 @@ public class Teleporter : MonoBehaviour, IContextualAction
         _busy = true;
         _activePlayer = player;
         _playerInRange = false;
+        _playerInTrigger = null;
+        _playerCharacterController = null;
+        _playerCollider = null;
         Teleporter destination = twinTeleporter;
         CameraService controller = ResolveCameraService();
         Transform previousCameraTarget = controller ? controller.CurrentTarget : null;
@@ -109,10 +126,11 @@ public class Teleporter : MonoBehaviour, IContextualAction
 
         float elapsed = 0f;
         float duration = Mathf.Max(teleportDuration, 0.0001f);
+        float cameraTravelDuration = Mathf.Max(duration - cameraMoveDelay, 0.0001f);
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            float cameraT = Mathf.Clamp01((elapsed - cameraMoveDelay) / duration);
+            float cameraT = Mathf.Clamp01((elapsed - cameraMoveDelay) / cameraTravelDuration);
             if (_cameraTargetProxy)
             {
                 _cameraTargetProxy.position = Vector3.Lerp(startPosition, endPosition, cameraT);
@@ -215,6 +233,44 @@ public class Teleporter : MonoBehaviour, IContextualAction
         return cameraService;
     }
 
+    private bool ValidatePlayerRange(SimpleCharacterController player)
+    {
+        if (!_playerInRange || !player)
+        {
+            return false;
+        }
+
+        if (_playerInTrigger && _playerInTrigger != player)
+        {
+            return false;
+        }
+
+        if (!_ownCollider)
+        {
+            return false;
+        }
+
+        bool overlaps = false;
+        if (_playerCharacterController)
+        {
+            overlaps = _ownCollider.bounds.Intersects(_playerCharacterController.bounds);
+        }
+        else if (_playerCollider)
+        {
+            overlaps = _ownCollider.bounds.Intersects(_playerCollider.bounds);
+        }
+
+        if (!overlaps)
+        {
+            _playerInRange = false;
+            _playerInTrigger = null;
+            _playerCharacterController = null;
+            _playerCollider = null;
+        }
+
+        return overlaps;
+    }
+
     private Transform GetCameraTargetForDestination(Teleporter destination)
     {
         return GetCameraTargetForDestination(destination, transform.position, destination ? destination.GetExitPosition() : GetExitPosition());
@@ -277,6 +333,9 @@ public class Teleporter : MonoBehaviour, IContextualAction
         _busy = false;
         SetTeleporterActive(false);
         _playerInRange = false;
+        _playerInTrigger = null;
+        _playerCharacterController = null;
+        _playerCollider = null;
     }
 
     private void OnValidate()

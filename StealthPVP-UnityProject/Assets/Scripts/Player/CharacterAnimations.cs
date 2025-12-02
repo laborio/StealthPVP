@@ -24,7 +24,6 @@ public class CharacterAnimations : MonoBehaviour
 
     [Header("Effects")]
     [SerializeField] private ParticleSystem runParticleSystem;
-    [SerializeField] private ParticleSystem teleportEffect;
 
     private int _walkingBoolHash;
     private int _idleBoolHash;
@@ -130,20 +129,6 @@ public class CharacterAnimations : MonoBehaviour
     public void SetTeleportedState(bool isPorted)
     {
         SetBool(_teleportedBoolHash, teleportedBoolName, isPorted);
-
-        if (!teleportEffect)
-        {
-            return;
-        }
-
-        if (isPorted)
-        {
-            teleportEffect.gameObject.SetActive(true);
-        }
-        else if (teleportEffect.gameObject.activeSelf)
-        {
-            teleportEffect.gameObject.SetActive(false);
-        }
     }
 
     private void UpdateRunParticles(bool shouldBeActive)
