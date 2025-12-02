@@ -32,14 +32,6 @@ public class SpikeStripAction : MonoBehaviour, IContextualAction
         WarnIfTagMismatch();
     }
 
-    private void Update()
-    {
-        if (_isAnimating)
-        {
-            UpdateAnimationState();
-        }
-    }
-
     public void OnEnterRange(SimpleCharacterController player)
     {
         _isInRange = true;
@@ -74,33 +66,38 @@ public class SpikeStripAction : MonoBehaviour, IContextualAction
         }
 
         _isAnimating = true;
-        _hasLeftIdle = false;
         animator.ResetTrigger(_triggerHash);
         animator.SetTrigger(_triggerHash);
+        StartCoroutine(TrackAnimationToIdle());
         return true;
     }
 
-    private void UpdateAnimationState()
+    private System.Collections.IEnumerator TrackAnimationToIdle()
     {
-        if (!animator)
+        _hasLeftIdle = false;
+        while (animator && !_hasLeftIdle)
         {
-            _isAnimating = false;
-            _hasLeftIdle = false;
-            return;
+            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            if (!stateInfo.IsName(idleStateName))
+            {
+                _hasLeftIdle = true;
+                break;
+            }
+            yield return null;
         }
 
-        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-        if (!_hasLeftIdle && !stateInfo.IsName(idleStateName))
+        while (animator && _hasLeftIdle)
         {
-            _hasLeftIdle = true;
-            return;
+            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            if (stateInfo.IsName(idleStateName) && !animator.IsInTransition(0))
+            {
+                break;
+            }
+            yield return null;
         }
 
-        if (_hasLeftIdle && stateInfo.IsName(idleStateName) && !animator.IsInTransition(0))
-        {
-            _isAnimating = false;
-            _hasLeftIdle = false;
-        }
+        _isAnimating = false;
+        _hasLeftIdle = false;
     }
 
     private void WarnIfColliderNotTrigger()
