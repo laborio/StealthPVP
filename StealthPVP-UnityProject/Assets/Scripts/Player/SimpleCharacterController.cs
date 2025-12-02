@@ -10,9 +10,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     [SerializeField] private float moveSpeed = 4f;
     [SerializeField] private float runMultiplier = 1.5f;
     [SerializeField] private float rotationSpeed = 720f;
-    [SerializeField] private KeyCode runKey = KeyCode.LeftShift;
-    [SerializeField] private KeyCode jumpKey = KeyCode.Space;
-    [SerializeField] private KeyCode dashKey = KeyCode.R;
+    [SerializeField] private PlayerInputRouter inputRouter;
 
     [Header("Click To Move")]
     [SerializeField] private LayerMask groundMask;
@@ -79,11 +77,20 @@ public partial class SimpleCharacterController : MonoBehaviour
         {
             characterAnimations = GetComponentInChildren<CharacterAnimations>();
         }
+        if (!inputRouter)
+        {
+            inputRouter = GetComponent<PlayerInputRouter>();
+            if (!inputRouter)
+            {
+                inputRouter = Object.FindFirstObjectByType<PlayerInputRouter>();
+            }
+        }
         OnBenchAwake();
     }
 
     private void Update()
     {
+        PlayerInputSnapshot inputSnapshot = inputRouter ? inputRouter.PollInput() : PollLegacyInput();
         bool isGrounded = IsGrounded();
         if (_teleportLocked)
         {
@@ -91,10 +98,10 @@ public partial class SimpleCharacterController : MonoBehaviour
             return;
         }
 
-        HandleClickToMove();
-        Vector2 movementInputRaw = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        HandleClickToMove(inputSnapshot);
+        Vector2 movementInputRaw = inputSnapshot.MoveAxis;
         bool requestedMovement = movementInputRaw.sqrMagnitude > 0.0001f;
-        bool interactPressed = Input.GetKeyDown(interactKey);
+        bool interactPressed = inputSnapshot.InteractPressed;
         HandleBenchInput(requestedMovement, interactPressed);
         bool actionKeyAllowed = _seatingState == SeatingState.Standing;
         HandleActionInput(interactPressed && actionKeyAllowed, isGrounded);
@@ -102,10 +109,10 @@ public partial class SimpleCharacterController : MonoBehaviour
         bool seatingLocked = _seatingState != SeatingState.Standing;
         bool movingToSeat = _seatingState == SeatingState.MovingToSeat;
         bool walkOverrideActive = movingToSeat;
-        Vector2 input = seatingLocked ? Vector2.zero : movementInputRaw;
-        Vector3 moveDirection = ResolveMoveDirection(input);
+        Vector2 movementInput = seatingLocked ? Vector2.zero : movementInputRaw;
+        Vector3 moveDirection = ResolveMoveDirection(movementInput);
         bool hasMovementInput = moveDirection.sqrMagnitude > 0.0001f;
-        bool wantsToWalk = Input.GetKey(runKey);
+        bool wantsToWalk = inputSnapshot.RunHeld;
         float deltaTime = Time.deltaTime;
         _wallContactTimer = Mathf.Max(_wallContactTimer - deltaTime, 0f);
         if (_wallJumpCooldownTimer > 0f)
@@ -196,7 +203,7 @@ public partial class SimpleCharacterController : MonoBehaviour
 
         if (!seatingLocked)
         {
-            if (Input.GetKeyDown(jumpKey))
+            if (inputSnapshot.JumpPressed)
             {
                 _jumpBufferTimer = jumpBufferTime;
             }
@@ -223,7 +230,7 @@ public partial class SimpleCharacterController : MonoBehaviour
                 _dashCooldownTimer = Mathf.Max(_dashCooldownTimer - deltaTime, 0f);
             }
 
-            if (!_isDashing && _dashCooldownTimer <= 0f && Input.GetKeyDown(dashKey))
+            if (!_isDashing && _dashCooldownTimer <= 0f && inputSnapshot.DashPressed)
             {
                 Vector3 forward = transform.forward;
                 forward.y = 0f;
@@ -411,31 +418,20 @@ public partial class SimpleCharacterController : MonoBehaviour
 
 
 
-    private void HandleClickToMove()
+    private void HandleClickToMove(PlayerInputSnapshot input)
     {
-        if (_seatingState != SeatingState.Standing || !Input.GetMouseButtonDown(1))
+        if (_seatingState != SeatingState.Standing || !input.MoveIssued)
         {
             return;
         }
 
-        Camera targetCamera = _camera ? _camera : Camera.main;
-        if (!targetCamera)
-        {
-            Debug.LogWarning("SimpleCharacterController: No main camera found for click-to-move.");
-            return;
-        }
+        _moveTarget = input.MoveTarget;
+        _moveTarget.y = transform.position.y;
+        _hasMoveTarget = true;
 
-        Ray ray = targetCamera.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out RaycastHit hitInfo, maximumRayDistance, groundMask, QueryTriggerInteraction.Ignore))
+        if (markerPool)
         {
-            _moveTarget = hitInfo.point;
-            _moveTarget.y = transform.position.y;
-            _hasMoveTarget = true;
-
-            if (markerPool)
-            {
-                markerPool.SpawnMarker(_moveTarget);
-            }
+            markerPool.SpawnMarker(_moveTarget);
         }
     }
 
@@ -534,6 +530,46 @@ public partial class SimpleCharacterController : MonoBehaviour
         standToSitAnimSpeed = Mathf.Max(0.1f, standToSitAnimSpeed);
         waterMoveSpeedMultiplier = Mathf.Clamp(waterMoveSpeedMultiplier, 0.1f, 1f);
         waterJumpVelocityMultiplier = Mathf.Clamp(waterJumpVelocityMultiplier, 0.1f, 1f);
+    }
+
+    private PlayerInputSnapshot PollLegacyInput()
+    {
+        PlayerInputSnapshot snapshot = new PlayerInputSnapshot
+        {
+            RunHeld = Input.GetKey(KeyCode.LeftShift),
+            StopPressed = Input.GetKeyDown(KeyCode.S),
+            JumpPressed = Input.GetKeyDown(KeyCode.Space),
+            DashPressed = Input.GetKeyDown(KeyCode.R),
+            InteractPressed = Input.GetKeyDown(KeyCode.E),
+            MoveAxis = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"))
+        };
+
+        if (Input.GetMouseButtonDown(1) && TryResolveClickToMove(out Vector3 targetPosition))
+        {
+            snapshot.MoveIssued = true;
+            snapshot.MoveTarget = targetPosition;
+        }
+
+        return snapshot;
+    }
+
+    private bool TryResolveClickToMove(out Vector3 targetPosition)
+    {
+        targetPosition = default;
+        Camera targetCamera = _camera ? _camera : Camera.main;
+        if (!targetCamera)
+        {
+            return false;
+        }
+
+        Ray ray = targetCamera.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out RaycastHit hitInfo, maximumRayDistance, groundMask, QueryTriggerInteraction.Ignore))
+        {
+            targetPosition = hitInfo.point;
+            return true;
+        }
+
+        return false;
     }
 
     private bool DetectWater()
