@@ -84,9 +84,14 @@ public partial class SimpleCharacterController : MonoBehaviour
 
     private void Update()
     {
-        HandleClickToMove();
-
         bool isGrounded = IsGrounded();
+        if (_teleportLocked)
+        {
+            HandleTeleportLockUpdate(isGrounded);
+            return;
+        }
+
+        HandleClickToMove();
         Vector2 movementInputRaw = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         bool requestedMovement = movementInputRaw.sqrMagnitude > 0.0001f;
         bool interactPressed = Input.GetKeyDown(interactKey);
@@ -500,6 +505,7 @@ public partial class SimpleCharacterController : MonoBehaviour
         ClearContextActions();
         characterAnimations?.ResetStates();
         _hasMoveTarget = false;
+        _teleportLocked = false;
     }
 
     private void OnValidate()

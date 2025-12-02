@@ -15,6 +15,7 @@ public class CharacterAnimations : MonoBehaviour
     [SerializeField] private string fallingBoolName = "isFalling";
     [SerializeField] private string sittingBoolName = "isSitting";
     [SerializeField] private string standToSitSpeedFloatName = "StandToSitSpeed";
+    [SerializeField] private string teleportedBoolName = "isPorted";
 
     [Header("Animation Speeds")]
     [SerializeField] private float walkAnimationBaseSpeed = 1f;
@@ -23,6 +24,7 @@ public class CharacterAnimations : MonoBehaviour
 
     [Header("Effects")]
     [SerializeField] private ParticleSystem runParticleSystem;
+    [SerializeField] private ParticleSystem teleportEffect;
 
     private int _walkingBoolHash;
     private int _idleBoolHash;
@@ -31,6 +33,7 @@ public class CharacterAnimations : MonoBehaviour
     private int _fallingBoolHash;
     private int _sittingBoolHash;
     private int _standToSitSpeedHash;
+    private int _teleportedBoolHash;
 
     private void Awake()
     {
@@ -120,7 +123,30 @@ public class CharacterAnimations : MonoBehaviour
         SetBool(_fallingBoolHash, fallingBoolName, false);
         SetBool(_sittingBoolHash, sittingBoolName, false);
         SetBool(_idleBoolHash, idleBoolName, true);
+        SetTeleportedState(false);
         animator.speed = 1f;
+    }
+
+    public void SetTeleportedState(bool isPorted)
+    {
+        SetBool(_teleportedBoolHash, teleportedBoolName, isPorted);
+
+        if (!teleportEffect)
+        {
+            return;
+        }
+
+        if (isPorted)
+        {
+            if (!teleportEffect.isPlaying)
+            {
+                teleportEffect.Play();
+            }
+        }
+        else if (teleportEffect.isPlaying)
+        {
+            teleportEffect.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+        }
     }
 
     private void UpdateRunParticles(bool shouldBeActive)
@@ -155,6 +181,7 @@ public class CharacterAnimations : MonoBehaviour
         _fallingBoolHash = HashOrZero(fallingBoolName);
         _sittingBoolHash = HashOrZero(sittingBoolName);
         _standToSitSpeedHash = HashOrZero(standToSitSpeedFloatName);
+        _teleportedBoolHash = HashOrZero(teleportedBoolName);
     }
 
     private static int HashOrZero(string parameterName)

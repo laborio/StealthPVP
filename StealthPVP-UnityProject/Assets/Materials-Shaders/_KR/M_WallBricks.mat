@@ -141,6 +141,9 @@ Material:
     - _Face_axis_X: 1
     - _Face_axis_Y: 1
     - _Face_axis_Z: -1
+    - _Face_front_axis_X: 1
+    - _Face_front_axis_Z: -1
+    - _Face_top_axis_Y: 1
     - _Front_face_light_factor: 2.5
     - _GlossMapScale: 0
     - _Glossiness: 0
@@ -153,7 +156,7 @@ Material:
     - _Noise_Contrast: 0.2
     - _Noise_Scale: 20
     - _Noise_Shape: 0.5
-    - _Normal_Strength: 0.2
+    - _Normal_Strength: 0.5
     - _Normal_UV_Rotation: 0
     - _OcclusionStrength: 1
     - _Original_Color: 0
@@ -186,6 +189,8 @@ Material:
     - _ZWrite: 1
     - _ZWriteControl: 0
     - _edge: 1
+    - _mask_edge_1: 0.3
+    - _mask_edge_2: 0.9
     - _rotation_test: 0
     - _step: 0.5
     - _z_mask_edge_1: 0.33

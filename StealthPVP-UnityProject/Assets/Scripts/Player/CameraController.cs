@@ -9,6 +9,8 @@ public class CameraController : MonoBehaviour
 
     private Vector3 _velocity;
 
+    public Transform CurrentTarget => target;
+
     private void Start()
     {
         if (target == null)

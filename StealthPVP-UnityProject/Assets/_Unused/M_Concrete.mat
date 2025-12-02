@@ -71,7 +71,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainNormalMap:
-        m_Texture: {fileID: 2800000, guid: a07d2994500164682acdf5c38ae5bf3e, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainRoughnessMap:
@@ -79,7 +79,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 29c2eb198189f4f55b659bb465ec71b8, type: 3}
+        m_Texture: {fileID: 2800000, guid: 855b4783e3c724e31bcc6677034313d7, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -141,6 +141,9 @@ Material:
     - _Face_axis_X: 1
     - _Face_axis_Y: 1
     - _Face_axis_Z: -1
+    - _Face_front_axis_X: 1
+    - _Face_front_axis_Z: -1
+    - _Face_top_axis_Y: 1
     - _Front_face_light_factor: 1
     - _GlossMapScale: 0
     - _Glossiness: 0
@@ -163,7 +166,7 @@ Material:
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _Side_face_light_factor: 3.9
+    - _Side_face_light_factor: 1
     - _Smoothness: 0
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
@@ -171,7 +174,7 @@ Material:
     - _SrcBlendAlpha: 1
     - _Strength: 0
     - _Surface: 0
-    - _Top_face_light_factor: 0.3
+    - _Top_face_light_factor: 1
     - _UV1_for_normal: 0
     - _UV_Rotation: 1.57
     - _UV_Scale_Rotation: 0
@@ -185,6 +188,8 @@ Material:
     - _ZWrite: 1
     - _ZWriteControl: 0
     - _edge: 1
+    - _mask_edge_1: 0.3
+    - _mask_edge_2: 0.9
     - _rotation_test: 0
     - _step: 0.5
     - _z_mask_edge_1: 0
@@ -198,13 +203,13 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _Height_offset: {r: 0, g: 0, b: 0, a: 0}
     - _Height_tiling: {r: 0, g: 0, b: 0, a: 0}
-    - _MainColor: {r: 0.4528302, g: 0.4528302, b: 0.4528302, a: 0}
+    - _MainColor: {r: 0.509434, g: 0.509434, b: 0.509434, a: 0}
     - _Normal_Tiling: {r: 1, g: 1, b: 0, a: 0}
     - _Normal_offset: {r: 1, g: 1, b: 0, a: 0}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _Tiling: {r: 6, g: 6, b: 0, a: 0}
     - _UV_Offset: {r: 1, g: 1, b: 0, a: 0}
-    - _UV_Scale: {r: 0.33, g: 41.81, b: 0, a: 0}
+    - _UV_Scale: {r: 1, g: 1, b: 0, a: 0}
     - _offset: {r: 1, g: 1, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -12,6 +12,7 @@ TagManager:
   - Bench
   - BenchSitPoint
   - SpikeStrip
+  - Teleporter
   layers:
   - Default
   - TransparentFX

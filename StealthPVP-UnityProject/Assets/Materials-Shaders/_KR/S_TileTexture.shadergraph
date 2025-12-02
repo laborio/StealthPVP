@@ -5473,7 +5473,7 @@
     "m_Title": "Normal map tiling",
     "m_Position": {
         "x": 2809.0,
-        "y": 980.0
+        "y": 979.5
     }
 }
 
@@ -5864,7 +5864,7 @@
     "m_ObjectId": "4f8aaf62fd8746b18cc780bb94532b19",
     "m_Title": "Front Face fake color lighting",
     "m_Position": {
-        "x": 1481.00048828125,
+        "x": 1481.0,
         "y": -397.0
     }
 }
@@ -6701,7 +6701,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "5effeba379b346dfaf83dcedbca6115f",
     "m_Id": 0,
-    "m_DisplayName": "z mask edge 1",
+    "m_DisplayName": "mask edge 1",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -6990,10 +6990,10 @@
     "m_Guid": {
         "m_GuidSerialized": "c6e8333b-fcd4-4f30-8dc8-db195f9f2873"
     },
-    "m_Name": "z mask edge 2",
+    "m_Name": "mask edge 2",
     "m_DefaultRefNameVersion": 1,
-    "m_RefNameGeneratedByDisplayName": "z mask edge 2",
-    "m_DefaultReferenceName": "_z_mask_edge_2",
+    "m_RefNameGeneratedByDisplayName": "mask edge 2",
+    "m_DefaultReferenceName": "_mask_edge_2",
     "m_OverrideReferenceName": "",
     "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
@@ -7005,7 +7005,7 @@
     "m_Hidden": false,
     "m_PerRendererData": false,
     "m_customAttributes": [],
-    "m_Value": 0.0,
+    "m_Value": 0.8999999761581421,
     "m_FloatType": 0,
     "m_RangeValues": {
         "x": 0.0,
@@ -7709,10 +7709,10 @@
     "m_Guid": {
         "m_GuidSerialized": "632b3beb-d20b-4218-9ab3-7e5a9bcd4546"
     },
-    "m_Name": "z mask edge 1",
+    "m_Name": "mask edge 1",
     "m_DefaultRefNameVersion": 1,
-    "m_RefNameGeneratedByDisplayName": "z mask edge 1",
-    "m_DefaultReferenceName": "_z_mask_edge_1",
+    "m_RefNameGeneratedByDisplayName": "mask edge 1",
+    "m_DefaultReferenceName": "_mask_edge_1",
     "m_OverrideReferenceName": "",
     "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
@@ -7724,7 +7724,7 @@
     "m_Hidden": false,
     "m_PerRendererData": false,
     "m_customAttributes": [],
-    "m_Value": 0.0,
+    "m_Value": 0.30000001192092898,
     "m_FloatType": 0,
     "m_RangeValues": {
         "x": 0.0,
@@ -9182,8 +9182,8 @@
     "m_ObjectId": "8ecfb10a1b6d40d2a2badb579d4507d4",
     "m_Title": "Top Face fake color lighting",
     "m_Position": {
-        "x": 3126.00048828125,
-        "y": -685.0000610351563
+        "x": 3126.0,
+        "y": -685.0
     }
 }
 
@@ -9192,7 +9192,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "8ef9600bd1d14b54880560e027a4b43c",
     "m_Id": 0,
-    "m_DisplayName": "z mask edge 1",
+    "m_DisplayName": "mask edge 1",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -9384,7 +9384,7 @@
     "m_Title": "Roughness",
     "m_Position": {
         "x": 5014.0,
-        "y": 1059.0
+        "y": 1058.5
     }
 }
 
@@ -9494,17 +9494,17 @@
     "m_Type": "UnityEditor.ShaderGraph.PropertyNode",
     "m_ObjectId": "95506f2ac443498fa1dfe3310e32f8fb",
     "m_Group": {
-        "m_Id": ""
+        "m_Id": "4f8aaf62fd8746b18cc780bb94532b19"
     },
     "m_Name": "Property",
     "m_DrawState": {
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": 2094.000244140625,
+            "x": 2099.000244140625,
             "y": 174.0,
-            "width": 150.0,
-            "height": 34.000030517578128
+            "width": 141.0,
+            "height": 34.0
         }
     },
     "m_Slots": [
@@ -10434,7 +10434,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "ac8efc691c60404b823c55ab3994d58c",
     "m_Id": 0,
-    "m_DisplayName": "z mask edge 2",
+    "m_DisplayName": "mask edge 2",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -11002,7 +11002,7 @@
     "m_Title": "Height map UNUSED",
     "m_Position": {
         "x": 2998.0,
-        "y": 2201.0
+        "y": 2200.5
     }
 }
 
@@ -11891,7 +11891,7 @@
     "m_ObjectId": "cad6790c5c724d9f9efa63e46fcb2375",
     "m_Title": "UV tiling for scalable meshes",
     "m_Position": {
-        "x": -1867.0,
+        "x": -1867.5,
         "y": 232.0
     }
 }
@@ -11949,7 +11949,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "ccf5ee2cc04443ea95cc7a9d64f487f0",
     "m_Id": 0,
-    "m_DisplayName": "z mask edge 2",
+    "m_DisplayName": "mask edge 2",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",

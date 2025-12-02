@@ -20,19 +20,24 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_Flame
+  m_Name: M_PortalEffect
   m_Shader: {fileID: -6465566751694194690, guid: 3ee3ae3c3672648a7a79577fbcb1810c, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
+  m_ValidKeywords:
+  - _RECEIVE_SHADOWS_OFF
+  - _SURFACE_TYPE_TRANSPARENT
   m_InvalidKeywords: []
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
+  m_CustomRenderQueue: 3000
+  stringTagMap:
+    RenderType: Transparent
   disabledShaderPasses:
   - MOTIONVECTORS
+  - DepthOnly
+  - SHADOWCASTER
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -94,13 +99,14 @@ Material:
     - _AlphaClip: 0
     - _AlphaToMask: 0
     - _Ambient_Occlusion: 0
-    - _Blend: 0
+    - _Blend: 2
     - _BlendModePreserveSpecular: 0
-    - _CastShadows: 1
+    - _CastShadows: 0
     - _Color_Multiplier: 1
     - _Cull: 2
-    - _DstBlend: 0
-    - _DstBlendAlpha: 0
+    - _DstBlend: 1
+    - _DstBlendAlpha: 1
+    - _Gradient_Radius: 1.22
     - _Height_Grass_Tex_Strength: 8
     - _Metallic: 0
     - _Noise_Contrast: 0.79
@@ -112,25 +118,31 @@ Material:
     - _Original_Color: 1
     - _QueueControl: 0
     - _QueueOffset: 0
-    - _ReceiveShadows: 1
+    - _ReceiveShadows: 0
     - _Smoothness: 0
-    - _Speed: 0.2
-    - _SrcBlend: 1
+    - _Speed: 2
+    - _SrcBlend: 5
     - _SrcBlendAlpha: 1
-    - _Surface: 0
+    - _Surface: 1
+    - _Twirl: 7
     - _UV_Rotation: 0
     - _Use_Original_Color: 0
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZTest: 4
-    - _ZWrite: 1
+    - _ZWrite: 0
     - _ZWriteControl: 0
     - _edge: 0
+    - _edge_1: 0.13
+    - _edge_2: 0.6
     - _step: 1.17
     m_Colors:
+    - _Base_Color: {r: 0, g: 0, b: 0, a: 1}
     - _BorderColor: {r: 0.3962264, g: 0.23216242, b: 0.08410467, a: 0}
     - _Border_Color: {r: 0, g: 0.33962262, b: 0.0028882024, a: 1}
-    - _Color: {r: 29.508846, g: 8.474851, b: 0, a: 0.5}
+    - _Color: {r: 0, g: 0.21335046, b: 2.2973967, a: 1}
+    - _Color1: {r: 0, g: 0, b: 0, a: 1}
+    - _Color2: {r: 0, g: 0.6267434, b: 3.2111173, a: 1}
     - _DirtColor: {r: 0.3301887, g: 0.091418676, b: 0, a: 0}
     - _DirtTiling: {r: 15, g: 8, b: 0, a: 0}
     - _GrassColor: {r: 0.6415094, g: 0.6415094, b: 0.6415094, a: 0}
