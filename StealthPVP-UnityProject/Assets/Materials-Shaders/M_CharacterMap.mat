@@ -125,7 +125,7 @@ Material:
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
-    - _Dissolve_radius: 0
+    - _Dissolve_radius: 0.46
     - _DstBlend: 10
     - _DstBlendAlpha: 10
     - _EnvironmentReflections: 1
@@ -178,6 +178,7 @@ Material:
     - _ZWriteControl: 1
     - _mask_edge_1: 0.3
     - _mask_edge_2: 0.9
+    - _twirl: 2.96
     - _z_mask_edge_1: 0.3
     - _z_mask_edge_2: 0.9
     m_Colors:

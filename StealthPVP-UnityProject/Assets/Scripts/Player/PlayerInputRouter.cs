@@ -9,12 +9,14 @@ public class PlayerInputRouter : MonoBehaviour
     [SerializeField] private KeyCode runKey = KeyCode.LeftShift;
     [SerializeField] private KeyCode stopKey = KeyCode.S;
     [SerializeField] private KeyCode jumpKey = KeyCode.Space;
+    [SerializeField] private KeyCode dashKey = KeyCode.R;
+    [SerializeField] private KeyCode interactKey = KeyCode.E;
+    [SerializeField] private string horizontalAxis = "Horizontal";
+    [SerializeField] private string verticalAxis = "Vertical";
 
     [Header("Click To Move")]
     [SerializeField] private float maximumRayDistance = 250f;
     [SerializeField] private LayerMask groundMask;
-    [SerializeField] private ClickMoveMarkerPool moveMarkerPool;
-    [SerializeField] private float markerHeight = 0.1f;
 
     /// <summary>
     /// Polls the underlying Unity input system and returns a snapshot for this frame.
@@ -25,14 +27,18 @@ public class PlayerInputRouter : MonoBehaviour
         {
             RunHeld = Input.GetKey(runKey),
             StopPressed = Input.GetKeyDown(stopKey),
-            JumpPressed = Input.GetKeyDown(jumpKey)
+            JumpPressed = Input.GetKeyDown(jumpKey),
+            DashPressed = Input.GetKeyDown(dashKey),
+            InteractPressed = Input.GetKeyDown(interactKey),
+            MoveAxis = new Vector2(
+                string.IsNullOrEmpty(horizontalAxis) ? 0f : Input.GetAxisRaw(horizontalAxis),
+                string.IsNullOrEmpty(verticalAxis) ? 0f : Input.GetAxisRaw(verticalAxis))
         };
 
         if (Input.GetMouseButtonDown(1) && TryResolveMoveTarget(out Vector3 targetPosition))
         {
             snapshot.MoveIssued = true;
             snapshot.MoveTarget = targetPosition;
-            SpawnMoveMarker(targetPosition);
         }
 
         return snapshot;
@@ -59,22 +65,9 @@ public class PlayerInputRouter : MonoBehaviour
         return false;
     }
 
-    private void SpawnMoveMarker(Vector3 position)
-    {
-        if (!moveMarkerPool)
-        {
-            return;
-        }
-
-        Vector3 markerPosition = position;
-        markerPosition.y = markerHeight;
-        moveMarkerPool.SpawnMarker(markerPosition);
-    }
-
     private void OnValidate()
     {
         maximumRayDistance = Mathf.Max(0f, maximumRayDistance);
-        markerHeight = Mathf.Max(0f, markerHeight);
     }
 }
 
@@ -83,6 +76,9 @@ public struct PlayerInputSnapshot
     public bool RunHeld;
     public bool StopPressed;
     public bool JumpPressed;
+    public bool DashPressed;
+    public bool InteractPressed;
     public bool MoveIssued;
+    public Vector2 MoveAxis;
     public Vector3 MoveTarget;
 }

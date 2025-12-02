@@ -4,7 +4,6 @@ using UnityEngine;
 public partial class SimpleCharacterController
 {
     [Header("Bench Interaction")]
-    [SerializeField] private KeyCode interactKey = KeyCode.E;
     [SerializeField] private string benchTag = "Bench";
     [SerializeField] private string sitPointTag = "BenchSitPoint";
     [SerializeField] private string sitPointName = "SitSpot";

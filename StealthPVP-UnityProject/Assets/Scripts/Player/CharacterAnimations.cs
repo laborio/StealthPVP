@@ -138,14 +138,11 @@ public class CharacterAnimations : MonoBehaviour
 
         if (isPorted)
         {
-            if (!teleportEffect.isPlaying)
-            {
-                teleportEffect.Play();
-            }
+            teleportEffect.gameObject.SetActive(true);
         }
-        else if (teleportEffect.isPlaying)
+        else if (teleportEffect.gameObject.activeSelf)
         {
-            teleportEffect.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            teleportEffect.gameObject.SetActive(false);
         }
     }
 

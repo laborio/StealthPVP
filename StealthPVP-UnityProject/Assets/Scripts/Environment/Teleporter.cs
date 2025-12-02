@@ -21,7 +21,7 @@ public class Teleporter : MonoBehaviour, IContextualAction
     [SerializeField, Tooltip("Higher number wins when multiple actions overlap.")] private int actionPriority = 200;
 
     [Header("Camera")]
-    [SerializeField, Tooltip("Optional override; defaults to the main camera's controller.")] private CameraController cameraController;
+    [SerializeField, Tooltip("Optional override; defaults to the main camera service.")] private CameraService cameraService;
     [SerializeField, Tooltip("Delay before the camera starts moving toward the destination.")] private float cameraMoveDelay = 0f;
 
     [Header("Destination Offset")]
@@ -92,7 +92,7 @@ public class Teleporter : MonoBehaviour, IContextualAction
         _activePlayer = player;
         _playerInRange = false;
         Teleporter destination = twinTeleporter;
-        CameraController controller = ResolveCameraController();
+        CameraService controller = ResolveCameraService();
         Transform previousCameraTarget = controller ? controller.CurrentTarget : null;
         _previousCameraTarget = previousCameraTarget;
         Vector3 startPosition = player ? player.transform.position : transform.position;
@@ -153,6 +153,11 @@ public class Teleporter : MonoBehaviour, IContextualAction
         SetAnimatorBool(true);
     }
 
+    public void ForceDeactivateAnimation()
+    {
+        SetAnimatorBool(false);
+    }
+
     private void SetTeleporterActive(bool active)
     {
         EnsureAnimatorCached();
@@ -192,22 +197,22 @@ public class Teleporter : MonoBehaviour, IContextualAction
         }
     }
 
-    private CameraController ResolveCameraController()
+    private CameraService ResolveCameraService()
     {
-        if (cameraController)
+        if (cameraService)
         {
-            return cameraController;
+            return cameraService;
         }
 
         Camera mainCamera = Camera.main;
-        if (mainCamera && mainCamera.TryGetComponent(out CameraController controller))
+        if (mainCamera && mainCamera.TryGetComponent(out CameraService attachedService))
         {
-            cameraController = controller;
-            return cameraController;
+            cameraService = attachedService;
+            return cameraService;
         }
 
-        cameraController = FindObjectOfType<CameraController>();
-        return cameraController;
+        cameraService = Object.FindFirstObjectByType<CameraService>();
+        return cameraService;
     }
 
     private Transform GetCameraTargetForDestination(Teleporter destination)
@@ -262,7 +267,7 @@ public class Teleporter : MonoBehaviour, IContextualAction
             _activePlayer = null;
         }
 
-        CameraController controller = ResolveCameraController();
+        CameraService controller = ResolveCameraService();
         if (controller && _previousCameraTarget)
         {
             controller.SetTarget(_previousCameraTarget);
