@@ -475,6 +475,20 @@ public partial class SimpleCharacterController
         }
     }
 
+    private void OnTriggerStay(Collider other)
+    {
+        bool alreadyTracked = _colliderActions.ContainsKey(other);
+        HandleActionTriggerEnter(other);
+
+        if (IsBenchCollider(other) && !alreadyTracked)
+        {
+            _activeBench = other;
+            CacheBenchSitPoints(other);
+            _benchContextAction.SetBench(other);
+            AddManualContextAction(other, _benchContextAction);
+        }
+    }
+
     private void OnTriggerExit(Collider other)
     {
         HandleActionTriggerExit(other);

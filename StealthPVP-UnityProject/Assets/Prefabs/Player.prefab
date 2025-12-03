@@ -6151,17 +6151,17 @@ MonoBehaviour:
   markerPool: {fileID: 0}
   gravity: -50
   groundedGravity: 0
-  jumpVelocity: 21
+  jumpVelocity: 18
   coyoteTime: 0.05
   jumpBufferTime: 0.2
   airControl: 2.01
-  dashSpeedMultiplier: 4
-  dashDuration: 0.25
+  dashSpeedMultiplier: 3
+  dashDuration: 0.2
   dashCooldown: 1
   groundProbeRadius: 0.2
   groundProbeDistance: 0.2
-  wallJumpUpVelocity: 23
-  wallJumpHorizontalSpeed: 10
+  wallJumpUpVelocity: 20
+  wallJumpHorizontalSpeed: 9
   wallContactLinger: 0.15
   wallJumpCooldown: 0
   groundedStateLinger: 0.12

@@ -54,8 +54,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 3, y: 2.9999995, z: 3}
-  m_Center: {x: 0, y: 1.4799998, z: 0.74}
+  m_Size: {x: 5, y: 2.9999995, z: 4}
+  m_Center: {x: 0, y: 1.4799998, z: 0.5}
 --- !u!95 &913606069178349028
 Animator:
   serializedVersion: 7
@@ -91,12 +91,36 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Teleporter
   twinTeleporter: {fileID: 0}
-  teleportDuration: 2
+  teleportDuration: 4
   teleporterAnimator: {fileID: 913606069178349028}
   onBoolName: On
   actionPriority: 200
   cameraService: {fileID: 0}
   cameraMoveDelay: 1
+  cameraMoveCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0.008299747
+      outSlope: 0.008299747
+      tangentMode: 0
+      weightedMode: 2
+      inWeight: 0
+      outWeight: 0.573741
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: -0.002274601
+      outSlope: -0.002274601
+      tangentMode: 0
+      weightedMode: 3
+      inWeight: 1
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   arrivalOffsetZ: -1
 --- !u!1001 &970325514550127042
 PrefabInstance:
