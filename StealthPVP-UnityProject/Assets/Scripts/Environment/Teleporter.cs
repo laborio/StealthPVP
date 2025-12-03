@@ -23,6 +23,7 @@ public class Teleporter : MonoBehaviour, IContextualAction
     [Header("Camera")]
     [SerializeField, Tooltip("Optional override; defaults to the main camera service.")] private CameraService cameraService;
     [SerializeField, Tooltip("Delay before the camera starts moving toward the destination.")] private float cameraMoveDelay = 0f;
+    [SerializeField, Tooltip("Curve applied to camera movement during teleport.")] private AnimationCurve cameraMoveCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     [Header("Destination Offset")]
     [SerializeField, Tooltip("Local Z offset applied at the destination teleporter.")] private float arrivalOffsetZ = 1f;
@@ -35,6 +36,11 @@ public class Teleporter : MonoBehaviour, IContextualAction
     private Transform _previousCameraTarget;
     private Transform _cameraTargetProxy;
     private bool _playerInRange;
+    private SimpleCharacterController _playerInTrigger;
+    private CharacterController _playerCharacterController;
+    private Collider _playerCollider;
+    private bool _hasOnBoolParameter;
+    private bool _validatedAnimatorParameters;
 
     public int Priority => actionPriority;
     public bool IsBusy => _busy;
@@ -52,7 +58,17 @@ public class Teleporter : MonoBehaviour, IContextualAction
 
     public bool CanExecute(SimpleCharacterController player, bool isGrounded)
     {
-        return !_busy && _playerInRange && player && !player.IsTeleportLocked && twinTeleporter && isGrounded;
+        if (!ValidatePlayerRange(player))
+        {
+            return false;
+        }
+
+        if (!IsAnimatorOn())
+        {
+            return false;
+        }
+
+        return !_busy && !player.IsTeleportLocked && twinTeleporter && isGrounded;
     }
 
     public bool ShouldShowHint(SimpleCharacterController player, bool isGrounded)
@@ -79,11 +95,17 @@ public class Teleporter : MonoBehaviour, IContextualAction
     public void OnEnterRange(SimpleCharacterController player)
     {
         _playerInRange = true;
+        _playerInTrigger = player;
+        _playerCharacterController = player ? player.GetComponent<CharacterController>() : null;
+        _playerCollider = player ? player.GetComponent<Collider>() : null;
     }
 
     public void OnExitRange(SimpleCharacterController player)
     {
         _playerInRange = false;
+        _playerInTrigger = null;
+        _playerCharacterController = null;
+        _playerCollider = null;
     }
 
     private IEnumerator TeleportRoutine(SimpleCharacterController player)
@@ -91,6 +113,9 @@ public class Teleporter : MonoBehaviour, IContextualAction
         _busy = true;
         _activePlayer = player;
         _playerInRange = false;
+        _playerInTrigger = null;
+        _playerCharacterController = null;
+        _playerCollider = null;
         Teleporter destination = twinTeleporter;
         CameraService controller = ResolveCameraService();
         Transform previousCameraTarget = controller ? controller.CurrentTarget : null;
@@ -109,10 +134,12 @@ public class Teleporter : MonoBehaviour, IContextualAction
 
         float elapsed = 0f;
         float duration = Mathf.Max(teleportDuration, 0.0001f);
+        float cameraTravelDuration = Mathf.Max(duration - cameraMoveDelay, 0.0001f);
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            float cameraT = Mathf.Clamp01((elapsed - cameraMoveDelay) / duration);
+            float cameraProgress = Mathf.Clamp01((elapsed - cameraMoveDelay) / cameraTravelDuration);
+            float cameraT = EvaluateCameraTravel(cameraProgress);
             if (_cameraTargetProxy)
             {
                 _cameraTargetProxy.position = Vector3.Lerp(startPosition, endPosition, cameraT);
@@ -123,6 +150,7 @@ public class Teleporter : MonoBehaviour, IContextualAction
         if (player && destination)
         {
             player.TeleportToPosition(endPosition);
+            player.RefreshContextActionsFromOverlaps();
         }
 
         if (controller)
@@ -215,6 +243,44 @@ public class Teleporter : MonoBehaviour, IContextualAction
         return cameraService;
     }
 
+    private bool ValidatePlayerRange(SimpleCharacterController player)
+    {
+        if (!_playerInRange || !player)
+        {
+            return false;
+        }
+
+        if (_playerInTrigger && _playerInTrigger != player)
+        {
+            return false;
+        }
+
+        if (!_ownCollider)
+        {
+            return false;
+        }
+
+        bool overlaps = false;
+        if (_playerCharacterController)
+        {
+            overlaps = _ownCollider.bounds.Intersects(_playerCharacterController.bounds);
+        }
+        else if (_playerCollider)
+        {
+            overlaps = _ownCollider.bounds.Intersects(_playerCollider.bounds);
+        }
+
+        if (!overlaps)
+        {
+            _playerInRange = false;
+            _playerInTrigger = null;
+            _playerCharacterController = null;
+            _playerCollider = null;
+        }
+
+        return overlaps;
+    }
+
     private Transform GetCameraTargetForDestination(Teleporter destination)
     {
         return GetCameraTargetForDestination(destination, transform.position, destination ? destination.GetExitPosition() : GetExitPosition());
@@ -240,6 +306,8 @@ public class Teleporter : MonoBehaviour, IContextualAction
     private void CacheHashes()
     {
         _onBoolHash = string.IsNullOrEmpty(onBoolName) ? 0 : Animator.StringToHash(onBoolName);
+        _validatedAnimatorParameters = false;
+        _hasOnBoolParameter = false;
     }
 
     private void EnsureCameraProxy()
@@ -277,12 +345,69 @@ public class Teleporter : MonoBehaviour, IContextualAction
         _busy = false;
         SetTeleporterActive(false);
         _playerInRange = false;
+        _playerInTrigger = null;
+        _playerCharacterController = null;
+        _playerCollider = null;
+    }
+
+    private float EvaluateCameraTravel(float normalizedTime)
+    {
+        if (cameraMoveCurve != null && cameraMoveCurve.length > 0)
+        {
+            return cameraMoveCurve.Evaluate(normalizedTime);
+        }
+
+        return Mathf.SmoothStep(0f, 1f, normalizedTime);
     }
 
     private void OnValidate()
     {
         teleportDuration = Mathf.Max(0.1f, teleportDuration);
         cameraMoveDelay = Mathf.Max(0f, cameraMoveDelay);
+        if (cameraMoveCurve == null || cameraMoveCurve.length == 0)
+        {
+            cameraMoveCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+        }
         CacheHashes();
+    }
+
+    private bool IsAnimatorOn()
+    {
+        EnsureAnimatorCached();
+        if (!teleporterAnimator || _onBoolHash == 0)
+        {
+            return true;
+        }
+
+        if (!_validatedAnimatorParameters)
+        {
+            _hasOnBoolParameter = AnimatorHasBool(teleporterAnimator, _onBoolHash);
+            _validatedAnimatorParameters = true;
+        }
+
+        if (!_hasOnBoolParameter)
+        {
+            return true;
+        }
+
+        return teleporterAnimator.GetBool(_onBoolHash);
+    }
+
+    private static bool AnimatorHasBool(Animator animator, int hash)
+    {
+        if (!animator)
+        {
+            return false;
+        }
+
+        foreach (AnimatorControllerParameter parameter in animator.parameters)
+        {
+            if (parameter.type == AnimatorControllerParameterType.Bool && parameter.nameHash == hash)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &3594544199909072551
+--- !u!1 &7592326329117731537
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,40 +8,40 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6631607643827885284}
-  - component: {fileID: 1042582064187603410}
-  - component: {fileID: 913606069178349028}
-  - component: {fileID: 7002170119158351879}
+  - component: {fileID: 920563455248672012}
+  - component: {fileID: 5546123273374501910}
+  - component: {fileID: 4109096590956938877}
+  - component: {fileID: 7568702350763768996}
   m_Layer: 0
-  m_Name: Teleporter_Blue
+  m_Name: Teleporter_Red
   m_TagString: Teleporter
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6631607643827885284
+--- !u!4 &920563455248672012
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3594544199909072551}
+  m_GameObject: {fileID: 7592326329117731537}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 52.5, y: 10, z: 25.5}
+  m_LocalPosition: {x: 112, y: 10, z: 36.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 792053642529033769}
+  - {fileID: 3614874614982924318}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &1042582064187603410
+--- !u!65 &5546123273374501910
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3594544199909072551}
+  m_GameObject: {fileID: 7592326329117731537}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -56,14 +56,14 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 5, y: 2.9999995, z: 4}
   m_Center: {x: 0, y: 1.4799998, z: 0.5}
---- !u!95 &913606069178349028
+--- !u!95 &4109096590956938877
 Animator:
   serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3594544199909072551}
+  m_GameObject: {fileID: 7592326329117731537}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: ac71063db59e84a7c855d9fdc919f8c0, type: 2}
@@ -78,13 +78,13 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &7002170119158351879
+--- !u!114 &7568702350763768996
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3594544199909072551}
+  m_GameObject: {fileID: 7592326329117731537}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e29edf950d24d4bd8a151fc0c239aed8, type: 3}
@@ -92,7 +92,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Teleporter
   twinTeleporter: {fileID: 0}
   teleportDuration: 4
-  teleporterAnimator: {fileID: 913606069178349028}
+  teleporterAnimator: {fileID: 4109096590956938877}
   onBoolName: On
   actionPriority: 200
   cameraService: {fileID: 0}
@@ -103,32 +103,32 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 0.008299747
-      outSlope: 0.008299747
+      inSlope: 0.009046534
+      outSlope: 0.009046534
       tangentMode: 0
       weightedMode: 2
       inWeight: 0
-      outWeight: 0.573741
+      outWeight: 0.78956836
     - serializedVersion: 3
       time: 1
       value: 1
-      inSlope: -0.002274601
-      outSlope: -0.002274601
+      inSlope: 0.0029682014
+      outSlope: 0.0029682014
       tangentMode: 0
-      weightedMode: 3
-      inWeight: 1
+      weightedMode: 1
+      inWeight: 0.80215824
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
   arrivalOffsetZ: -1
---- !u!1001 &970325514550127042
+--- !u!1001 &3864128278174318581
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 6631607643827885284}
+    m_TransformParent: {fileID: 920563455248672012}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 314018ab288b54e7e9dd650f3515f235, type: 3}
       propertyPath: m_LocalPosition.x
@@ -213,18 +213,14 @@ PrefabInstance:
     - target: {fileID: 6072950624694365348, guid: 314018ab288b54e7e9dd650f3515f235, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: dfb11e91558884bdc9979060aef166d4, type: 2}
-    - target: {fileID: 6247607563737965766, guid: 314018ab288b54e7e9dd650f3515f235, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: eb0e4d9eaec5b423d9aa800682975c11, type: 2}
+      objectReference: {fileID: 2100000, guid: 6bd1d2f14cf0a4b40b527ce0b4c0efc5, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 314018ab288b54e7e9dd650f3515f235, type: 3}
---- !u!4 &792053642529033769 stripped
+--- !u!4 &3614874614982924318 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 314018ab288b54e7e9dd650f3515f235, type: 3}
-  m_PrefabInstance: {fileID: 970325514550127042}
+  m_PrefabInstance: {fileID: 3864128278174318581}
   m_PrefabAsset: {fileID: 0}

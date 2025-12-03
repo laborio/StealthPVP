@@ -110,8 +110,14 @@ public partial class SimpleCharacterController
 
         foreach (IContextualAction action in actions)
         {
-            if (action == null || colliderList.Contains(action))
+            if (action == null)
             {
+                continue;
+            }
+
+            if (colliderList.Contains(action))
+            {
+                action.OnEnterRange(this);
                 continue;
             }
 
@@ -181,5 +187,26 @@ public partial class SimpleCharacterController
         _colliderActions.Clear();
         _contextActions.Clear();
         SetActionHintVisible(false);
+    }
+
+    public void RefreshContextActionsFromOverlaps()
+    {
+        if (!_characterController)
+        {
+            return;
+        }
+
+        Vector3 center = _characterController.bounds.center;
+        float radius = _characterController.radius;
+        float halfHeight = Mathf.Max(0f, (_characterController.height * 0.5f) - radius);
+        Vector3 up = transform.up * halfHeight;
+        Vector3 point0 = center + up;
+        Vector3 point1 = center - up;
+
+        Collider[] overlaps = Physics.OverlapCapsule(point0, point1, radius, ~0, QueryTriggerInteraction.Collide);
+        for (int i = 0; i < overlaps.Length; i++)
+        {
+            HandleActionTriggerEnter(overlaps[i]);
+        }
     }
 }

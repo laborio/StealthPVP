@@ -5473,7 +5473,7 @@
     "m_Title": "Normal map tiling",
     "m_Position": {
         "x": 2809.0,
-        "y": 979.5
+        "y": 980.0
     }
 }
 
@@ -9384,7 +9384,7 @@
     "m_Title": "Roughness",
     "m_Position": {
         "x": 5014.0,
-        "y": 1058.5
+        "y": 1059.0
     }
 }
 
@@ -11002,7 +11002,7 @@
     "m_Title": "Height map UNUSED",
     "m_Position": {
         "x": 2998.0,
-        "y": 2200.5
+        "y": 2201.0
     }
 }
 
@@ -11891,7 +11891,7 @@
     "m_ObjectId": "cad6790c5c724d9f9efa63e46fcb2375",
     "m_Title": "UV tiling for scalable meshes",
     "m_Position": {
-        "x": -1867.5,
+        "x": -1867.0,
         "y": 232.0
     }
 }

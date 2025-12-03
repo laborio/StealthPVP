@@ -20,14 +20,15 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_PortalEffect
+  m_Name: M_PortalEffect_2
   m_Shader: {fileID: -6465566751694194690, guid: 3ee3ae3c3672648a7a79577fbcb1810c, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _RECEIVE_SHADOWS_OFF
+  - _ALPHATEST_ON
   - _SURFACE_TYPE_TRANSPARENT
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _RECEIVE_SHADOWS_OFF
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -36,8 +37,8 @@ Material:
     RenderType: Transparent
   disabledShaderPasses:
   - MOTIONVECTORS
-  - DepthOnly
   - SHADOWCASTER
+  - DepthOnly
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -96,7 +97,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AlphaClip: 0
+    - _AlphaClip: 1
     - _AlphaToMask: 0
     - _Ambient_Occlusion: 0
     - _Blend: 2
@@ -106,7 +107,7 @@ Material:
     - _Cull: 2
     - _DstBlend: 1
     - _DstBlendAlpha: 1
-    - _Gradient_Radius: 1.22
+    - _Gradient_Radius: 1.31
     - _Height_Grass_Tex_Strength: 8
     - _Metallic: 0
     - _Noise_Contrast: 0.79
@@ -134,7 +135,7 @@ Material:
     - _ZWriteControl: 0
     - _edge: 0
     - _edge_1: 0.13
-    - _edge_2: 0.6
+    - _edge_2: 0.69
     - _step: 1.17
     m_Colors:
     - _Base_Color: {r: 0, g: 0, b: 0, a: 1}
@@ -142,7 +143,7 @@ Material:
     - _Border_Color: {r: 0, g: 0.33962262, b: 0.0028882024, a: 1}
     - _Color: {r: 0, g: 0.21335046, b: 2.2973967, a: 1}
     - _Color1: {r: 0, g: 0, b: 0, a: 1}
-    - _Color2: {r: 0, g: 0.6267434, b: 3.2111173, a: 1}
+    - _Color2: {r: 11.206975, g: 0.058675263, b: 0, a: 1}
     - _DirtColor: {r: 0.3301887, g: 0.091418676, b: 0, a: 0}
     - _DirtTiling: {r: 15, g: 8, b: 0, a: 0}
     - _GrassColor: {r: 0.6415094, g: 0.6415094, b: 0.6415094, a: 0}
