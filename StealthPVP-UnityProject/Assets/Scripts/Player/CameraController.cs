@@ -32,6 +32,10 @@ public class CameraController : MonoBehaviour
         }
 
         Vector3 desiredPosition = target.position + offset;
+        if (CameraShake.Instance)
+        {
+            desiredPosition += CameraShake.Instance.CurrentOffset;
+        }
         transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref _velocity, followSmoothTime);
         transform.rotation = Quaternion.Euler(rotationEuler);
     }

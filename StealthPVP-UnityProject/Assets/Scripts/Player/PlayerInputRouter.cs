@@ -13,6 +13,9 @@ public class PlayerInputRouter : MonoBehaviour
     [SerializeField] private KeyCode interactKey = KeyCode.E;
     [SerializeField] private string horizontalAxis = "Horizontal";
     [SerializeField] private string verticalAxis = "Vertical";
+    [Header("Attack")]
+    [SerializeField, Tooltip("Maximum ray distance for attack aiming.")] private float attackRayDistance = 250f;
+    [SerializeField, Tooltip("Layers considered for attack aim / range indicator.")] private LayerMask attackGroundMask = Physics.DefaultRaycastLayers;
 
     [Header("Click To Move")]
     [SerializeField] private float maximumRayDistance = 250f;
@@ -30,6 +33,9 @@ public class PlayerInputRouter : MonoBehaviour
             JumpPressed = Input.GetKeyDown(jumpKey),
             DashPressed = Input.GetKeyDown(dashKey),
             InteractPressed = Input.GetKeyDown(interactKey),
+            PrimaryPressed = Input.GetMouseButtonDown(0),
+            PrimaryHeld = Input.GetMouseButton(0),
+            PrimaryReleased = Input.GetMouseButtonUp(0),
             MoveAxis = new Vector2(
                 string.IsNullOrEmpty(horizontalAxis) ? 0f : Input.GetAxisRaw(horizontalAxis),
                 string.IsNullOrEmpty(verticalAxis) ? 0f : Input.GetAxisRaw(verticalAxis))
@@ -39,6 +45,15 @@ public class PlayerInputRouter : MonoBehaviour
         {
             snapshot.MoveIssued = true;
             snapshot.MoveTarget = targetPosition;
+        }
+
+        if (snapshot.PrimaryHeld || snapshot.PrimaryPressed || snapshot.PrimaryReleased)
+        {
+            if (TryResolveAimPoint(attackRayDistance, attackGroundMask, out Vector3 aimPoint))
+            {
+                snapshot.AimPoint = aimPoint;
+                snapshot.HasAimPoint = true;
+            }
         }
 
         return snapshot;
@@ -65,9 +80,30 @@ public class PlayerInputRouter : MonoBehaviour
         return false;
     }
 
+    private bool TryResolveAimPoint(float distance, LayerMask mask, out Vector3 point)
+    {
+        point = default;
+
+        Camera currentCamera = Camera.main;
+        if (!currentCamera)
+        {
+            return false;
+        }
+
+        Ray ray = currentCamera.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out RaycastHit hitInfo, distance, mask, QueryTriggerInteraction.Ignore))
+        {
+            point = hitInfo.point;
+            return true;
+        }
+
+        return false;
+    }
+
     private void OnValidate()
     {
         maximumRayDistance = Mathf.Max(0f, maximumRayDistance);
+        attackRayDistance = Mathf.Max(0f, attackRayDistance);
     }
 }
 
@@ -78,7 +114,12 @@ public struct PlayerInputSnapshot
     public bool JumpPressed;
     public bool DashPressed;
     public bool InteractPressed;
+    public bool PrimaryPressed;
+    public bool PrimaryHeld;
+    public bool PrimaryReleased;
     public bool MoveIssued;
     public Vector2 MoveAxis;
     public Vector3 MoveTarget;
+    public bool HasAimPoint;
+    public Vector3 AimPoint;
 }
