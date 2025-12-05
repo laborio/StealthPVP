@@ -5806,7 +5806,7 @@ GameObject:
   - component: {fileID: 8202753440923050041}
   - component: {fileID: 3551573431893224452}
   m_Layer: 0
-  m_Name: NPC Char
+  m_Name: NPC_Purple
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5942,7 +5942,7 @@ MonoBehaviour:
   ragdollBodies: []
   disableAnimatorOnRagdoll: 1
   initializeAsKinematic: 1
-  deathImpulseForce: 20
+  deathImpulseForce: 25
   impulseMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -5959,7 +5959,7 @@ MonoBehaviour:
   lethalShakeMagnitude: 1
   lethalShakeDuration: 0.08
   debugLogs: 0
-  ragdollGravityMultiplier: 2
+  ragdollGravityMultiplier: 1.8
 --- !u!1 &3867670483099182728
 GameObject:
   m_ObjectHideFlags: 0
@@ -6951,7 +6951,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 4
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 34e920b85964344a39935fb3c050359e, type: 2}
+  - {fileID: 2100000, guid: 191869927ae8b482ba3904881309bfe9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

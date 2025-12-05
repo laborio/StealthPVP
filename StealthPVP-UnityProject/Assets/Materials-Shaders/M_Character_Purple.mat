@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_Character_0
+  m_Name: M_Character_Purple
   m_Shader: {fileID: -6465566751694194690, guid: 22d55221463f54311b9cf6293cb57e6c, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -76,7 +76,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 177811d1fa8d1458997c41dc1944de15, type: 3}
+        m_Texture: {fileID: 2800000, guid: 39e893a487fcb45819702ac7b2f6666a, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
