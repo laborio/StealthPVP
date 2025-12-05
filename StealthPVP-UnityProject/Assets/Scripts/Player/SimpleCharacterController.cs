@@ -25,6 +25,13 @@ public partial class SimpleCharacterController : MonoBehaviour
     [SerializeField] private float coyoteTime = 0.1f;
     [SerializeField] private float jumpBufferTime = 0.1f;
     [SerializeField, Range(0f, 5f)] private float airControl = 0.3f;
+    [Header("Attack")]
+    [SerializeField, Tooltip("Name of the animator trigger used for the attack animation.")] private string attackTriggerName = "Attack";
+    [SerializeField, Tooltip("Optional range indicator shown while holding the attack button.")] private GameObject rangeIndicator;
+    [SerializeField, Tooltip("Rotation speed (deg/sec) when aligning to the attack aim.")] private float attackAimRotationSpeed = 1080f;
+    [SerializeField, Tooltip("Layers considered for attack aiming.")] private LayerMask attackGroundMask = Physics.DefaultRaycastLayers;
+    [SerializeField, Tooltip("Minimum time movement stays locked after triggering an attack.")] private float attackLockMinDuration = 0.05f;
+    [SerializeField, Tooltip("Impulse applied to rigidbodies when bumped by the CharacterController.")] private float rigidbodyPushForce = 3f;
     [SerializeField] private float dashSpeedMultiplier = 3f;
     [SerializeField] private float dashDuration = 0.25f;
     [SerializeField] private float dashCooldown = 1f;
@@ -66,6 +73,13 @@ public partial class SimpleCharacterController : MonoBehaviour
     private float _wallJumpCooldownTimer;
     private bool _isInWater;
     [SerializeField] private CharacterAnimations characterAnimations;
+    private bool _attackChargeActive;
+    private bool _attackLockActive;
+    private bool _attackAimInProgress;
+    private Quaternion _attackTargetRotation;
+    private Vector3 _lastAimDirection = Vector3.forward;
+    private Transform _rangeIndicatorTransform;
+    private float _attackLockTimer;
 
     private void Awake()
     {
@@ -85,6 +99,8 @@ public partial class SimpleCharacterController : MonoBehaviour
                 inputRouter = Object.FindFirstObjectByType<PlayerInputRouter>();
             }
         }
+        CacheRangeIndicator();
+        SetRangeIndicatorActive(false);
         OnBenchAwake();
     }
 
@@ -102,18 +118,21 @@ public partial class SimpleCharacterController : MonoBehaviour
         Vector2 movementInputRaw = inputSnapshot.MoveAxis;
         bool requestedMovement = movementInputRaw.sqrMagnitude > 0.0001f;
         bool interactPressed = inputSnapshot.InteractPressed;
+        float deltaTime = Time.deltaTime;
         HandleBenchInput(requestedMovement, interactPressed);
+        HandleAttackInput(inputSnapshot, isGrounded);
+        UpdateAttackLockState(deltaTime);
         bool actionKeyAllowed = _seatingState == SeatingState.Standing;
         HandleActionInput(interactPressed && actionKeyAllowed, isGrounded);
 
         bool seatingLocked = _seatingState != SeatingState.Standing;
+        bool attackMovementLocked = _attackLockActive;
         bool movingToSeat = _seatingState == SeatingState.MovingToSeat;
         bool walkOverrideActive = movingToSeat;
-        Vector2 movementInput = seatingLocked ? Vector2.zero : movementInputRaw;
+        Vector2 movementInput = (seatingLocked || attackMovementLocked) ? Vector2.zero : movementInputRaw;
         Vector3 moveDirection = ResolveMoveDirection(movementInput);
         bool hasMovementInput = moveDirection.sqrMagnitude > 0.0001f;
         bool wantsToWalk = inputSnapshot.RunHeld;
-        float deltaTime = Time.deltaTime;
         _wallContactTimer = Mathf.Max(_wallContactTimer - deltaTime, 0f);
         if (_wallJumpCooldownTimer > 0f)
         {
@@ -151,6 +170,12 @@ public partial class SimpleCharacterController : MonoBehaviour
             {
                 _hasMoveTarget = false;
                 hasMovementInput = false;
+            }
+            else if (attackMovementLocked)
+            {
+                _hasMoveTarget = false;
+                hasMovementInput = false;
+                requestedMovement = false;
             }
 
             if (hasMovementInput)
@@ -257,6 +282,12 @@ public partial class SimpleCharacterController : MonoBehaviour
                 _isDashing = false;
             }
         }
+        else if (attackMovementLocked)
+        {
+            _dashTimer = 0f;
+            _dashCooldownTimer = 0f;
+            _isDashing = false;
+        }
 
         Vector3 targetPlanarVelocity = _isDashing ? _currentPlanarVelocity : desiredPlanarVelocity;
         if (_isDashing)
@@ -265,12 +296,14 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
         else if (isGrounded)
         {
-            _currentPlanarVelocity = targetPlanarVelocity;
+            _currentPlanarVelocity = attackMovementLocked ? Vector3.zero : targetPlanarVelocity;
         }
         else if (targetPlanarVelocity.sqrMagnitude > 0.0001f)
         {
             float lerpFactor = Mathf.Clamp01(airControl * deltaTime);
-            _currentPlanarVelocity = Vector3.Lerp(_currentPlanarVelocity, targetPlanarVelocity, lerpFactor);
+            _currentPlanarVelocity = attackMovementLocked
+                ? Vector3.Lerp(_currentPlanarVelocity, Vector3.zero, lerpFactor)
+                : Vector3.Lerp(_currentPlanarVelocity, targetPlanarVelocity, lerpFactor);
         }
 
         bool bufferedJumpRequested = _jumpBufferTimer > 0f;
@@ -342,10 +375,12 @@ public partial class SimpleCharacterController : MonoBehaviour
         Vector3 planarMove = new Vector3(_currentPlanarVelocity.x, 0f, _currentPlanarVelocity.z);
         float planarSpeed = planarMove.magnitude;
 
-        if (planarMove.sqrMagnitude > 0.0001f)
+        bool attackRotationApplied = ProcessAttackAimRotation(deltaTime);
+
+        if (!attackRotationApplied && planarMove.sqrMagnitude > 0.0001f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(planarMove.normalized, Vector3.up);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * deltaTime);
         }
 
         bool allowRunningAnimation = !walkOverrideActive;
@@ -385,6 +420,236 @@ public partial class SimpleCharacterController : MonoBehaviour
         UpdateSeatingState(deltaTime);
         ProcessBenchCollisionRestore(deltaTime);
         UpdateActionHintDisplay(_seatingState == SeatingState.Standing, isGrounded);
+    }
+
+    private void HandleAttackInput(PlayerInputSnapshot input, bool isGrounded)
+    {
+        if (_seatingState != SeatingState.Standing || !isGrounded)
+        {
+            CancelAttackCharge();
+            return;
+        }
+
+        if (_attackLockActive || (characterAnimations != null && characterAnimations.IsInAttackState()))
+        {
+            return;
+        }
+
+        if (input.PrimaryPressed)
+        {
+            StartAttackCharge();
+        }
+
+        if (_attackChargeActive && (input.PrimaryHeld || input.PrimaryPressed))
+        {
+            UpdateAttackAim(input);
+        }
+
+        if (_attackChargeActive && input.PrimaryReleased)
+        {
+            TriggerAttack(input);
+        }
+    }
+
+    private void StartAttackCharge()
+    {
+        _attackChargeActive = true;
+        _lastAimDirection = transform.forward;
+        SetRangeIndicatorActive(true);
+        ApplyRangeIndicatorRotation(_lastAimDirection);
+    }
+
+    private void CancelAttackCharge()
+    {
+        _attackChargeActive = false;
+        _attackAimInProgress = false;
+        SetRangeIndicatorActive(false);
+    }
+
+    private void UpdateAttackAim(PlayerInputSnapshot input)
+    {
+        if (!TryGetAimPoint(input, out Vector3 aimPoint))
+        {
+            return;
+        }
+
+        Vector3 aimDirection = aimPoint - transform.position;
+        aimDirection.y = 0f;
+        if (aimDirection.sqrMagnitude < 0.0001f)
+        {
+            return;
+        }
+
+        _lastAimDirection = aimDirection.normalized;
+        ApplyRangeIndicatorRotation(_lastAimDirection);
+    }
+
+    private void TriggerAttack(PlayerInputSnapshot input)
+    {
+        SetRangeIndicatorActive(false);
+        _attackChargeActive = false;
+
+        Vector3 aimDirection = _lastAimDirection;
+        if (TryGetAimPoint(input, out Vector3 aimPoint))
+        {
+            Vector3 dir = aimPoint - transform.position;
+            dir.y = 0f;
+            if (dir.sqrMagnitude > 0.0001f)
+            {
+                aimDirection = dir.normalized;
+            }
+        }
+
+        BeginAttackRotation(aimDirection);
+        _attackLockActive = true;
+        _attackLockTimer = Mathf.Max(attackLockMinDuration, 0f);
+        _isDashing = false;
+        _dashTimer = 0f;
+        _currentPlanarVelocity = Vector3.zero;
+        _hasMoveTarget = false;
+        characterAnimations?.TriggerAttack(attackTriggerName);
+    }
+
+    private void BeginAttackRotation(Vector3 aimDirection)
+    {
+        if (aimDirection.sqrMagnitude < 0.0001f)
+        {
+            _attackAimInProgress = false;
+            return;
+        }
+
+        _attackTargetRotation = Quaternion.LookRotation(aimDirection.normalized, Vector3.up);
+        _attackAimInProgress = true;
+    }
+
+    private bool ProcessAttackAimRotation(float deltaTime)
+    {
+        if (!_attackAimInProgress)
+        {
+            return false;
+        }
+
+        if (attackAimRotationSpeed <= 0f)
+        {
+            transform.rotation = _attackTargetRotation;
+            _attackAimInProgress = false;
+            return true;
+        }
+
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, _attackTargetRotation, attackAimRotationSpeed * deltaTime);
+        float remainingAngle = Quaternion.Angle(transform.rotation, _attackTargetRotation);
+        if (remainingAngle <= 0.5f)
+        {
+            _attackAimInProgress = false;
+        }
+
+        return true;
+    }
+
+    private void UpdateAttackLockState(float deltaTime)
+    {
+        if (!_attackLockActive)
+        {
+            return;
+        }
+
+        _attackLockTimer = Mathf.Max(0f, _attackLockTimer - deltaTime);
+
+        if (_attackLockTimer > 0f)
+        {
+            return;
+        }
+
+        if (characterAnimations != null && characterAnimations.IsInAttackState())
+        {
+            return;
+        }
+
+        _attackLockActive = false;
+    }
+
+    private bool TryGetAimPoint(PlayerInputSnapshot input, out Vector3 point)
+    {
+        if (input.HasAimPoint)
+        {
+            point = input.AimPoint;
+            return true;
+        }
+
+        point = default;
+        Camera targetCamera = _camera ? _camera : Camera.main;
+        if (!targetCamera)
+        {
+            return false;
+        }
+
+        Ray ray = targetCamera.ScreenPointToRay(Input.mousePosition);
+        LayerMask mask = attackGroundMask.value != 0 ? attackGroundMask : groundMask;
+        if (Physics.Raycast(ray, out RaycastHit hitInfo, maximumRayDistance, mask, QueryTriggerInteraction.Ignore))
+        {
+            point = hitInfo.point;
+            return true;
+        }
+
+        return false;
+    }
+
+    private void SetRangeIndicatorActive(bool active)
+    {
+        if (!_rangeIndicatorTransform)
+        {
+            return;
+        }
+
+        GameObject indicatorGO = _rangeIndicatorTransform.gameObject;
+        if (indicatorGO.activeSelf != active)
+        {
+            indicatorGO.SetActive(active);
+        }
+    }
+
+    private void CacheRangeIndicator()
+    {
+        if (rangeIndicator)
+        {
+            _rangeIndicatorTransform = rangeIndicator.transform;
+            return;
+        }
+
+        Transform[] children = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < children.Length; i++)
+        {
+            if (children[i] && children[i].name == "RangeIndicator")
+            {
+                _rangeIndicatorTransform = children[i];
+                rangeIndicator = children[i].gameObject;
+                break;
+            }
+        }
+    }
+
+    private void ApplyRangeIndicatorRotation(Vector3 direction)
+    {
+        if (!_rangeIndicatorTransform)
+        {
+            return;
+        }
+
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            direction = transform.forward;
+        }
+
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            direction = Vector3.forward;
+        }
+
+        direction.Normalize();
+        float yaw = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
+        Quaternion rotation = Quaternion.Euler(90f, yaw, 0f);
+        _rangeIndicatorTransform.rotation = rotation;
     }
 
     private bool IsGrounded()
@@ -456,7 +721,22 @@ public partial class SimpleCharacterController : MonoBehaviour
 
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
-        if (!_characterController || !_characterController.enabled || wallContactLinger <= 0f)
+        if (!_characterController || !_characterController.enabled)
+        {
+            return;
+        }
+
+        if (rigidbodyPushForce > 0f && hit.rigidbody && !hit.rigidbody.isKinematic)
+        {
+            Vector3 pushDir = hit.moveDirection;
+            pushDir.y = 0f;
+            if (pushDir.sqrMagnitude > 0.0001f)
+            {
+                hit.rigidbody.AddForce(pushDir.normalized * rigidbodyPushForce, ForceMode.Impulse);
+            }
+        }
+
+        if (wallContactLinger <= 0f)
         {
             return;
         }
@@ -502,6 +782,8 @@ public partial class SimpleCharacterController : MonoBehaviour
         characterAnimations?.ResetStates();
         _hasMoveTarget = false;
         _teleportLocked = false;
+        CancelAttackCharge();
+        _attackLockActive = false;
     }
 
     private void OnValidate()
@@ -530,6 +812,10 @@ public partial class SimpleCharacterController : MonoBehaviour
         standToSitAnimSpeed = Mathf.Max(0.1f, standToSitAnimSpeed);
         waterMoveSpeedMultiplier = Mathf.Clamp(waterMoveSpeedMultiplier, 0.1f, 1f);
         waterJumpVelocityMultiplier = Mathf.Clamp(waterJumpVelocityMultiplier, 0.1f, 1f);
+        attackAimRotationSpeed = Mathf.Max(0f, attackAimRotationSpeed);
+        attackLockMinDuration = Mathf.Max(0f, attackLockMinDuration);
+        rigidbodyPushForce = Mathf.Max(0f, rigidbodyPushForce);
+        CacheRangeIndicator();
     }
 
     private PlayerInputSnapshot PollLegacyInput()
@@ -541,6 +827,9 @@ public partial class SimpleCharacterController : MonoBehaviour
             JumpPressed = Input.GetKeyDown(KeyCode.Space),
             DashPressed = Input.GetKeyDown(KeyCode.R),
             InteractPressed = Input.GetKeyDown(KeyCode.E),
+            PrimaryPressed = Input.GetMouseButtonDown(0),
+            PrimaryHeld = Input.GetMouseButton(0),
+            PrimaryReleased = Input.GetMouseButtonUp(0),
             MoveAxis = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"))
         };
 
@@ -548,6 +837,12 @@ public partial class SimpleCharacterController : MonoBehaviour
         {
             snapshot.MoveIssued = true;
             snapshot.MoveTarget = targetPosition;
+        }
+
+        if ((snapshot.PrimaryHeld || snapshot.PrimaryPressed || snapshot.PrimaryReleased) && TryResolveAimPoint(out Vector3 aimPoint))
+        {
+            snapshot.HasAimPoint = true;
+            snapshot.AimPoint = aimPoint;
         }
 
         return snapshot;
@@ -566,6 +861,26 @@ public partial class SimpleCharacterController : MonoBehaviour
         if (Physics.Raycast(ray, out RaycastHit hitInfo, maximumRayDistance, groundMask, QueryTriggerInteraction.Ignore))
         {
             targetPosition = hitInfo.point;
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool TryResolveAimPoint(out Vector3 point)
+    {
+        point = default;
+        Camera targetCamera = _camera ? _camera : Camera.main;
+        if (!targetCamera)
+        {
+            return false;
+        }
+
+        Ray ray = targetCamera.ScreenPointToRay(Input.mousePosition);
+        LayerMask mask = attackGroundMask.value != 0 ? attackGroundMask : groundMask;
+        if (Physics.Raycast(ray, out RaycastHit hitInfo, maximumRayDistance, mask, QueryTriggerInteraction.Ignore))
+        {
+            point = hitInfo.point;
             return true;
         }
 

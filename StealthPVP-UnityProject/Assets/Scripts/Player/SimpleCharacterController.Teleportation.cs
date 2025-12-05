@@ -13,6 +13,10 @@ public partial class SimpleCharacterController
             return;
         }
 
+        CancelAttackCharge();
+        _attackLockActive = false;
+        _attackAimInProgress = false;
+        _attackLockTimer = 0f;
         _teleportLocked = true;
         _hasMoveTarget = false;
         _currentPlanarVelocity = Vector3.zero;

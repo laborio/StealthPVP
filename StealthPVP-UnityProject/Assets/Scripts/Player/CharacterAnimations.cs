@@ -16,6 +16,9 @@ public class CharacterAnimations : MonoBehaviour
     [SerializeField] private string sittingBoolName = "isSitting";
     [SerializeField] private string standToSitSpeedFloatName = "StandToSitSpeed";
     [SerializeField] private string teleportedBoolName = "isPorted";
+    [SerializeField, Tooltip("Trigger parameter for basic attacks.")] private string attackTriggerName = "Attack";
+    [SerializeField, Tooltip("Animator state tag used to detect active attack animations.")] private string attackStateTag = "Attack";
+    [SerializeField, Tooltip("Trigger parameter for taking a hit.")] private string hitTriggerName = "isHit";
 
     [Header("Animation Speeds")]
     [SerializeField] private float walkAnimationBaseSpeed = 1f;
@@ -33,9 +36,13 @@ public class CharacterAnimations : MonoBehaviour
     private int _sittingBoolHash;
     private int _standToSitSpeedHash;
     private int _teleportedBoolHash;
+    private int _attackTriggerHash;
+    private int _attackTagHash;
+    private int _hitTriggerHash;
 
     private void Awake()
     {
+        ResolveAnimator();
         CacheHashes();
     }
 
@@ -44,6 +51,7 @@ public class CharacterAnimations : MonoBehaviour
         walkAnimationBaseSpeed = Mathf.Max(0.01f, walkAnimationBaseSpeed);
         runAnimationBaseSpeed = Mathf.Max(0.01f, runAnimationBaseSpeed);
         jumpAnimationBaseSpeed = Mathf.Max(0.01f, jumpAnimationBaseSpeed);
+        ResolveAnimator();
         CacheHashes();
     }
 
@@ -131,6 +139,88 @@ public class CharacterAnimations : MonoBehaviour
         SetBool(_teleportedBoolHash, teleportedBoolName, isPorted);
     }
 
+    public void TriggerAttack(string overrideTrigger = null)
+    {
+        if (!animator)
+        {
+            return;
+        }
+
+        int hash = _attackTriggerHash;
+        if (!string.IsNullOrEmpty(overrideTrigger) && overrideTrigger != attackTriggerName)
+        {
+            hash = Animator.StringToHash(overrideTrigger);
+        }
+        else if (hash == 0 && !string.IsNullOrEmpty(attackTriggerName))
+        {
+            hash = _attackTriggerHash = Animator.StringToHash(attackTriggerName);
+        }
+
+        if (hash != 0)
+        {
+            animator.ResetTrigger(hash);
+            animator.SetTrigger(hash);
+        }
+        else if (!string.IsNullOrEmpty(attackTriggerName))
+        {
+            animator.ResetTrigger(attackTriggerName);
+            animator.SetTrigger(attackTriggerName);
+        }
+    }
+
+    public void TriggerHit(string overrideTrigger = null)
+    {
+        if (!animator)
+        {
+            return;
+        }
+
+        int hash = _hitTriggerHash;
+        if (!string.IsNullOrEmpty(overrideTrigger) && overrideTrigger != hitTriggerName)
+        {
+            hash = Animator.StringToHash(overrideTrigger);
+        }
+        else if (hash == 0 && !string.IsNullOrEmpty(hitTriggerName))
+        {
+            hash = _hitTriggerHash = Animator.StringToHash(hitTriggerName);
+        }
+
+        if (hash != 0)
+        {
+            animator.ResetTrigger(hash);
+            animator.SetTrigger(hash);
+            Debug.Log("HIT animator");
+        }
+        else if (!string.IsNullOrEmpty(hitTriggerName))
+        {
+            animator.ResetTrigger(hitTriggerName);
+            animator.SetTrigger(hitTriggerName);
+        }
+    }
+
+    public bool IsInAttackState(string overrideTag = null)
+    {
+        if (!animator)
+        {
+            return false;
+        }
+
+        string tag = string.IsNullOrEmpty(overrideTag) ? attackStateTag : overrideTag;
+        if (string.IsNullOrEmpty(tag))
+        {
+            return false;
+        }
+
+        int hash = string.IsNullOrEmpty(overrideTag) ? _attackTagHash : Animator.StringToHash(tag);
+        AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+        if (hash != 0 && state.tagHash == hash)
+        {
+            return true;
+        }
+
+        return state.IsTag(tag);
+    }
+
     private void UpdateRunParticles(bool shouldBeActive)
     {
         if (!runParticleSystem)
@@ -164,6 +254,22 @@ public class CharacterAnimations : MonoBehaviour
         _sittingBoolHash = HashOrZero(sittingBoolName);
         _standToSitSpeedHash = HashOrZero(standToSitSpeedFloatName);
         _teleportedBoolHash = HashOrZero(teleportedBoolName);
+        _attackTriggerHash = HashOrZero(attackTriggerName);
+        _attackTagHash = HashOrZero(attackStateTag);
+        _hitTriggerHash = HashOrZero(hitTriggerName);
+    }
+
+    private void ResolveAnimator()
+    {
+        if (!animator)
+        {
+            animator = GetComponent<Animator>();
+        }
+
+        if (!animator)
+        {
+            animator = GetComponentInChildren<Animator>();
+        }
     }
 
     private static int HashOrZero(string parameterName)
