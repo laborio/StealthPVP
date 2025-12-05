@@ -2000,10 +2000,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2122717960}
     m_Modifications:
-    - target: {fileID: 107514385873597078, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
-      propertyPath: playOnAwake
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 2149196381008729807, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
       propertyPath: m_LocalPosition.x
       value: 89.9
@@ -2044,10 +2040,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4079118791320287191, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 5601125754130475395, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
       propertyPath: m_Name
       value: Player
@@ -2061,8 +2053,16 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 621446320}
     - target: {fileID: 5776939949241814741, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
-      propertyPath: rigidbodyPushForce
-      value: 4
+      propertyPath: jumpVelocity
+      value: 19
+      objectReference: {fileID: 0}
+    - target: {fileID: 5776939949241814741, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
+      propertyPath: wallJumpUpVelocity
+      value: 22
+      objectReference: {fileID: 0}
+    - target: {fileID: 5776939949241814741, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
+      propertyPath: wallJumpHorizontalSpeed
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 8468907843254813444, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
       propertyPath: targetCamera
@@ -33008,8 +33008,9 @@ GameObject:
   m_Component:
   - component: {fileID: 7504293550682031433}
   - component: {fileID: 601876330357610830}
+  - component: {fileID: 7504293550682031434}
   m_Layer: 0
-  m_Name: Character_1
+  m_Name: Character_Mesh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -38378,6 +38379,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterAnimations
   animator: {fileID: 7977548934970672798}
+  vfxAnimator: {fileID: 7504293550682031434}
   walkingBoolName: isWalking
   idleBoolName: isIdle
   runningBoolName: isRunning
@@ -38393,6 +38395,7 @@ MonoBehaviour:
   runAnimationBaseSpeed: 1
   jumpAnimationBaseSpeed: 1
   runParticleSystem: {fileID: 6635746432785612418}
+  debugLogs: 0
 --- !u!1 &6381215179369492035
 GameObject:
   m_ObjectHideFlags: 0
@@ -43573,6 +43576,28 @@ Transform:
   - {fileID: 244030453}
   m_Father: {fileID: 6301024547874695297}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!95 &7504293550682031434
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4777098542818178255}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: d3cedb74868da464fa2a94bd6507621f, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!4 &7668253405278520365
 Transform:
   m_ObjectHideFlags: 0
@@ -43980,10 +44005,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RagdollController
   health: {fileID: 7977548934970672799}
   animator: {fileID: 7977548934970672798}
+  vfxAnimator: {fileID: 7504293550682031434}
   ragdollBodies: []
-  disableAnimatorOnRagdoll: 0
+  disableAnimatorOnRagdoll: 1
   initializeAsKinematic: 1
-  deathImpulseForce: 25
+  deathImpulseForce: 40
   impulseMask:
     serializedVersion: 2
     m_Bits: 4294967295

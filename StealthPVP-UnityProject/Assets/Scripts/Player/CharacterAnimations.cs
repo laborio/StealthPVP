@@ -8,6 +8,7 @@ public class CharacterAnimations : MonoBehaviour
 {
     [Header("Animator")]
     [SerializeField] private Animator animator;
+    [SerializeField, Tooltip("Animator that drives VFX-only animations. Optional; falls back to movement animator if not set.")] private Animator vfxAnimator;
     [SerializeField] private string walkingBoolName = "isWalking";
     [SerializeField] private string idleBoolName = "isIdle";
     [SerializeField] private string runningBoolName = "isRunning";
@@ -27,6 +28,8 @@ public class CharacterAnimations : MonoBehaviour
 
     [Header("Effects")]
     [SerializeField] private ParticleSystem runParticleSystem;
+    [Header("Debug")]
+    [SerializeField] private bool debugLogs = false;
 
     private int _walkingBoolHash;
     private int _idleBoolHash;
@@ -42,7 +45,7 @@ public class CharacterAnimations : MonoBehaviour
 
     private void Awake()
     {
-        ResolveAnimator();
+        ResolveAnimators();
         CacheHashes();
     }
 
@@ -51,7 +54,7 @@ public class CharacterAnimations : MonoBehaviour
         walkAnimationBaseSpeed = Mathf.Max(0.01f, walkAnimationBaseSpeed);
         runAnimationBaseSpeed = Mathf.Max(0.01f, runAnimationBaseSpeed);
         jumpAnimationBaseSpeed = Mathf.Max(0.01f, jumpAnimationBaseSpeed);
-        ResolveAnimator();
+        ResolveAnimators();
         CacheHashes();
     }
 
@@ -62,13 +65,13 @@ public class CharacterAnimations : MonoBehaviour
             return;
         }
 
-        SetBool(_walkingBoolHash, walkingBoolName, data.IsWalking);
-        SetBool(_runningBoolHash, runningBoolName, data.IsRunning);
-        SetBool(_jumpingBoolHash, jumpingBoolName, data.IsJumping);
-        SetBool(_fallingBoolHash, fallingBoolName, data.IsFalling);
+        SetBool(animator, _walkingBoolHash, walkingBoolName, data.IsWalking);
+        SetBool(animator, _runningBoolHash, runningBoolName, data.IsRunning);
+        SetBool(animator, _jumpingBoolHash, jumpingBoolName, data.IsJumping);
+        SetBool(animator, _fallingBoolHash, fallingBoolName, data.IsFalling);
 
         bool isIdle = !data.IsWalking && !data.IsRunning && !data.IsJumping && !data.IsFalling;
-        SetBool(_idleBoolHash, idleBoolName, isIdle);
+        SetBool(animator, _idleBoolHash, idleBoolName, isIdle);
 
         float animatorSpeed = 1f;
         if (data.IsRunning)
@@ -105,7 +108,7 @@ public class CharacterAnimations : MonoBehaviour
             return;
         }
 
-        SetBool(_sittingBoolHash, sittingBoolName, isSitting);
+        SetBool(animator, _sittingBoolHash, sittingBoolName, isSitting);
         if (!string.IsNullOrEmpty(standToSitSpeedFloatName))
         {
             if (_standToSitSpeedHash == 0)
@@ -124,87 +127,38 @@ public class CharacterAnimations : MonoBehaviour
             return;
         }
 
-        SetBool(_walkingBoolHash, walkingBoolName, false);
-        SetBool(_runningBoolHash, runningBoolName, false);
-        SetBool(_jumpingBoolHash, jumpingBoolName, false);
-        SetBool(_fallingBoolHash, fallingBoolName, false);
-        SetBool(_sittingBoolHash, sittingBoolName, false);
-        SetBool(_idleBoolHash, idleBoolName, true);
+        SetBool(animator, _walkingBoolHash, walkingBoolName, false);
+        SetBool(animator, _runningBoolHash, runningBoolName, false);
+        SetBool(animator, _jumpingBoolHash, jumpingBoolName, false);
+        SetBool(animator, _fallingBoolHash, fallingBoolName, false);
+        SetBool(animator, _sittingBoolHash, sittingBoolName, false);
+        SetBool(animator, _idleBoolHash, idleBoolName, true);
         SetTeleportedState(false);
         animator.speed = 1f;
     }
 
     public void SetTeleportedState(bool isPorted)
     {
-        SetBool(_teleportedBoolHash, teleportedBoolName, isPorted);
+        Animator targetAnimator = vfxAnimator ? vfxAnimator : animator;
+        SetBool(targetAnimator, _teleportedBoolHash, teleportedBoolName, isPorted);
     }
 
     public void TriggerAttack(string overrideTrigger = null)
     {
-        if (!animator)
-        {
-            return;
-        }
-
-        int hash = _attackTriggerHash;
-        if (!string.IsNullOrEmpty(overrideTrigger) && overrideTrigger != attackTriggerName)
-        {
-            hash = Animator.StringToHash(overrideTrigger);
-        }
-        else if (hash == 0 && !string.IsNullOrEmpty(attackTriggerName))
-        {
-            hash = _attackTriggerHash = Animator.StringToHash(attackTriggerName);
-        }
-
-        if (hash != 0)
-        {
-            animator.ResetTrigger(hash);
-            animator.SetTrigger(hash);
-        }
-        else if (!string.IsNullOrEmpty(attackTriggerName))
-        {
-            animator.ResetTrigger(attackTriggerName);
-            animator.SetTrigger(attackTriggerName);
-        }
+        string triggerName = string.IsNullOrEmpty(overrideTrigger) ? attackTriggerName : overrideTrigger;
+        int hash = HashOrZero(triggerName);
+        TriggerOnAnimators(triggerName, hash);
     }
 
     public void TriggerHit(string overrideTrigger = null)
     {
-        if (!animator)
-        {
-            return;
-        }
-
-        int hash = _hitTriggerHash;
-        if (!string.IsNullOrEmpty(overrideTrigger) && overrideTrigger != hitTriggerName)
-        {
-            hash = Animator.StringToHash(overrideTrigger);
-        }
-        else if (hash == 0 && !string.IsNullOrEmpty(hitTriggerName))
-        {
-            hash = _hitTriggerHash = Animator.StringToHash(hitTriggerName);
-        }
-
-        if (hash != 0)
-        {
-            animator.ResetTrigger(hash);
-            animator.SetTrigger(hash);
-            Debug.Log("HIT animator");
-        }
-        else if (!string.IsNullOrEmpty(hitTriggerName))
-        {
-            animator.ResetTrigger(hitTriggerName);
-            animator.SetTrigger(hitTriggerName);
-        }
+        string triggerName = string.IsNullOrEmpty(overrideTrigger) ? hitTriggerName : overrideTrigger;
+        int hash = HashOrZero(triggerName);
+        TriggerOnAnimators(triggerName, hash);
     }
 
     public bool IsInAttackState(string overrideTag = null)
     {
-        if (!animator)
-        {
-            return false;
-        }
-
         string tag = string.IsNullOrEmpty(overrideTag) ? attackStateTag : overrideTag;
         if (string.IsNullOrEmpty(tag))
         {
@@ -212,13 +166,17 @@ public class CharacterAnimations : MonoBehaviour
         }
 
         int hash = string.IsNullOrEmpty(overrideTag) ? _attackTagHash : Animator.StringToHash(tag);
-        AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
-        if (hash != 0 && state.tagHash == hash)
+        if (IsAnimatorInAttackState(animator, tag, hash))
         {
             return true;
         }
 
-        return state.IsTag(tag);
+        if (vfxAnimator && vfxAnimator != animator && IsAnimatorInAttackState(vfxAnimator, tag, hash))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private void UpdateRunParticles(bool shouldBeActive)
@@ -259,7 +217,7 @@ public class CharacterAnimations : MonoBehaviour
         _hitTriggerHash = HashOrZero(hitTriggerName);
     }
 
-    private void ResolveAnimator()
+    private void ResolveAnimators()
     {
         if (!animator)
         {
@@ -270,6 +228,32 @@ public class CharacterAnimations : MonoBehaviour
         {
             animator = GetComponentInChildren<Animator>();
         }
+
+        if (!vfxAnimator || vfxAnimator == animator)
+        {
+            vfxAnimator = FindVfxAnimator();
+        }
+    }
+
+    private Animator FindVfxAnimator()
+    {
+        Transform meshTransform = transform.Find("Character_Mesh");
+        if (meshTransform && meshTransform.TryGetComponent(out Animator meshAnimator) && meshAnimator != animator)
+        {
+            return meshAnimator;
+        }
+
+        Animator[] animators = GetComponentsInChildren<Animator>(true);
+        for (int i = 0; i < animators.Length; i++)
+        {
+            Animator candidate = animators[i];
+            if (candidate && candidate != animator)
+            {
+                return candidate;
+            }
+        }
+
+        return null;
     }
 
     private static int HashOrZero(string parameterName)
@@ -277,20 +261,109 @@ public class CharacterAnimations : MonoBehaviour
         return string.IsNullOrEmpty(parameterName) ? 0 : Animator.StringToHash(parameterName);
     }
 
-    private void SetBool(int hash, string parameterName, bool value)
+    private void TriggerOnAnimators(string parameterName, int hash)
+    {
+        TriggerAnimator(animator, parameterName, hash, allowMissing: true);
+        if (vfxAnimator && vfxAnimator != animator)
+        {
+            TriggerAnimator(vfxAnimator, parameterName, hash, allowMissing: false);
+        }
+    }
+
+    private void TriggerAnimator(Animator targetAnimator, string parameterName, int hash, bool allowMissing)
+    {
+        if (!targetAnimator || string.IsNullOrEmpty(parameterName))
+        {
+            return;
+        }
+
+        bool exists = ParameterExists(targetAnimator, hash, parameterName, AnimatorControllerParameterType.Trigger);
+        if (!exists && !allowMissing)
+        {
+            LogDebug($"Skipped trigger '{parameterName}' on {targetAnimator.name} (parameter missing)");
+            return;
+        }
+
+        if (!exists && allowMissing)
+        {
+            LogDebug($"Triggering '{parameterName}' on {targetAnimator.name} without parameter lookup (allowMissing)");
+        }
+
+        if (hash != 0)
+        {
+            targetAnimator.ResetTrigger(hash);
+            targetAnimator.SetTrigger(hash);
+        }
+        else
+        {
+            targetAnimator.ResetTrigger(parameterName);
+            targetAnimator.SetTrigger(parameterName);
+        }
+    }
+
+    private static bool ParameterExists(Animator animator, int hash, string name, AnimatorControllerParameterType type)
     {
         if (!animator)
+        {
+            return false;
+        }
+
+        AnimatorControllerParameter[] parameters = animator.parameters;
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            AnimatorControllerParameter param = parameters[i];
+            if (param.type != type)
+            {
+                continue;
+            }
+
+            if ((hash != 0 && param.nameHash == hash) || (!string.IsNullOrEmpty(name) && param.name == name))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsAnimatorInAttackState(Animator targetAnimator, string tag, int hash)
+    {
+        if (!targetAnimator)
+        {
+            return false;
+        }
+
+        AnimatorStateInfo state = targetAnimator.GetCurrentAnimatorStateInfo(0);
+        if (hash != 0 && state.tagHash == hash)
+        {
+            return true;
+        }
+
+        return state.IsTag(tag);
+    }
+
+    private void LogDebug(string message)
+    {
+        if (debugLogs)
+        {
+            Debug.Log($"[CharacterAnimations:{name}] {message}", this);
+        }
+    }
+
+    private static void SetBool(Animator targetAnimator, int hash, string parameterName, bool value)
+    {
+        if (!targetAnimator)
         {
             return;
         }
 
         if (hash != 0)
         {
-            animator.SetBool(hash, value);
+            targetAnimator.SetBool(hash, value);
         }
         else if (!string.IsNullOrEmpty(parameterName))
         {
-            animator.SetBool(parameterName, value);
+            targetAnimator.SetBool(parameterName, value);
         }
     }
 }

@@ -10,6 +10,7 @@ public class RagdollController : MonoBehaviour
 {
     [SerializeField, Tooltip("Character health that drives ragdoll activation. Defaults to a component on this object.")] private CharacterHealth health;
     [SerializeField, Tooltip("Animator to disable when ragdoll activates. Defaults to a child Animator.")] private Animator animator;
+    [SerializeField, Tooltip("Animator that should stay active for VFX while ragdolling. Optional.")] private Animator vfxAnimator;
     [SerializeField, Tooltip("Optional explicit list of rigidbodies to toggle. Leave empty to auto-collect from children.")] private List<Rigidbody> ragdollBodies = new List<Rigidbody>();
     [SerializeField, Tooltip("Whether to disable the animator when ragdolling. Uncheck if you need it left on.")] private bool disableAnimatorOnRagdoll = true;
     [SerializeField, Tooltip("Force kinematic on all ragdoll bodies at Awake.")] private bool initializeAsKinematic = true;
@@ -27,6 +28,8 @@ public class RagdollController : MonoBehaviour
     [SerializeField, Tooltip("Override shake magnitude on lethal; set < 0 to use CameraShake defaults.")] private float lethalShakeMagnitude = -1f;
     [SerializeField, Tooltip("Override shake duration on lethal; set < 0 to use CameraShake defaults.")] private float lethalShakeDuration = -1f;
     [SerializeField, Tooltip("Enable to print debug logs for ragdoll/camera shake events.")] private bool debugLogs = true;
+    [Header("Ragdoll Gravity")]
+    [SerializeField, Tooltip("Multiplier applied to Physics.gravity for ragdoll bodies. 1 = default physics gravity.")] private float ragdollGravityMultiplier = 1.5f;
 
     private bool _ragdollActive;
     private DamagePayload _lastDamage;
@@ -39,11 +42,7 @@ public class RagdollController : MonoBehaviour
             health = GetComponent<CharacterHealth>();
         }
 
-        if (!animator)
-        {
-            animator = GetComponentInChildren<Animator>();
-        }
-
+        ResolveAnimators();
         if (!characterAnimations)
         {
             characterAnimations = GetComponentInChildren<CharacterAnimations>();
@@ -120,6 +119,14 @@ public class RagdollController : MonoBehaviour
         PlayBloodVfx(payload);
     }
 
+    private void FixedUpdate()
+    {
+        if (_ragdollActive)
+        {
+            ApplyExtraGravity();
+        }
+    }
+
     /// <summary>
     /// Allows manual toggling if needed (true = ragdoll active).
     /// </summary>
@@ -127,9 +134,13 @@ public class RagdollController : MonoBehaviour
     {
         _ragdollActive = active;
 
-        if (animator && disableAnimatorOnRagdoll)
+        if (disableAnimatorOnRagdoll)
         {
-            animator.enabled = !active;
+            SetAnimatorEnabled(animator, !active);
+            if (active && vfxAnimator)
+            {
+                SetAnimatorEnabled(vfxAnimator, true);
+            }
         }
 
         if (active)
@@ -337,6 +348,7 @@ public class RagdollController : MonoBehaviour
     private void OnValidate()
     {
         ragdollPhysicsLayer = Mathf.Clamp(ragdollPhysicsLayer, -1, 31);
+        ragdollGravityMultiplier = Mathf.Max(0f, ragdollGravityMultiplier);
 
         if (lethalShakeMagnitude < 0f)
         {
@@ -380,5 +392,70 @@ public class RagdollController : MonoBehaviour
         }
 
         Debug.Log($"[RagdollController:{name}] {message}", this);
+    }
+
+    private void ResolveAnimators()
+    {
+        if (!animator)
+        {
+            animator = GetComponent<Animator>();
+        }
+
+        if (!animator)
+        {
+            animator = GetComponentInChildren<Animator>();
+        }
+
+        if (!vfxAnimator || vfxAnimator == animator)
+        {
+            vfxAnimator = FindSecondaryAnimator(animator);
+        }
+    }
+
+    private Animator FindSecondaryAnimator(Animator primary)
+    {
+        Transform meshTransform = transform.Find("Character_Mesh");
+        if (meshTransform && meshTransform.TryGetComponent(out Animator meshAnimator) && meshAnimator != primary)
+        {
+            return meshAnimator;
+        }
+
+        Animator[] animators = GetComponentsInChildren<Animator>(true);
+        for (int i = 0; i < animators.Length; i++)
+        {
+            Animator candidate = animators[i];
+            if (candidate && candidate != primary)
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private void ApplyExtraGravity()
+    {
+        if (ragdollGravityMultiplier <= 1f)
+        {
+            return;
+        }
+
+        Vector3 extraGravity = Physics.gravity * (ragdollGravityMultiplier - 1f);
+        for (int i = 0; i < ragdollBodies.Count; i++)
+        {
+            Rigidbody body = ragdollBodies[i];
+            if (body && !body.isKinematic)
+            {
+                body.AddForce(extraGravity, ForceMode.Acceleration);
+            }
+        }
+    }
+
+    private static void SetAnimatorEnabled(Animator target, bool enabled)
+    {
+        if (target)
+        {
+            target.enabled = enabled;
+        }
     }
 }

@@ -424,7 +424,7 @@ public partial class SimpleCharacterController : MonoBehaviour
 
     private void HandleAttackInput(PlayerInputSnapshot input, bool isGrounded)
     {
-        if (_seatingState != SeatingState.Standing || !isGrounded)
+        if (_seatingState != SeatingState.Standing)
         {
             CancelAttackCharge();
             return;
@@ -447,7 +447,15 @@ public partial class SimpleCharacterController : MonoBehaviour
 
         if (_attackChargeActive && input.PrimaryReleased)
         {
-            TriggerAttack(input);
+            if (isGrounded)
+            {
+                Debug.Log("ATCK");
+                TriggerAttack(input);
+            }
+            else
+            {
+                CancelAttackCharge();
+            }
         }
     }
 
