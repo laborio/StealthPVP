@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -28,12 +29,18 @@ public class RagdollController : MonoBehaviour
     [SerializeField, Tooltip("Override shake magnitude on lethal; set < 0 to use CameraShake defaults.")] private float lethalShakeMagnitude = -1f;
     [SerializeField, Tooltip("Override shake duration on lethal; set < 0 to use CameraShake defaults.")] private float lethalShakeDuration = -1f;
     [SerializeField, Tooltip("Enable to print debug logs for ragdoll/camera shake events.")] private bool debugLogs = true;
+    [Header("Ragdoll Cleanup")]
+    [SerializeField, Tooltip("When enabled, freezes ragdoll bodies shortly after activation and optionally destroys the root after a delay.")] private bool freezeAndCleanupOnRagdoll = false;
+    [SerializeField, Tooltip("Frames to wait after ragdoll activation before freezing.")] private int freezeAfterFrames = 3;
+    [SerializeField, Tooltip("Seconds to wait after freezing before destroying the GameObject. <= 0 disables auto-destroy.")] private float destroyDelayAfterFreeze = 5f;
+    [SerializeField, Tooltip("Trigger fired on the VFX animator when ragdoll is frozen. Leave empty to skip.")] private string npcDeadTriggerName = "NPCDead";
     [Header("Ragdoll Gravity")]
     [SerializeField, Tooltip("Multiplier applied to Physics.gravity for ragdoll bodies. 1 = default physics gravity.")] private float ragdollGravityMultiplier = 1.5f;
 
     private bool _ragdollActive;
     private DamagePayload _lastDamage;
     private bool _hasLastDamage;
+    private Coroutine _freezeRoutine;
 
     private void Awake()
     {
@@ -179,6 +186,20 @@ public class RagdollController : MonoBehaviour
         if (active && collidersToSetTrigger != null && collidersToSetTrigger.Count > 0)
         {
             ToggleCollidersTrigger(collidersToSetTrigger, true);
+        }
+
+        if (_ragdollActive && freezeAndCleanupOnRagdoll)
+        {
+            if (_freezeRoutine != null)
+            {
+                StopCoroutine(_freezeRoutine);
+            }
+            _freezeRoutine = StartCoroutine(FreezeAndCleanupRoutine());
+        }
+        else if (!_ragdollActive && _freezeRoutine != null)
+        {
+            StopCoroutine(_freezeRoutine);
+            _freezeRoutine = null;
         }
     }
 
@@ -348,6 +369,8 @@ public class RagdollController : MonoBehaviour
     private void OnValidate()
     {
         ragdollPhysicsLayer = Mathf.Clamp(ragdollPhysicsLayer, -1, 31);
+        freezeAfterFrames = Mathf.Max(0, freezeAfterFrames);
+        destroyDelayAfterFreeze = Mathf.Max(-1f, destroyDelayAfterFreeze);
         ragdollGravityMultiplier = Mathf.Max(0f, ragdollGravityMultiplier);
 
         if (lethalShakeMagnitude < 0f)
@@ -449,6 +472,104 @@ public class RagdollController : MonoBehaviour
                 body.AddForce(extraGravity, ForceMode.Acceleration);
             }
         }
+    }
+
+    private IEnumerator FreezeAndCleanupRoutine()
+    {
+        int frames = Mathf.Max(0, freezeAfterFrames);
+        for (int i = 0; i < frames; i++)
+        {
+            yield return new WaitForFixedUpdate();
+        }
+
+        FreezeRagdollBodies();
+
+        if (destroyDelayAfterFreeze > 0f)
+        {
+            yield return new WaitForSeconds(destroyDelayAfterFreeze);
+            Destroy(gameObject);
+        }
+
+        _freezeRoutine = null;
+    }
+
+    private void FreezeRagdollBodies()
+    {
+        for (int i = 0; i < ragdollBodies.Count; i++)
+        {
+            Rigidbody body = ragdollBodies[i];
+            if (!body)
+            {
+                continue;
+            }
+
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+            body.isKinematic = true;
+            body.useGravity = false;
+        }
+
+        if (ragdollColliders != null)
+        {
+            for (int i = 0; i < ragdollColliders.Count; i++)
+            {
+                Collider col = ragdollColliders[i];
+                if (col)
+                {
+                    col.enabled = false;
+                }
+            }
+        }
+
+        TriggerNpcDeadVfx();
+        LogDebug("Ragdoll bodies frozen for cleanup");
+    }
+
+    private void TriggerNpcDeadVfx()
+    {
+        if (string.IsNullOrEmpty(npcDeadTriggerName))
+        {
+            return;
+        }
+
+        Animator target = vfxAnimator ? vfxAnimator : animator;
+        if (!target)
+        {
+            return;
+        }
+
+        int hash = Animator.StringToHash(npcDeadTriggerName);
+        if (AnimatorHasTrigger(target, hash, npcDeadTriggerName))
+        {
+            target.ResetTrigger(hash);
+            target.SetTrigger(hash);
+            LogDebug($"Triggered VFX death trigger '{npcDeadTriggerName}'");
+        }
+    }
+
+    private static bool AnimatorHasTrigger(Animator animator, int hash, string name)
+    {
+        if (!animator)
+        {
+            return false;
+        }
+
+        AnimatorControllerParameter[] parameters = animator.parameters;
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            AnimatorControllerParameter param = parameters[i];
+            if (param.type != AnimatorControllerParameterType.Trigger)
+            {
+                continue;
+            }
+
+            if ((hash != 0 && param.nameHash == hash) || (!string.IsNullOrEmpty(name) && param.name == name))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void SetAnimatorEnabled(Animator target, bool enabled)

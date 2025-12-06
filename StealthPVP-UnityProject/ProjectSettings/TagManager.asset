@@ -13,6 +13,7 @@ TagManager:
   - BenchSitPoint
   - SpikeStrip
   - Teleporter
+  - PlayerDummy
   layers:
   - Default
   - TransparentFX

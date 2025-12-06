@@ -5807,7 +5807,7 @@ GameObject:
   - component: {fileID: 3551573431893224452}
   m_Layer: 0
   m_Name: PlayerDummy_Purple
-  m_TagString: Untagged
+  m_TagString: PlayerDummy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5942,7 +5942,7 @@ MonoBehaviour:
   ragdollBodies: []
   disableAnimatorOnRagdoll: 1
   initializeAsKinematic: 1
-  deathImpulseForce: 25
+  deathImpulseForce: 12
   impulseMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -5956,9 +5956,13 @@ MonoBehaviour:
   bloodVfx: {fileID: 6176224393807613766}
   characterAnimations: {fileID: 5985314486009331514}
   cameraShake: {fileID: 0}
-  lethalShakeMagnitude: 1
-  lethalShakeDuration: 0.08
+  lethalShakeMagnitude: 1.3
+  lethalShakeDuration: 0.2
   debugLogs: 0
+  freezeAndCleanupOnRagdoll: 0
+  freezeAfterFrames: 3
+  destroyDelayAfterFreeze: 5
+  npcDeadTriggerName: NPCDead
   ragdollGravityMultiplier: 1.8
 --- !u!1 &3867670483099182728
 GameObject:
