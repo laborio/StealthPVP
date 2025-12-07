@@ -43,6 +43,7 @@ GameObject:
   - component: {fileID: 5982006361488709029}
   - component: {fileID: 8677557589635226479}
   - component: {fileID: 5199556620386404045}
+  - component: {fileID: 10068374570061192}
   m_Layer: 8
   m_Name: Bench
   m_TagString: Untagged
@@ -143,6 +144,22 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -1926403951900781465, guid: 2bb7ef293862e4f9a893d9b5fbe6fdf7, type: 3}
+--- !u!208 &10068374570061192
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 792862752773519044}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 1
+  m_Extents: {x: 1, y: 0.342, z: 0.266}
+  m_MoveThreshold: 0.1
+  m_Carve: 1
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0.342, z: 0.016}
+  m_TimeToStationary: 0.5
 --- !u!1 &3485964672216342719
 GameObject:
   m_ObjectHideFlags: 0

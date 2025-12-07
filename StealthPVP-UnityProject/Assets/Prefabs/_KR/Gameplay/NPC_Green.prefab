@@ -21531,6 +21531,9 @@ GameObject:
   - component: {fileID: 2753014398543989827}
   - component: {fileID: 8219212262964137680}
   - component: {fileID: 23914508473876547}
+  - component: {fileID: 3306620444987402973}
+  - component: {fileID: 6138229842044069515}
+  - component: {fileID: 8481327206142215975}
   m_Layer: 0
   m_Name: NPC_Green
   m_TagString: NPC
@@ -21570,7 +21573,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: 41e4f636152bc4001ac42ea6a67e3f36, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
-  m_ApplyRootMotion: 1
+  m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
@@ -21681,6 +21684,7 @@ MonoBehaviour:
   ragdollPhysicsLayer: -1
   bloodVfx: {fileID: 5569322711858174030}
   characterAnimations: {fileID: 2753014398543989827}
+  navMeshAgent: {fileID: 0}
   cameraShake: {fileID: 0}
   lethalShakeMagnitude: 0
   lethalShakeDuration: 0
@@ -21690,6 +21694,64 @@ MonoBehaviour:
   destroyDelayAfterFreeze: 5
   npcDeadTriggerName: NPCDead
   ragdollGravityMultiplier: 1.8
+--- !u!195 &3306620444987402973
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8308234682327654559}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 2.5
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 360
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 2
+  m_BaseOffset: 0
+  m_WalkableMask: 1
+  m_ObstacleAvoidanceType: 4
+--- !u!114 &6138229842044069515
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8308234682327654559}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5f35b7618d644dcc8536b3f20e4ef96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NpcIdentity
+  identifierColor: {r: 0.1738163, g: 0.5849056, b: 0.34852925, a: 1}
+  targetIndicator: {fileID: 0}
+--- !u!114 &8481327206142215975
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8308234682327654559}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac56bf9bb78244e84873fd39fe09b102, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NpcNavAgent
+  agent: {fileID: 3306620444987402973}
+  wanderPoints: []
+  wanderRadius: 50
+  repathInterval: 0.25
+  idleTimeRange: {x: 0.5, y: 3}
+  stopOnDeath: 1
+  animator: {fileID: 0}
+  walkingBoolName: isWalking
+  idleBoolName: isIdle
+  moveSpeedThreshold: 0.1
 --- !u!1 &8553775122156935885
 GameObject:
   m_ObjectHideFlags: 0
