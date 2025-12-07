@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 /// <summary>
 /// Manages toggling ragdoll physics on death by flipping kinematic state on child rigidbodies.
@@ -24,6 +25,7 @@ public class RagdollController : MonoBehaviour
     [SerializeField, Tooltip("Optional layer to assign to ragdoll colliders on ragdoll activation. -1 leaves unchanged.")] private int ragdollPhysicsLayer = -1;
     [SerializeField, Tooltip("Blood VFX played at the hit point when damaged.")] private ParticleSystem bloodVfx;
     [SerializeField, Tooltip("Character animations to trigger hit reactions. Defaults to a child component.")] private CharacterAnimations characterAnimations;
+    [SerializeField, Tooltip("NavMeshAgent to disable when ragdolling. Optional.")] private NavMeshAgent navMeshAgent;
     [Header("Camera Shake")]
     [SerializeField, Tooltip("Camera shake to trigger on lethal damage. If empty, will search for one.")] private CameraShake cameraShake;
     [SerializeField, Tooltip("Override shake magnitude on lethal; set < 0 to use CameraShake defaults.")] private float lethalShakeMagnitude = -1f;
@@ -41,6 +43,7 @@ public class RagdollController : MonoBehaviour
     private DamagePayload _lastDamage;
     private bool _hasLastDamage;
     private Coroutine _freezeRoutine;
+    private bool _navAgentWasEnabled;
 
     private void Awake()
     {
@@ -50,6 +53,7 @@ public class RagdollController : MonoBehaviour
         }
 
         ResolveAnimators();
+        ResolveNavAgent();
         if (!characterAnimations)
         {
             characterAnimations = GetComponentInChildren<CharacterAnimations>();
@@ -153,6 +157,11 @@ public class RagdollController : MonoBehaviour
         if (active)
         {
             DisableRootColliders();
+        }
+
+        if (navMeshAgent)
+        {
+            SetNavAgentEnabled(!active);
         }
 
         for (int i = 0; i < ragdollBodies.Count; i++)
@@ -456,6 +465,24 @@ public class RagdollController : MonoBehaviour
         return null;
     }
 
+    private void ResolveNavAgent()
+    {
+        if (!navMeshAgent)
+        {
+            navMeshAgent = GetComponent<NavMeshAgent>();
+        }
+
+        if (!navMeshAgent)
+        {
+            navMeshAgent = GetComponentInChildren<NavMeshAgent>();
+        }
+
+        if (navMeshAgent)
+        {
+            _navAgentWasEnabled = navMeshAgent.enabled;
+        }
+    }
+
     private void ApplyExtraGravity()
     {
         if (ragdollGravityMultiplier <= 1f)
@@ -577,6 +604,33 @@ public class RagdollController : MonoBehaviour
         if (target)
         {
             target.enabled = enabled;
+        }
+    }
+
+    private void SetNavAgentEnabled(bool enabled)
+    {
+        if (!navMeshAgent)
+        {
+            return;
+        }
+
+        if (enabled)
+        {
+            navMeshAgent.enabled = true;
+            if (_navAgentWasEnabled)
+            {
+                navMeshAgent.isStopped = false;
+            }
+        }
+        else
+        {
+            _navAgentWasEnabled = navMeshAgent.enabled;
+            if (navMeshAgent.isOnNavMesh)
+            {
+                navMeshAgent.ResetPath();
+            }
+            navMeshAgent.isStopped = true;
+            navMeshAgent.enabled = false;
         }
     }
 }
