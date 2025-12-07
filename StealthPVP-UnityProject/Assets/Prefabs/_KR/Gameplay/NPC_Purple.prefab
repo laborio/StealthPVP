@@ -10896,7 +10896,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5f35b7618d644dcc8536b3f20e4ef96, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NpcIdentity
-  identifierColor: {r: 0.5254902, g: 0.23529412, b: 0.48235294, a: 1}
+  identifierColor: {r: 0.764151, g: 0.09732112, b: 0.66502726, a: 1}
   targetIndicator: {fileID: 0}
 --- !u!114 &-6521619335711553035
 MonoBehaviour:
@@ -10920,6 +10920,9 @@ MonoBehaviour:
   walkingBoolName: isWalking
   idleBoolName: isIdle
   moveSpeedThreshold: 0.1
+  moveStopSpeedThreshold: 0.05
+  stuckSpeedThreshold: 0.05
+  stuckTime: 1.5
 --- !u!1 &3867670483099182728
 GameObject:
   m_ObjectHideFlags: 0
