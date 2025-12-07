@@ -14,16 +14,29 @@ public class NpcGameDirector : MonoBehaviour
     [SerializeField, Tooltip("Number of decoys to spawn.")] private int decoyCount = 5;
     [SerializeField, Tooltip("Possible spawn points for all NPCs. If empty, uses this transform position.")] private List<Transform> spawnPoints = new List<Transform>();
     [SerializeField, Tooltip("UI image that shows the color of the current target.")] private Image targetImage;
+    [SerializeField, Tooltip("UI manager that handles target indicators. Optional.")] private NpcUiManager uiManager;
     [SerializeField, Tooltip("If true, spawn a fresh target prefab when the current target dies; otherwise pick from existing NPCs.")] private bool spawnNewTargetOnDeath = true;
     [SerializeField, Tooltip("Radius used to find a NavMesh position near spawn.")] private float navMeshSampleRadius = 5f;
+    [SerializeField, Tooltip("Enable debug logs for target assignment/spawning.")] private bool debugLogs = false;
 
     private readonly List<NpcIdentity> _activeNpcs = new List<NpcIdentity>();
     private NpcIdentity _currentTarget;
 
     private void Start()
     {
+        if (!uiManager)
+        {
+            uiManager = Object.FindFirstObjectByType<NpcUiManager>();
+        }
+
         SpawnInitialNpcs();
         AssignNewTarget();
+
+        if (!_currentTarget)
+        {
+            // Fallback: try to grab any existing NPC in the scene.
+            TrySetExistingSceneTarget();
+        }
     }
 
     private void OnDestroy()
@@ -33,6 +46,7 @@ public class NpcGameDirector : MonoBehaviour
             Unsubscribe(_activeNpcs[i]);
         }
         _activeNpcs.Clear();
+        uiManager?.ClearTarget();
     }
 
     private void SpawnInitialNpcs()
@@ -59,6 +73,7 @@ public class NpcGameDirector : MonoBehaviour
     {
         if (targetPrefabs == null || targetPrefabs.Count == 0)
         {
+            LogDebug("No target prefabs assigned; skipping target spawn.");
             return;
         }
 
@@ -257,17 +272,25 @@ public class NpcGameDirector : MonoBehaviour
         _currentTarget = identity;
         _currentTarget.SetTarget(true);
         UpdateTargetUi(_currentTarget.IdentifierColor);
+        if (uiManager)
+        {
+            uiManager.SetTarget(identity);
+        }
+
+        LogDebug($"Set target to {identity.name}");
     }
 
     private void UpdateTargetUi(Color color)
     {
-        if (!targetImage)
+        if (targetImage)
         {
-            return;
+            targetImage.color = color;
+            targetImage.enabled = true;
         }
-
-        targetImage.color = color;
-        targetImage.enabled = true;
+        else if (uiManager)
+        {
+            // uiManager handles enabling the indicator
+        }
     }
 
     private void ClearUi()
@@ -275,6 +298,36 @@ public class NpcGameDirector : MonoBehaviour
         if (targetImage)
         {
             targetImage.enabled = false;
+        }
+        uiManager?.ClearTarget();
+    }
+
+    private void TrySetExistingSceneTarget()
+    {
+        NpcIdentity[] identities = Object.FindObjectsByType<NpcIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        for (int i = 0; i < identities.Length; i++)
+        {
+            CharacterHealth health = identities[i].GetComponent<CharacterHealth>();
+            if (health && !health.IsDead)
+            {
+                if (!_activeNpcs.Contains(identities[i]))
+                {
+                    _activeNpcs.Add(identities[i]);
+                    Subscribe(identities[i]);
+                }
+                SetTarget(identities[i]);
+                return;
+            }
+        }
+
+        LogDebug("No existing scene NpcIdentity found to set as target.");
+    }
+
+    private void LogDebug(string message)
+    {
+        if (debugLogs)
+        {
+            Debug.Log($"[NpcGameDirector] {message}", this);
         }
     }
 }
