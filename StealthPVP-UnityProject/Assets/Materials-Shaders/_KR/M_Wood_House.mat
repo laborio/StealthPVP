@@ -183,6 +183,9 @@ Material:
     - _ZWrite: 1
     - _ZWriteControl: 0
     - _edge: 1
+    - _fog: 0
+    - _mask_edge_1: 0.3
+    - _mask_edge_2: 0.9
     - _rotation_test: 0
     - _step: 0.5
     - _z_mask_edge_1: 0.31

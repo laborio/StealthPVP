@@ -6386,6 +6386,7 @@ GameObject:
   - component: {fileID: 1358479111065527026}
   - component: {fileID: 5776939949241814741}
   - component: {fileID: 5931815322622634413}
+  - component: {fileID: 2925403330456065289}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -6546,14 +6547,14 @@ MonoBehaviour:
   attackGroundMask:
     serializedVersion: 2
     m_Bits: 264
-  attackLockMinDuration: 0.7
+  attackLockMinDuration: 0
   rigidbodyPushForce: 4
   dashSpeedMultiplier: 3
   dashDuration: 0.2
   dashCooldown: 1
   groundProbeRadius: 0.2
   groundProbeDistance: 0.2
-  wallJumpUpVelocity: 22
+  wallJumpUpVelocity: 24
   wallJumpHorizontalSpeed: 11
   wallContactLinger: 0.15
   wallJumpCooldown: 0
@@ -6580,6 +6581,25 @@ MonoBehaviour:
   destroyOnDeath: 0
   invulnerable: 0
   debugLogs: 0
+--- !u!114 &2925403330456065289
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601125754130475395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ac160cd4a4934e6ab2317bb431738a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VisionSource
+  baseRadius: 12
+  level1Radius: 20
+  level2Radius: 28
+  useHeightBasedLevels: 1
+  level1MinHeight: 15
+  level2MinHeight: 18
+  isOnHighGround: 1
 --- !u!1 &5631832183318855960
 GameObject:
   m_ObjectHideFlags: 0

@@ -10702,6 +10702,7 @@ GameObject:
   - component: {fileID: -793065168731190277}
   - component: {fileID: 1602980127866212216}
   - component: {fileID: 7512171911391900750}
+  - component: {fileID: 5717665253987252266}
   m_Layer: 0
   m_Name: NPC_Blue
   m_TagString: NPC
@@ -10769,7 +10770,7 @@ CharacterController:
   m_Enabled: 1
   serializedVersion: 3
   m_Height: 1.87
-  m_Radius: 0.4
+  m_Radius: 0.25
   m_SlopeLimit: 45
   m_StepOffset: 0.25
   m_SkinWidth: 0.08
@@ -10912,7 +10913,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NpcNavAgent
   agent: {fileID: 1602980127866212216}
   wanderPoints: []
-  wanderRadius: 50
+  wanderRadius: 75
   repathInterval: 0.25
   idleTimeRange: {x: 0.5, y: 3}
   stopOnDeath: 1
@@ -10923,6 +10924,22 @@ MonoBehaviour:
   moveStopSpeedThreshold: 0.05
   stuckSpeedThreshold: 0.05
   stuckTime: 1.5
+--- !u!114 &5717665253987252266
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3862951192762057215}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7547770540554a92ab06e56e90c5cd7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FogHidable
+  isAlly: 0
+  minimapColor: {r: 0.011764706, g: 0.16862746, b: 1, a: 1}
+  minimapSprite: {fileID: 0}
+  minimapIgnoreFog: 0
 --- !u!1 &3867670483099182728
 GameObject:
   m_ObjectHideFlags: 0
