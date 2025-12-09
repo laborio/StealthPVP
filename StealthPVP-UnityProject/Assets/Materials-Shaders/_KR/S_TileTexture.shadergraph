@@ -101,6 +101,9 @@
         },
         {
             "m_Id": "f42336455b134af79464f0f473b1ecec"
+        },
+        {
+            "m_Id": "4de2d073b73c4d9ba8c9d2c2fce554e7"
         }
     ],
     "m_Keywords": [],
@@ -2054,8 +2057,8 @@
     ],
     "m_VertexContext": {
         "m_Position": {
-            "x": 6116.00048828125,
-            "y": 760.5000610351563
+            "x": 7267.0,
+            "y": 714.0
         },
         "m_Blocks": [
             {
@@ -2071,8 +2074,8 @@
     },
     "m_FragmentContext": {
         "m_Position": {
-            "x": 6116.00048828125,
-            "y": 960.5001220703125
+            "x": 7267.0,
+            "y": 914.0
         },
         "m_Blocks": [
             {
@@ -5825,6 +5828,46 @@
 }
 
 {
+    "m_SGVersion": 1,
+    "m_Type": "UnityEditor.ShaderGraph.Internal.Vector1ShaderProperty",
+    "m_ObjectId": "4de2d073b73c4d9ba8c9d2c2fce554e7",
+    "m_Guid": {
+        "m_GuidSerialized": "f7331af5-ce98-4e5e-8bd4-de6f13540aaf"
+    },
+    "m_Name": "fog",
+    "m_DefaultRefNameVersion": 1,
+    "m_RefNameGeneratedByDisplayName": "fog",
+    "m_DefaultReferenceName": "_fog",
+    "m_OverrideReferenceName": "",
+    "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
+    "m_DismissedVersion": 0,
+    "m_Precision": 0,
+    "overrideHLSLDeclaration": false,
+    "hlslDeclarationOverride": 0,
+    "m_Hidden": false,
+    "m_PerRendererData": false,
+    "m_customAttributes": [],
+    "m_Value": 0.0,
+    "m_FloatType": 1,
+    "m_RangeValues": {
+        "x": 0.0,
+        "y": 1.0
+    },
+    "m_SliderType": 0,
+    "m_SliderPower": 3.0,
+    "m_EnumType": 0,
+    "m_CSharpEnumString": "",
+    "m_EnumNames": [
+        "Default"
+    ],
+    "m_EnumValues": [
+        0
+    ]
+}
+
+{
     "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.BlockNode",
     "m_ObjectId": "4e32cde9ef724e0bb17dddc805066637",
@@ -6359,8 +6402,8 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": 5989.00048828125,
-            "y": 985.5000610351563,
+            "x": 7067.0,
+            "y": 939.0000610351563,
             "width": 56.0,
             "height": 23.99993896484375
         }
@@ -6443,8 +6486,8 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": 5972.00048828125,
-            "y": 1241.5001220703125,
+            "x": 7123.0,
+            "y": 1195.0,
             "width": 208.0,
             "height": 125.0
         }
@@ -7370,9 +7413,9 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": 5993.00048828125,
-            "y": 1039.5001220703125,
-            "width": 56.00048828125,
+            "x": 7144.0,
+            "y": 993.0,
+            "width": 56.0,
             "height": 24.0
         }
     },
@@ -8517,7 +8560,7 @@
     "m_Title": "Base color tiling",
     "m_Position": {
         "x": -1096.0,
-        "y": -689.0
+        "y": -688.9999389648438
     }
 }
 
@@ -9183,7 +9226,7 @@
     "m_Title": "Top Face fake color lighting",
     "m_Position": {
         "x": 3126.0,
-        "y": -685.0
+        "y": -684.9998779296875
     }
 }
 
@@ -10992,7 +11035,11 @@
     "m_Type": "UnityEditor.ShaderGraph.CategoryData",
     "m_ObjectId": "b7ac31b9b42044368e9220f71e43d666",
     "m_Name": "",
-    "m_ChildObjectList": []
+    "m_ChildObjectList": [
+        {
+            "m_Id": "4de2d073b73c4d9ba8c9d2c2fce554e7"
+        }
+    ]
 }
 
 {
@@ -11002,7 +11049,7 @@
     "m_Title": "Height map UNUSED",
     "m_Position": {
         "x": 2998.0,
-        "y": 2201.0
+        "y": 2200.99951171875
     }
 }
 
@@ -11891,7 +11938,7 @@
     "m_ObjectId": "cad6790c5c724d9f9efa63e46fcb2375",
     "m_Title": "UV tiling for scalable meshes",
     "m_Position": {
-        "x": -1867.0,
+        "x": -1866.99951171875,
         "y": 232.0
     }
 }
