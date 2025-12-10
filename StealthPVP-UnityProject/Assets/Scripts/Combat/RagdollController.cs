@@ -26,6 +26,7 @@ public class RagdollController : MonoBehaviour
     [SerializeField, Tooltip("Blood VFX played at the hit point when damaged.")] private ParticleSystem bloodVfx;
     [SerializeField, Tooltip("Character animations to trigger hit reactions. Defaults to a child component.")] private CharacterAnimations characterAnimations;
     [SerializeField, Tooltip("NavMeshAgent to disable when ragdolling. Optional.")] private NavMeshAgent navMeshAgent;
+    [SerializeField, Tooltip("Behaviours (e.g., player input/movement scripts) to disable when ragdolling.")] private List<Behaviour> behavioursToDisable = new List<Behaviour>();
     [Header("Camera Shake")]
     [SerializeField, Tooltip("Camera shake to trigger on lethal damage. If empty, will search for one.")] private CameraShake cameraShake;
     [SerializeField, Tooltip("Override shake magnitude on lethal; set < 0 to use CameraShake defaults.")] private float lethalShakeMagnitude = -1f;
@@ -44,6 +45,7 @@ public class RagdollController : MonoBehaviour
     private bool _hasLastDamage;
     private Coroutine _freezeRoutine;
     private bool _navAgentWasEnabled;
+    private readonly Dictionary<Behaviour, bool> _behaviourStates = new Dictionary<Behaviour, bool>();
 
     private void Awake()
     {
@@ -164,6 +166,8 @@ public class RagdollController : MonoBehaviour
             SetNavAgentEnabled(!active);
         }
 
+        ToggleBehaviours(!active);
+
         for (int i = 0; i < ragdollBodies.Count; i++)
         {
             Rigidbody body = ragdollBodies[i];
@@ -194,11 +198,11 @@ public class RagdollController : MonoBehaviour
 
         if (active && collidersToSetTrigger != null && collidersToSetTrigger.Count > 0)
         {
-            ToggleCollidersTrigger(collidersToSetTrigger, true);
-        }
+        ToggleCollidersTrigger(collidersToSetTrigger, true);
+    }
 
-        if (_ragdollActive && freezeAndCleanupOnRagdoll)
-        {
+    if (_ragdollActive && freezeAndCleanupOnRagdoll)
+    {
             if (_freezeRoutine != null)
             {
                 StopCoroutine(_freezeRoutine);
@@ -604,6 +608,30 @@ public class RagdollController : MonoBehaviour
         if (target)
         {
             target.enabled = enabled;
+        }
+    }
+
+    private void ToggleBehaviours(bool enable)
+    {
+        if (behavioursToDisable == null || behavioursToDisable.Count == 0)
+        {
+            return;
+        }
+
+        for (int i = 0; i < behavioursToDisable.Count; i++)
+        {
+            Behaviour behaviour = behavioursToDisable[i];
+            if (!behaviour)
+            {
+                continue;
+            }
+
+            if (!_behaviourStates.ContainsKey(behaviour))
+            {
+                _behaviourStates.Add(behaviour, behaviour.enabled);
+            }
+
+            behaviour.enabled = enable && _behaviourStates[behaviour];
         }
     }
 
