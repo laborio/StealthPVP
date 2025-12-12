@@ -124,7 +124,7 @@ Material:
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Clip: 0.5
-    - _Color_Multiplier: 1
+    - _Color_Multiplier: 0.8
     - _Cull: 2
     - _Cutoff: 0.5
     - _Cutoff_Height: 21

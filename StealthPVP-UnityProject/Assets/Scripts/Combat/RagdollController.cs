@@ -160,6 +160,14 @@ public class RagdollController : MonoBehaviour
         {
             DisableRootColliders();
         }
+        else
+        {
+            EnableRootColliders();
+            if (collidersToSetTrigger != null && collidersToSetTrigger.Count > 0)
+            {
+                ToggleCollidersTrigger(collidersToSetTrigger, false);
+            }
+        }
 
         if (navMeshAgent)
         {
@@ -291,6 +299,24 @@ public class RagdollController : MonoBehaviour
             if (col)
             {
                 col.enabled = false;
+            }
+        }
+    }
+
+    private void EnableRootColliders()
+    {
+        if (collidersToDisable == null || collidersToDisable.Count == 0)
+        {
+            return;
+        }
+
+        for (int i = 0; i < collidersToDisable.Count; i++)
+        {
+            Collider col = collidersToDisable[i];
+            if (col)
+            {
+                col.enabled = true;
+                col.isTrigger = false;
             }
         }
     }

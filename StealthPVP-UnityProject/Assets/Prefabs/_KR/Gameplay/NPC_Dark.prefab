@@ -10699,12 +10699,12 @@ GameObject:
   - component: {fileID: 5985314486009331514}
   - component: {fileID: 8202753440923050041}
   - component: {fileID: 2466302345232800574}
-  - component: {fileID: -793065168731190277}
-  - component: {fileID: 1602980127866212216}
-  - component: {fileID: 7512171911391900750}
-  - component: {fileID: 5717665253987252266}
+  - component: {fileID: 1303794103584574667}
+  - component: {fileID: 1540793843003663605}
+  - component: {fileID: -6521619335711553035}
+  - component: {fileID: -3430034299404105299}
   m_Layer: 0
-  m_Name: NPC_Blue
+  m_Name: NPC_Dark
   m_TagString: NPC
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10864,21 +10864,7 @@ MonoBehaviour:
   destroyDelayAfterFreeze: 5
   npcDeadTriggerName: NPCDead
   ragdollGravityMultiplier: 1.8
---- !u!114 &-793065168731190277
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3862951192762057215}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5f35b7618d644dcc8536b3f20e4ef96, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NpcIdentity
-  identifierColor: {r: 0.0141509175, g: 0.16981117, b: 1, a: 1}
-  targetIndicator: {fileID: 0}
---- !u!195 &1602980127866212216
+--- !u!195 &1303794103584574667
 NavMeshAgent:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -10900,7 +10886,21 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 1
   m_ObstacleAvoidanceType: 4
---- !u!114 &7512171911391900750
+--- !u!114 &1540793843003663605
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3862951192762057215}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5f35b7618d644dcc8536b3f20e4ef96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NpcIdentity
+  identifierColor: {r: 0.13375808, g: 0.13056247, b: 0.16981131, a: 1}
+  targetIndicator: {fileID: 0}
+--- !u!114 &-6521619335711553035
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -10912,20 +10912,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac56bf9bb78244e84873fd39fe09b102, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NpcNavAgent
-  agent: {fileID: 1602980127866212216}
+  agent: {fileID: 1303794103584574667}
   wanderPoints: []
   wanderRadius: 75
   repathInterval: 0.25
   idleTimeRange: {x: 3, y: 10}
   stopOnDeath: 1
-  animator: {fileID: 0}
+  animator: {fileID: 5966920758261546895}
   walkingBoolName: isWalking
   idleBoolName: isIdle
   moveSpeedThreshold: 0.1
   moveStopSpeedThreshold: 0.05
   stuckSpeedThreshold: 0.05
   stuckTime: 1.5
---- !u!114 &5717665253987252266
+--- !u!114 &-3430034299404105299
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -10938,7 +10938,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FogHidable
   isAlly: 0
-  minimapColor: {r: 0.011764706, g: 0.16862746, b: 1, a: 1}
+  minimapColor: {r: 0.7647059, g: 0.09803922, b: 0.6666667, a: 1}
   minimapSprite: {fileID: 0}
   minimapIgnoreFog: 0
 --- !u!1 &3867670483099182728
@@ -16887,7 +16887,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 4
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 47c4d498ae4894a88b883c7f4cbe806e, type: 2}
+  - {fileID: 2100000, guid: 300f4fe95da8c48cdacbfe1800ab5f54, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

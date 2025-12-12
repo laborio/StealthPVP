@@ -17,15 +17,20 @@ public class NpcGameDirector : MonoBehaviour
     [SerializeField, Tooltip("UI manager that handles target indicators. Optional.")] private NpcUiManager uiManager;
     [SerializeField, Tooltip("If true, spawn a fresh target prefab when the current target dies; otherwise pick from existing NPCs.")] private bool spawnNewTargetOnDeath = true;
     [SerializeField, Tooltip("Radius used to find a NavMesh position near spawn.")] private float navMeshSampleRadius = 5f;
+    [SerializeField, Tooltip("Minimum distance between spawned NPCs when picking spawn points. Ignored if 0 or not enough points.")] private float minSpawnSeparation = 8f;
     [SerializeField, Tooltip("Enable debug logs for target assignment/spawning.")] private bool debugLogs = false;
     [Header("Triangle Targeting")]
-    [SerializeField, Tooltip("Enable triangle mode: player + 2 spawned targets each hunt one another.")] private bool useTriangleTargets = true;
+    [SerializeField, Tooltip("Enable triangle mode: player + 3 spawned targets each hunt one another in a loop.")] private bool useTriangleTargets = true;
     [SerializeField, Tooltip("Player controller participating in the triangle. Optional when triangle mode is off.")] private TriangleAgentController playerAgent;
+    [SerializeField, Tooltip("Optional extra player-controlled agents to include in the hunt loop.")] private List<TriangleAgentController> additionalPlayerAgents = new List<TriangleAgentController>();
+    [SerializeField, Tooltip("How many distinct NPC prefabs to spawn for the triangle hunt. Must not exceed unique target prefabs.")] private int triangleTargetCount = 3;
+    [Header("Difficulty")]
+    [Range(0f, 1f)] [SerializeField, Tooltip("0 = easiest, 1 = hardest. Applied to all triangle agents.")] private float aiDifficulty = 0.5f;
 
     private readonly List<NpcIdentity> _activeNpcs = new List<NpcIdentity>();
     private readonly List<TriangleAgentController> _triangleAgents = new List<TriangleAgentController>();
-    private TriangleAgentController _triangleTargetA;
-    private TriangleAgentController _triangleTargetB;
+    private readonly List<Vector3> _usedSpawnPositions = new List<Vector3>();
+    private readonly List<TriangleAgentController> _triangleTargets = new List<TriangleAgentController>();
     private NpcIdentity _currentTarget;
 
     private void Start()
@@ -34,6 +39,10 @@ public class NpcGameDirector : MonoBehaviour
         {
             uiManager = Object.FindFirstObjectByType<NpcUiManager>();
         }
+
+        _usedSpawnPositions.Clear();
+        RegisterPlayerAgents();
+        ApplyDifficultyToAgents();
 
         if (useTriangleTargets)
         {
@@ -115,8 +124,7 @@ public class NpcGameDirector : MonoBehaviour
 
     private void SpawnTriangleTargets()
     {
-        _triangleTargetA = null;
-        _triangleTargetB = null;
+        _triangleTargets.Clear();
 
         if (targetPrefabs == null || targetPrefabs.Count == 0)
         {
@@ -124,29 +132,47 @@ public class NpcGameDirector : MonoBehaviour
             return;
         }
 
-        List<GameObject> uniquePrefabs = new List<GameObject>(targetPrefabs);
-        uniquePrefabs.RemoveAll(p => p == null);
-
-        if (uniquePrefabs.Count < 2)
+        List<GameObject> validPrefabs = new List<GameObject>(targetPrefabs);
+        validPrefabs.RemoveAll(p => p == null);
+        if (validPrefabs.Count == 0)
         {
-            LogDebug("Triangle target spawn skipped: need at least 2 unique target prefabs.");
+            LogDebug("Triangle target spawn skipped: all target prefabs null.");
             return;
         }
 
-        int firstIndex = Random.Range(0, uniquePrefabs.Count);
-        GameObject firstPrefab = uniquePrefabs[firstIndex];
-        uniquePrefabs.RemoveAt(firstIndex);
+        // Enforce uniqueness of prefabs.
+        List<GameObject> uniquePrefabs = new List<GameObject>();
+        for (int i = 0; i < validPrefabs.Count; i++)
+        {
+            GameObject prefab = validPrefabs[i];
+            if (prefab && !uniquePrefabs.Contains(prefab))
+            {
+                uniquePrefabs.Add(prefab);
+            }
+        }
 
-        GameObject secondPrefab = uniquePrefabs[Random.Range(0, uniquePrefabs.Count)];
+        int desiredTargets = Mathf.Max(1, triangleTargetCount);
+        if (uniquePrefabs.Count < desiredTargets)
+        {
+            LogDebug($"Triangle target count reduced: requested {desiredTargets} unique targets but only found {uniquePrefabs.Count} unique prefabs.");
+            desiredTargets = uniquePrefabs.Count;
+        }
 
-        NpcIdentity first = SpawnNpc(firstPrefab);
-        NpcIdentity second = SpawnNpc(secondPrefab);
-        _triangleTargetA = GetTriangleAgent(first);
-        _triangleTargetB = GetTriangleAgent(second);
+        List<GameObject> pool = new List<GameObject>(uniquePrefabs);
+        for (int i = 0; i < desiredTargets && pool.Count > 0; i++)
+        {
+            int pickIndex = Random.Range(0, pool.Count);
+            GameObject prefab = pool[pickIndex];
+            pool.RemoveAt(pickIndex);
 
-        RegisterTriangleAgent(playerAgent);
-        RegisterTriangleAgent(_triangleTargetA);
-        RegisterTriangleAgent(_triangleTargetB);
+            NpcIdentity identity = SpawnNpc(prefab);
+            TriangleAgentController agent = GetTriangleAgent(identity);
+            RegisterTriangleAgent(agent);
+            if (agent)
+            {
+                _triangleTargets.Add(agent);
+            }
+        }
     }
 
     private NpcIdentity SpawnNpc(GameObject prefab)
@@ -156,12 +182,13 @@ public class NpcGameDirector : MonoBehaviour
             return null;
         }
 
-        Transform spawn = ResolveSpawnPoint();
+        Transform spawn = ResolveSpawnPointWithSeparation();
         Vector3 position = spawn ? spawn.position : transform.position;
         Quaternion rotation = spawn ? spawn.rotation : Quaternion.identity;
         GameObject instance = Instantiate(prefab, position, rotation);
 
         TrySnapToNavMesh(instance, navMeshSampleRadius);
+        _usedSpawnPositions.Add(instance.transform.position);
 
         NpcIdentity identity = instance.GetComponent<NpcIdentity>();
         if (!identity)
@@ -179,10 +206,48 @@ public class NpcGameDirector : MonoBehaviour
         return identity;
     }
 
-    private Transform ResolveSpawnPoint()
+    private Transform ResolveSpawnPointWithSeparation()
     {
         if (spawnPoints != null && spawnPoints.Count > 0)
         {
+            if (minSpawnSeparation <= 0f || _usedSpawnPositions.Count == 0 || spawnPoints.Count == 1)
+            {
+                return spawnPoints[Random.Range(0, spawnPoints.Count)];
+            }
+
+            List<Transform> candidates = new List<Transform>();
+            float minDistSqr = minSpawnSeparation * minSpawnSeparation;
+            for (int i = 0; i < spawnPoints.Count; i++)
+            {
+                Transform point = spawnPoints[i];
+                if (!point)
+                {
+                    continue;
+                }
+
+                bool farEnough = true;
+                Vector3 pos = point.position;
+                for (int j = 0; j < _usedSpawnPositions.Count; j++)
+                {
+                    if ((pos - _usedSpawnPositions[j]).sqrMagnitude < minDistSqr)
+                    {
+                        farEnough = false;
+                        break;
+                    }
+                }
+
+                if (farEnough)
+                {
+                    candidates.Add(point);
+                }
+            }
+
+            if (candidates.Count > 0)
+            {
+                return candidates[Random.Range(0, candidates.Count)];
+            }
+
+            // Fallback: no sufficiently separated spawn; pick any.
             return spawnPoints[Random.Range(0, spawnPoints.Count)];
         }
 
@@ -211,6 +276,56 @@ public class NpcGameDirector : MonoBehaviour
         {
             Debug.LogWarning($"NavMesh sample failed for '{instance.name}'. Ensure spawn point is on a baked NavMesh.");
         }
+    }
+
+    public Transform GetFurthestSpawnPoint(IReadOnlyList<Transform> avoidTransforms)
+    {
+        if (spawnPoints == null || spawnPoints.Count == 0)
+        {
+            return null;
+        }
+
+        Transform best = null;
+        float bestScore = float.MinValue;
+        for (int i = 0; i < spawnPoints.Count; i++)
+        {
+            Transform candidate = spawnPoints[i];
+            if (!candidate)
+            {
+                continue;
+            }
+
+            float closestSqr = float.MaxValue;
+            if (avoidTransforms != null && avoidTransforms.Count > 0)
+            {
+                for (int j = 0; j < avoidTransforms.Count; j++)
+                {
+                    Transform t = avoidTransforms[j];
+                    if (!t)
+                    {
+                        continue;
+                    }
+
+                    float sqr = (candidate.position - t.position).sqrMagnitude;
+                    if (sqr < closestSqr)
+                    {
+                        closestSqr = sqr;
+                    }
+                }
+            }
+            else
+            {
+                closestSqr = 0f;
+            }
+
+            if (closestSqr > bestScore)
+            {
+                bestScore = closestSqr;
+                best = candidate;
+            }
+        }
+
+        return best;
     }
 
     private void Subscribe(NpcIdentity identity)
@@ -249,7 +364,32 @@ public class NpcGameDirector : MonoBehaviour
         }
 
         dead.Died -= OnNpcDied;
-        NpcIdentity identity = dead.GetComponent<NpcIdentity>();
+        // Death can fire from a CharacterHealth on a different GameObject than the NpcIdentity (e.g., player identity on a child).
+        NpcIdentity identity = dead.GetComponent<NpcIdentity>() ?? dead.GetComponentInChildren<NpcIdentity>(true) ?? dead.GetComponentInParent<NpcIdentity>();
+
+        if (useTriangleTargets)
+        {
+            // Player has no NpcIdentity; locate triangle agent directly from the dead health hierarchy.
+            TriangleAgentController triangleAgent = (identity ? GetTriangleAgent(identity) : null) ??
+                                                   dead.GetComponent<TriangleAgentController>() ??
+                                                   dead.GetComponentInChildren<TriangleAgentController>(true) ??
+                                                   dead.GetComponentInParent<TriangleAgentController>();
+
+            if (triangleAgent && _triangleAgents.Contains(triangleAgent))
+            {
+                HandleTriangleAgentDeath(triangleAgent);
+            }
+
+            UpdatePlayerUiTarget();
+
+            if (identity)
+            {
+                identity.SetTarget(false);
+                _activeNpcs.Remove(identity);
+            }
+            return;
+        }
+
         if (!identity)
         {
             return;
@@ -257,18 +397,6 @@ public class NpcGameDirector : MonoBehaviour
 
         identity.SetTarget(false);
         _activeNpcs.Remove(identity);
-
-        TriangleAgentController triangleAgent = GetTriangleAgent(identity);
-        if (useTriangleTargets)
-        {
-            if (triangleAgent && _triangleAgents.Contains(triangleAgent))
-            {
-                HandleTriangleAgentDeath(triangleAgent);
-            }
-
-            UpdatePlayerUiTarget();
-            return;
-        }
 
         if (_currentTarget == identity)
         {
@@ -416,7 +544,9 @@ public class NpcGameDirector : MonoBehaviour
             return null;
         }
 
-        return identity.GetComponent<TriangleAgentController>() ?? identity.GetComponentInChildren<TriangleAgentController>(true);
+        return identity.GetComponent<TriangleAgentController>() ??
+               identity.GetComponentInChildren<TriangleAgentController>(true) ??
+               identity.GetComponentInParent<TriangleAgentController>();
     }
 
     private void RegisterTriangleAgent(TriangleAgentController agent)
@@ -429,6 +559,97 @@ public class NpcGameDirector : MonoBehaviour
         _triangleAgents.Add(agent);
         CharacterHealth health = agent.GetComponent<CharacterHealth>() ?? agent.GetComponentInChildren<CharacterHealth>(true);
         SubscribeHealth(health);
+        agent.ApplyDifficulty(aiDifficulty);
+    }
+
+    public void RegisterRespawnedAgent(TriangleAgentController agent)
+    {
+        if (!agent)
+        {
+            return;
+        }
+
+        RegisterTriangleAgent(agent);
+        NpcIdentity identity = agent.GetComponent<NpcIdentity>() ?? agent.GetComponentInChildren<NpcIdentity>(true);
+        if (identity && !_activeNpcs.Contains(identity))
+        {
+            _activeNpcs.Add(identity);
+            Subscribe(identity);
+        }
+
+        SetupTriangleMapping();
+        agent.ApplyDifficulty(aiDifficulty);
+    }
+
+    private void RegisterPlayerAgents()
+    {
+        RegisterTriangleAgent(playerAgent);
+        if (additionalPlayerAgents == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < additionalPlayerAgents.Count; i++)
+        {
+            RegisterTriangleAgent(additionalPlayerAgents[i]);
+        }
+    }
+
+    private void ApplyDifficultyToAgents()
+    {
+        for (int i = 0; i < _triangleAgents.Count; i++)
+        {
+            _triangleAgents[i]?.ApplyDifficulty(aiDifficulty);
+        }
+    }
+
+    private List<TriangleAgentController> GetAliveTriangleAgents()
+    {
+        List<TriangleAgentController> alive = new List<TriangleAgentController>();
+        for (int i = 0; i < _triangleAgents.Count; i++)
+        {
+            TriangleAgentController agent = _triangleAgents[i];
+            if (agent && !agent.IsDead && !alive.Contains(agent))
+            {
+                alive.Add(agent);
+            }
+        }
+
+        return alive;
+    }
+
+    private void ConfigureHuntLoop(List<TriangleAgentController> agents)
+    {
+        if (agents == null || agents.Count == 0)
+        {
+            _currentTarget = null;
+            ClearUi();
+            return;
+        }
+
+        if (agents.Count == 1)
+        {
+            TriangleAgentController solo = agents[0];
+            solo.ResetForNewTarget(null);
+            if (solo == playerAgent)
+            {
+                _currentTarget = null;
+                ClearUi();
+            }
+            return;
+        }
+
+        int count = agents.Count;
+        for (int i = 0; i < count; i++)
+        {
+            TriangleAgentController agent = agents[i];
+            TriangleAgentController target = agents[(i + 1) % count];
+            TriangleAgentController hunter = agents[(i - 1 + count) % count];
+            agent.ResetForNewTarget(target, hunter);
+        }
+
+        UpdatePlayerUiTarget();
+        LogDebug($"Triangle hunt loop configured for {count} agents.");
     }
 
     private void SetupTriangleMapping()
@@ -438,18 +659,14 @@ public class NpcGameDirector : MonoBehaviour
             return;
         }
 
-        if (!playerAgent || !_triangleTargetA || !_triangleTargetB)
+        List<TriangleAgentController> alive = GetAliveTriangleAgents();
+        if (alive.Count < 2)
         {
-            LogDebug("Triangle mapping skipped; missing player or target agents.");
+            LogDebug("Triangle mapping skipped; need at least 2 agents alive.");
             return;
         }
 
-        playerAgent.ResetForNewTarget(_triangleTargetA, _triangleTargetB);
-        _triangleTargetA.ResetForNewTarget(_triangleTargetB, playerAgent);
-        _triangleTargetB.ResetForNewTarget(playerAgent, _triangleTargetA);
-        UpdatePlayerUiTarget();
-
-        LogDebug("Triangle mapping created: Player -> A -> B -> Player.");
+        ConfigureHuntLoop(alive);
     }
 
     private void HandleTriangleAgentDeath(TriangleAgentController deadAgent)
@@ -460,59 +677,21 @@ public class NpcGameDirector : MonoBehaviour
         }
 
         _triangleAgents.Remove(deadAgent);
-        if (deadAgent == _triangleTargetA)
-        {
-            _triangleTargetA = null;
-        }
-        if (deadAgent == _triangleTargetB)
-        {
-            _triangleTargetB = null;
-        }
+        _triangleTargets.Remove(deadAgent);
         if (deadAgent == playerAgent)
         {
             playerAgent = null;
         }
 
-        List<TriangleAgentController> alive = new List<TriangleAgentController>();
-        if (playerAgent && !playerAgent.IsDead)
-        {
-            alive.Add(playerAgent);
-        }
-        if (_triangleTargetA && !_triangleTargetA.IsDead)
-        {
-            alive.Add(_triangleTargetA);
-        }
-        if (_triangleTargetB && !_triangleTargetB.IsDead)
-        {
-            alive.Add(_triangleTargetB);
-        }
-
-        if (alive.Count == 3)
-        {
-            SetupTriangleMapping();
-            return;
-        }
-
-        if (alive.Count == 2)
-        {
-            TriangleAgentController first = alive[0];
-            TriangleAgentController second = alive[1];
-            first.ResetForNewTarget(second);
-            second.ResetForNewTarget(first);
-            UpdatePlayerUiTarget();
-            LogDebug("Triangle agent died -> remaining two now hunt each other.");
-            return;
-        }
-
+        List<TriangleAgentController> alive = GetAliveTriangleAgents();
+        ConfigureHuntLoop(alive);
         if (alive.Count == 1)
         {
-            alive[0].ResetForNewTarget(null);
-            if (alive[0] == playerAgent)
-            {
-                _currentTarget = null;
-                ClearUi();
-            }
             LogDebug("Only one triangle agent remains; clearing target.");
+        }
+        else
+        {
+            LogDebug($"Triangle agent died -> remapped hunt loop for {alive.Count} agents.");
         }
     }
 

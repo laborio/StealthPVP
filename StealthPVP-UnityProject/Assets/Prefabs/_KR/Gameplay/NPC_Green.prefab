@@ -21686,6 +21686,7 @@ MonoBehaviour:
   bloodVfx: {fileID: 5569322711858174030}
   characterAnimations: {fileID: 2753014398543989827}
   navMeshAgent: {fileID: 0}
+  behavioursToDisable: []
   cameraShake: {fileID: 0}
   lethalShakeMagnitude: 0
   lethalShakeDuration: 0
@@ -21747,7 +21748,7 @@ MonoBehaviour:
   wanderPoints: []
   wanderRadius: 75
   repathInterval: 0.25
-  idleTimeRange: {x: 0.5, y: 3}
+  idleTimeRange: {x: 3, y: 10}
   stopOnDeath: 1
   animator: {fileID: 0}
   walkingBoolName: isWalking
