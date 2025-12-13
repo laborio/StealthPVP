@@ -14,7 +14,7 @@ public class NpcGameDirector : MonoBehaviour
     [SerializeField, Tooltip("Number of decoys to spawn.")] private int decoyCount = 5;
     [SerializeField, Tooltip("Possible spawn points for all NPCs. If empty, uses this transform position.")] private List<Transform> spawnPoints = new List<Transform>();
     [SerializeField, Tooltip("UI image that shows the color of the current target.")] private Image targetImage;
-    [SerializeField, Tooltip("UI manager that handles target indicators. Optional.")] private NpcUiManager uiManager;
+    [SerializeField, Tooltip("Player reveal indicator controller (world-space compass). Optional.")] private RevealIndicatorController playerRevealIndicator;
     [SerializeField, Tooltip("If true, spawn a fresh target prefab when the current target dies; otherwise pick from existing NPCs.")] private bool spawnNewTargetOnDeath = true;
     [SerializeField, Tooltip("Radius used to find a NavMesh position near spawn.")] private float navMeshSampleRadius = 5f;
     [SerializeField, Tooltip("Minimum distance between spawned NPCs when picking spawn points. Ignored if 0 or not enough points.")] private float minSpawnSeparation = 8f;
@@ -26,6 +26,10 @@ public class NpcGameDirector : MonoBehaviour
     [SerializeField, Tooltip("How many distinct NPC prefabs to spawn for the triangle hunt. Must not exceed unique target prefabs.")] private int triangleTargetCount = 3;
     [Header("Difficulty")]
     [Range(0f, 1f)] [SerializeField, Tooltip("0 = easiest, 1 = hardest. Applied to all triangle agents.")] private float aiDifficulty = 0.5f;
+    [Header("Reveal Base (shared for triangle agents)")]
+    [SerializeField] private float revealCooldownBase = 30f;
+    [SerializeField] private float revealHoldBase = 2f;
+    [SerializeField] private float revealFadeBase = 1f;
 
     private readonly List<NpcIdentity> _activeNpcs = new List<NpcIdentity>();
     private readonly List<TriangleAgentController> _triangleAgents = new List<TriangleAgentController>();
@@ -35,14 +39,23 @@ public class NpcGameDirector : MonoBehaviour
 
     private void Start()
     {
-        if (!uiManager)
-        {
-            uiManager = Object.FindFirstObjectByType<NpcUiManager>();
-        }
-
+        Debug.Log("[NpcGameDirector] Start called", this);
         _usedSpawnPositions.Clear();
         RegisterPlayerAgents();
         ApplyDifficultyToAgents();
+
+        if (!playerRevealIndicator)
+        {
+            playerRevealIndicator = Object.FindFirstObjectByType<RevealIndicatorController>();
+            if (playerRevealIndicator)
+            {
+                Debug.Log($"[NpcGameDirector] Found RevealIndicatorController in scene: {playerRevealIndicator.name}", this);
+            }
+            else
+            {
+                Debug.LogWarning("[NpcGameDirector] No RevealIndicatorController found in scene.", this);
+            }
+        }
 
         if (useTriangleTargets)
         {
@@ -83,7 +96,6 @@ public class NpcGameDirector : MonoBehaviour
             UnsubscribeHealth(health);
         }
         _triangleAgents.Clear();
-        uiManager?.ClearTarget();
     }
 
     private void SpawnInitialNpcs()
@@ -481,9 +493,15 @@ public class NpcGameDirector : MonoBehaviour
         _currentTarget = identity;
         _currentTarget.SetTarget(true);
         UpdateTargetUi(_currentTarget.IdentifierColor);
-        if (uiManager)
+
+        if (playerRevealIndicator)
         {
-            uiManager.SetTarget(identity);
+            Debug.Log($"[NpcGameDirector] Sending target to RevealIndicatorController: {_currentTarget.name}", this);
+            playerRevealIndicator.SetTarget(identity);
+        }
+        else
+        {
+            Debug.LogWarning("[NpcGameDirector] playerRevealIndicator is null when setting target.", this);
         }
 
         LogDebug($"Set target to {identity.name}");
@@ -496,9 +514,9 @@ public class NpcGameDirector : MonoBehaviour
             targetImage.color = color;
             targetImage.enabled = true;
         }
-        else if (uiManager)
+        else
         {
-            // uiManager handles enabling the indicator
+            Debug.LogWarning("[NpcGameDirector] targetImage not assigned; UI color not updated.", this);
         }
     }
 
@@ -508,7 +526,12 @@ public class NpcGameDirector : MonoBehaviour
         {
             targetImage.enabled = false;
         }
-        uiManager?.ClearTarget();
+
+        if (playerRevealIndicator)
+        {
+            Debug.Log("[NpcGameDirector] Clearing RevealIndicatorController target.", this);
+            playerRevealIndicator.ClearTarget();
+        }
     }
 
     private void TrySetExistingSceneTarget()
@@ -560,6 +583,22 @@ public class NpcGameDirector : MonoBehaviour
         CharacterHealth health = agent.GetComponent<CharacterHealth>() ?? agent.GetComponentInChildren<CharacterHealth>(true);
         SubscribeHealth(health);
         agent.ApplyDifficulty(aiDifficulty);
+        agent.SetRevealBase(revealCooldownBase, revealHoldBase, revealFadeBase);
+    }
+
+    public void SetRevealBase(float cooldown, float hold, float fade)
+    {
+        revealCooldownBase = cooldown;
+        revealHoldBase = hold;
+        revealFadeBase = fade;
+        for (int i = 0; i < _triangleAgents.Count; i++)
+        {
+            TriangleAgentController agent = _triangleAgents[i];
+            if (agent)
+            {
+                agent.SetRevealBase(cooldown, hold, fade);
+            }
+        }
     }
 
     public void RegisterRespawnedAgent(TriangleAgentController agent)
@@ -601,6 +640,12 @@ public class NpcGameDirector : MonoBehaviour
         {
             _triangleAgents[i]?.ApplyDifficulty(aiDifficulty);
         }
+    }
+
+    public void SetDifficulty(float value)
+    {
+        aiDifficulty = Mathf.Clamp01(value);
+        ApplyDifficultyToAgents();
     }
 
     private List<TriangleAgentController> GetAliveTriangleAgents()
@@ -734,7 +779,15 @@ public class NpcGameDirector : MonoBehaviour
         {
             _currentTarget.SetTarget(true);
             UpdateTargetUi(_currentTarget.IdentifierColor);
-            uiManager?.SetTarget(_currentTarget);
+            if (playerRevealIndicator)
+            {
+                Debug.Log($"[NpcGameDirector] UpdatePlayerUiTarget -> setting indicator target {_currentTarget.name}", this);
+                playerRevealIndicator.SetTarget(_currentTarget);
+            }
+            else
+            {
+                Debug.LogWarning("[NpcGameDirector] UpdatePlayerUiTarget -> playerRevealIndicator is null", this);
+            }
         }
         else
         {

@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 1042582064187603410}
   - component: {fileID: 913606069178349028}
   - component: {fileID: 7002170119158351879}
-  - component: {fileID: 2671989442048840365}
   m_Layer: 0
   m_Name: Teleporter_Blue
   m_TagString: Teleporter
@@ -123,22 +122,6 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   arrivalOffsetZ: -1
---- !u!114 &2671989442048840365
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3594544199909072551}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3ac160cd4a4934e6ab2317bb431738a9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::VisionSource
-  baseRadius: 4
-  highGroundRadius: 16
-  useHighGroundBonus: 0
-  isOnHighGround: 0
 --- !u!1001 &970325514550127042
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -5845,6 +5845,7 @@ GameObject:
   - component: {fileID: -49066601331264853}
   - component: {fileID: -9202026260665875430}
   - component: {fileID: 5036128873748252586}
+  - component: {fileID: 5685374085109674918}
   m_Layer: 0
   m_Name: PlayerDummy_Green
   m_TagString: PlayerDummy
@@ -6094,12 +6095,16 @@ MonoBehaviour:
   revealFullVisibilitySeconds: 2
   revealFadeSeconds: 1
   autoReveal: 1
+  revealConfirmDistance: 10
+  revealSuspicionRadius: 8
   targetRunBool: isRunning
   targetJumpBool: isJumping
   targetAttackTag: Attack
   decoyIdleRadius: 6
   abilityConfig: {fileID: 11400000, guid: 6dc990a5bbbf74c8d898192900ba6d19, type: 2}
+  revealAbility: {fileID: 5685374085109674918}
   revealAbilityId: Reveal
+  difficulty: 0.5
 --- !u!114 &-49066601331264853
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6154,6 +6159,23 @@ MonoBehaviour:
   level1MinHeight: 15
   level2MinHeight: 18
   isOnHighGround: 0
+--- !u!114 &5685374085109674918
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3862951192762057215}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22111044b5a224c139e17e1054b96a0c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityRunner
+  abilityConfig: {fileID: 0}
+  abilityId: Reveal
+  useInput: 0
+  isPlayer: 0
+  overrideKey: 0
 --- !u!1 &3867670483099182728
 GameObject:
   m_ObjectHideFlags: 0

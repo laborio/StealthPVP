@@ -56,10 +56,10 @@ public class TriangleAgentController : MonoBehaviour
     [SerializeField, Tooltip("Animator state tag used to detect attacks on the target.")] private string targetAttackTag = "Attack";
     [SerializeField, Tooltip("Radius to check for nearby decoys of the same color to justify idling while blending in. <=0 disables.")] private float decoyIdleRadius = 6f;
     [Header("Abilities")]
-    [SerializeField, Tooltip("Optional shared ability configuration. NPCs read their reveal tuning here.")] private AbilityConfig abilityConfig;
+    [SerializeField, Tooltip("Ability runner to drive reveal timings for this agent.")] private AbilityRunner revealAbility;
     [SerializeField, Tooltip("Ability id used for reveal.")] private string revealAbilityId = "Reveal";
     [Header("Difficulty")]
-    [Range(0f, 1f)] [SerializeField, Tooltip("0 = easiest, 1 = hardest. Applied globally via director.")] private float difficulty = 0.5f;
+    [HideInInspector] [Range(0f, 1f)] [SerializeField, Tooltip("0 = easiest, 1 = hardest. Applied globally via director.")] private float difficulty = 0.5f;
 
     public TriangleAgentController MyTarget => myTarget;
     public TriangleAgentController MyHunter => myHunter;
@@ -73,9 +73,6 @@ public class TriangleAgentController : MonoBehaviour
 
     private bool _attackTriggered;
     private float _fogLossTimer;
-    private float _revealHoldTimer;
-    private float _revealFadeTimer;
-    private float _revealCooldownTimer;
     private bool _hasLastKnownPosition;
     private bool _revealHasLockedPosition;
     private FogOfWarManager _fogManager;
@@ -110,9 +107,6 @@ public class TriangleAgentController : MonoBehaviour
         lastKnownPosition = Vector3.zero;
         _attackTriggered = false;
         _fogLossTimer = 0f;
-        _revealHoldTimer = 0f;
-        _revealFadeTimer = 0f;
-        _revealCooldownTimer = 0f;
         _hasLastKnownPosition = false;
         _revealHasLockedPosition = false;
     }
@@ -191,15 +185,21 @@ public class TriangleAgentController : MonoBehaviour
         }
 
         CacheBaseAbilityValues();
-        ApplyAbilityConfig();
+        if (!revealAbility)
+        {
+            revealAbility = GetComponent<AbilityRunner>() ?? GetComponentInChildren<AbilityRunner>(true);
+        }
+        if (revealAbility)
+        {
+            revealAbility.ApplyOverrides(revealCooldownSeconds, revealFullVisibilitySeconds, revealFadeSeconds);
+        }
     }
 
     private void DriveBehaviour()
     {
         float deltaTime = Time.deltaTime;
-        UpdateRevealTimers(deltaTime);
-
         bool hasActiveNavAgent = navMeshAgent && navMeshAgent.enabled && navMeshAgent.isOnNavMesh;
+        UpdateRevealState(deltaTime);
 
         if (IsDead)
         {
@@ -323,38 +323,12 @@ public class TriangleAgentController : MonoBehaviour
         UpdateAnimatorState(moving, running, !moving && !attacking);
     }
 
-    private void UpdateRevealTimers(float deltaTime)
+    private void UpdateRevealState(float deltaTime)
     {
-        if (_revealCooldownTimer > 0f)
-        {
-            _revealCooldownTimer = Mathf.Max(0f, _revealCooldownTimer - deltaTime);
-        }
-
-        if (_revealHoldTimer > 0f)
-        {
-            _revealHoldTimer = Mathf.Max(0f, _revealHoldTimer - deltaTime);
-        }
-        else if (_revealFadeTimer > 0f)
-        {
-            _revealFadeTimer = Mathf.Max(0f, _revealFadeTimer - deltaTime);
-        }
-        else
+        if (revealAbility && !revealAbility.IsActive)
         {
             _revealHasLockedPosition = false;
         }
-    }
-
-    private void TriggerReveal()
-    {
-        _revealHoldTimer = revealFullVisibilitySeconds;
-        _revealFadeTimer = revealFadeSeconds;
-        _revealCooldownTimer = revealCooldownSeconds;
-        _revealHasLockedPosition = false;
-    }
-
-    private bool IsRevealActive()
-    {
-        return _revealHoldTimer > 0f || _revealFadeTimer > 0f;
     }
 
     private bool UpdatePerception(TriangleAgentController target, float deltaTime)
@@ -367,11 +341,11 @@ public class TriangleAgentController : MonoBehaviour
         }
 
         bool visible = IsTargetVisible(target);
-        bool revealActive = IsRevealActive();
+        bool revealActive = revealAbility && revealAbility.IsActive;
 
-        if (!visible && !revealActive && autoReveal && _revealCooldownTimer <= 0f && _fogLossTimer >= fogMemoryDuration)
+        if (!visible && !revealActive && autoReveal && revealAbility && !revealAbility.IsCoolingDown && _fogLossTimer >= fogMemoryDuration)
         {
-            TriggerReveal();
+            revealAbility.Trigger();
             revealActive = true;
         }
 
@@ -573,22 +547,6 @@ public class TriangleAgentController : MonoBehaviour
         return state.IsTag(tag);
     }
 
-    private void ApplyAbilityConfig()
-    {
-        if (!abilityConfig)
-        {
-            return;
-        }
-
-        AbilityDefinition def = abilityConfig.GetAbility(revealAbilityId, isPlayer: false);
-        if (def != null)
-        {
-            revealCooldownSeconds = def.CooldownSeconds;
-            revealFullVisibilitySeconds = def.FullDurationSeconds;
-            revealFadeSeconds = def.FadeDurationSeconds;
-        }
-    }
-
     private void CacheBaseAbilityValues()
     {
         _baseFogMemoryDuration = fogMemoryDuration;
@@ -610,6 +568,25 @@ public class TriangleAgentController : MonoBehaviour
         revealConfirmDistance = Mathf.Lerp(_baseRevealConfirm * 0.6f, _baseRevealConfirm * 1.2f, difficulty);
         revealSuspicionRadius = Mathf.Lerp(_baseRevealSuspicion * 0.5f, _baseRevealSuspicion * 1.3f, difficulty);
         autoReveal = difficulty > 0.35f;
+
+        if (revealAbility)
+        {
+            revealAbility.ApplyOverrides(revealCooldownSeconds, revealFullVisibilitySeconds, revealFadeSeconds);
+        }
+    }
+
+    public void SetRevealBase(float cooldown, float hold, float fade)
+    {
+        revealCooldownSeconds = cooldown;
+        revealFullVisibilitySeconds = hold;
+        revealFadeSeconds = fade;
+        _baseRevealCooldown = cooldown;
+        _baseRevealHold = hold;
+        _baseRevealFade = fade;
+        if (revealAbility)
+        {
+            revealAbility.ApplyOverrides(cooldown, hold, fade);
+        }
     }
 
     private bool ShouldIdleInBlendIn()

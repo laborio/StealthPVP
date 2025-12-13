@@ -6088,6 +6088,7 @@ GameObject:
   - component: {fileID: 6674100514243477572}
   - component: {fileID: 5977583201912370383}
   - component: {fileID: -787714269412200852}
+  - component: {fileID: -8593203682676541231}
   m_Layer: 0
   m_Name: PlayerDummy_Blue
   m_TagString: PlayerDummy
@@ -6343,7 +6344,7 @@ MonoBehaviour:
   targetJumpBool: isJumping
   targetAttackTag: Attack
   decoyIdleRadius: 6
-  abilityConfig: {fileID: 11400000, guid: 6dc990a5bbbf74c8d898192900ba6d19, type: 2}
+  revealAbility: {fileID: -8593203682676541231}
   revealAbilityId: Reveal
   difficulty: 0.5
 --- !u!114 &6674100514243477572
@@ -6400,6 +6401,22 @@ MonoBehaviour:
   level1MinHeight: 15
   level2MinHeight: 18
   isOnHighGround: 0
+--- !u!114 &-8593203682676541231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3862951192762057215}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22111044b5a224c139e17e1054b96a0c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AbilityRunner
+  abilityId: Reveal
+  useInput: 0
+  isPlayer: 0
+  overrideKey: 0
 --- !u!1 &3867670483099182728
 GameObject:
   m_ObjectHideFlags: 0
@@ -12876,8 +12893,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8945044522417601190}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.01123725, y: -0.9886989, z: -0.09990651, w: -0.11120651}
-  m_LocalPosition: {x: 21.273283, y: 0.605069, z: -12.343281}
+  m_LocalRotation: {x: -0.21812978, y: -0.36946848, z: 0.08966459, w: -0.8988174}
+  m_LocalPosition: {x: 5.082925, y: 0.73136824, z: 19.960567}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
