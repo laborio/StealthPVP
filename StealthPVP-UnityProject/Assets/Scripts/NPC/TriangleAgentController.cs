@@ -15,7 +15,8 @@ public class TriangleAgentController : MonoBehaviour
         Investigate,
         Hunt,
         SearchLastKnown,
-        KillAttempt
+        KillAttempt,
+        Escape
     }
 
     [Header("Targeting")]
@@ -55,6 +56,16 @@ public class TriangleAgentController : MonoBehaviour
     [SerializeField, Tooltip("Animator bool name used to detect jumping on the target.")] private string targetJumpBool = "isJumping";
     [SerializeField, Tooltip("Animator state tag used to detect attacks on the target.")] private string targetAttackTag = "Attack";
     [SerializeField, Tooltip("Radius to check for nearby decoys of the same color to justify idling while blending in. <=0 disables.")] private float decoyIdleRadius = 6f;
+    [Header("Combat Behaviour")]
+    [SerializeField, Tooltip("Seconds between attack triggers while in range.")] private float attackRepeatCooldown = 1.1f;
+    [SerializeField, Tooltip("Seconds to treat an attack as active for animator gating.")] private float attackAnimHoldSeconds = 0.6f;
+    [SerializeField, Tooltip("Degrees per second to rotate toward the target when attacking.")] private float attackFacingSpeed = 720f;
+    [SerializeField, Tooltip("Seconds spent sprinting away after killing the target.")] private float postKillEscapeDuration = 1.5f;
+    [SerializeField, Tooltip("Distance to try to create from the kill spot while escaping.")] private float postKillEscapeDistance = 12f;
+    [SerializeField, Tooltip("Seconds to ignore new hunt orders after killing a target.")] private float postKillCooldownSeconds = 2.5f;
+    [SerializeField, Tooltip("Speed considered stuck while chasing (repath if slower).")] private float chaseStuckSpeedThreshold = 0.1f;
+    [SerializeField, Tooltip("Seconds of low chase speed before forcing a repath.")] private float chaseStuckTime = 1f;
+    [SerializeField, Tooltip("Seconds to linger at the last known position before giving up.")] private float searchHangTime = 1.5f;
     [Header("Abilities")]
     [SerializeField, Tooltip("Ability runner to drive reveal timings for this agent.")] private AbilityRunner revealAbility;
     [SerializeField, Tooltip("Ability id used for reveal.")] private string revealAbilityId = "Reveal";
@@ -72,9 +83,17 @@ public class TriangleAgentController : MonoBehaviour
     public NavMeshAgent NavAgent => navMeshAgent;
 
     private bool _attackTriggered;
+    private float _attackCooldownTimer;
+    private float _attackHoldTimer;
     private float _fogLossTimer;
     private bool _hasLastKnownPosition;
     private bool _revealHasLockedPosition;
+    private float _postKillCooldownTimer;
+    private float _escapeTimer;
+    private Vector3 _escapeDestination;
+    private float _chaseStuckTimer;
+    private float _searchHangTimer;
+    private CharacterHealth _targetHealth;
     private FogOfWarManager _fogManager;
     private float _baseFogMemoryDuration;
     private float _baseRevealCooldown;
@@ -98,17 +117,71 @@ public class TriangleAgentController : MonoBehaviour
         CacheRefs();
     }
 
+    private void OnDestroy()
+    {
+        UnsubscribeFromTarget();
+    }
+
+    private void UnsubscribeFromTarget()
+    {
+        if (_targetHealth)
+        {
+            _targetHealth.Died -= OnTargetDied;
+            _targetHealth = null;
+        }
+    }
+
     public void ResetForNewTarget(TriangleAgentController target, TriangleAgentController hunter = null)
     {
+        UnsubscribeFromTarget();
         myTarget = target;
         myHunter = hunter;
         currentState = target ? AgentState.Investigate : AgentState.BlendIn;
         knownTarget = null;
         lastKnownPosition = Vector3.zero;
         _attackTriggered = false;
+        _attackCooldownTimer = 0f;
+        _attackHoldTimer = 0f;
         _fogLossTimer = 0f;
         _hasLastKnownPosition = false;
         _revealHasLockedPosition = false;
+        _chaseStuckTimer = 0f;
+        _searchHangTimer = 0f;
+
+        if (target)
+        {
+            _targetHealth = target.characterHealth ?? target.GetComponent<CharacterHealth>() ?? target.GetComponentInChildren<CharacterHealth>(true);
+            if (_targetHealth)
+            {
+                _targetHealth.Died -= OnTargetDied;
+                _targetHealth.Died += OnTargetDied;
+            }
+        }
+    }
+
+    private void OnTargetDied(CharacterHealth dead)
+    {
+        if (!dead || dead != _targetHealth)
+        {
+            return;
+        }
+
+        _postKillCooldownTimer = Mathf.Max(_postKillCooldownTimer, postKillCooldownSeconds);
+        _escapeTimer = Mathf.Max(_escapeTimer, postKillEscapeDuration);
+        knownTarget = null;
+        myTarget = null;
+        myHunter = null;
+        _hasLastKnownPosition = false;
+        _revealHasLockedPosition = false;
+        _fogLossTimer = 0f;
+        UnsubscribeFromTarget();
+        _attackTriggered = false;
+        _attackHoldTimer = 0f;
+        _attackCooldownTimer = 0f;
+        currentState = AgentState.Escape;
+
+        _escapeDestination = FindEscapeDestination(dead.transform.position);
+        BeginEscapeRun();
     }
 
     public void SetKnownTarget(TriangleAgentController target)
@@ -200,6 +273,7 @@ public class TriangleAgentController : MonoBehaviour
         float deltaTime = Time.deltaTime;
         bool hasActiveNavAgent = navMeshAgent && navMeshAgent.enabled && navMeshAgent.isOnNavMesh;
         UpdateRevealState(deltaTime);
+        UpdateAttackTimers(deltaTime);
 
         if (IsDead)
         {
@@ -211,6 +285,11 @@ public class TriangleAgentController : MonoBehaviour
 
             ToggleWander(true);
             UpdateAnimatorState(false, false, true);
+            return;
+        }
+
+        if (HandlePostKillState(deltaTime, hasActiveNavAgent))
+        {
             return;
         }
 
@@ -259,19 +338,16 @@ public class TriangleAgentController : MonoBehaviour
         Vector3 targetPos = hasKnownPosition ? lastKnownPosition : target.transform.position;
 
         float desiredSpeed = walkSpeed;
-        if (currentState != AgentState.KillAttempt)
-        {
-            _attackTriggered = false;
-        }
 
         float sqrDistance = (targetPos - transform.position).sqrMagnitude;
-        bool canKill = hasKnowledge && sqrDistance <= killRange * killRange;
+        float effectiveKillRange = killRange + (navMeshAgent ? navMeshAgent.stoppingDistance : 0f) + 0.15f;
+        bool canKill = hasKnowledge && sqrDistance <= effectiveKillRange * effectiveKillRange;
 
         if (canKill)
         {
             currentState = AgentState.KillAttempt;
         }
-        else if (hasKnownPosition && (currentState == AgentState.BlendIn || currentState == AgentState.SearchLastKnown || currentState == AgentState.KillAttempt))
+        else if (hasKnownPosition && (currentState == AgentState.BlendIn || currentState == AgentState.SearchLastKnown || currentState == AgentState.KillAttempt || currentState == AgentState.Investigate))
         {
             currentState = AgentState.Hunt;
         }
@@ -285,14 +361,18 @@ public class TriangleAgentController : MonoBehaviour
             case AgentState.Hunt:
                 desiredSpeed = walkSpeed * runMultiplier;
                 DriveChase(targetPos, desiredSpeed);
+                EnsureChaseProgress(targetPos, deltaTime);
                 break;
             case AgentState.Investigate:
                 desiredSpeed = walkSpeed;
                 DriveChase(targetPos, desiredSpeed);
+                EnsureChaseProgress(targetPos, deltaTime);
                 break;
             case AgentState.SearchLastKnown:
                 desiredSpeed = walkSpeed;
                 DriveChase(lastKnownPosition, desiredSpeed);
+                EnsureChaseProgress(lastKnownPosition, deltaTime);
+                HandleSearchHang(deltaTime);
                 break;
             case AgentState.BlendIn:
                 if (ShouldIdleInBlendIn())
@@ -306,19 +386,29 @@ public class TriangleAgentController : MonoBehaviour
 
                 navMeshAgent.speed = walkSpeed;
                 ToggleWander(true);
+                _searchHangTimer = 0f;
                 break;
             case AgentState.KillAttempt:
-                StopNav();
-                TryTriggerAttack();
+                HandleKillAttempt(targetPos, deltaTime);
+                desiredSpeed = walkSpeed * runMultiplier;
+                break;
+            case AgentState.Escape:
+                ToggleWander(true);
                 break;
             default:
                 break;
         }
 
+        if (currentState != AgentState.KillAttempt && _attackTriggered)
+        {
+            _attackTriggered = false;
+            _attackHoldTimer = 0f;
+        }
+
         bool moving = navMeshAgent && navMeshAgent.enabled && navMeshAgent.isOnNavMesh && !navMeshAgent.isStopped && navMeshAgent.velocity.sqrMagnitude > 0.0001f;
         // If the NavMeshAgent speed is above the walk speed, force running animation even if state desyncs.
         float navSpeedSetting = navMeshAgent ? navMeshAgent.speed : 0f;
-        bool running = currentState == AgentState.Hunt || navSpeedSetting > walkSpeed * 1.05f;
+        bool running = currentState == AgentState.Hunt || currentState == AgentState.Escape || navSpeedSetting > walkSpeed * 1.05f;
         bool attacking = currentState == AgentState.KillAttempt && _attackTriggered;
         UpdateAnimatorState(moving, running, !moving && !attacking);
     }
@@ -329,6 +419,186 @@ public class TriangleAgentController : MonoBehaviour
         {
             _revealHasLockedPosition = false;
         }
+    }
+
+    private void UpdateAttackTimers(float deltaTime)
+    {
+        if (_attackCooldownTimer > 0f)
+        {
+            _attackCooldownTimer = Mathf.Max(0f, _attackCooldownTimer - deltaTime);
+        }
+
+        if (_attackTriggered)
+        {
+            _attackHoldTimer -= deltaTime;
+            if (_attackHoldTimer <= 0f)
+            {
+                _attackTriggered = false;
+                _attackHoldTimer = 0f;
+            }
+        }
+    }
+
+    private bool HandlePostKillState(float deltaTime, bool hasActiveNavAgent)
+    {
+        if (_postKillCooldownTimer > 0f)
+        {
+            _postKillCooldownTimer = Mathf.Max(0f, _postKillCooldownTimer - deltaTime);
+        }
+
+        if (_escapeTimer > 0f)
+        {
+            _escapeTimer = Mathf.Max(0f, _escapeTimer - deltaTime);
+            currentState = AgentState.Escape;
+            ToggleWander(false);
+
+            if (hasActiveNavAgent)
+            {
+                navMeshAgent.isStopped = false;
+                navMeshAgent.speed = walkSpeed * runMultiplier;
+                if (!navMeshAgent.hasPath || navMeshAgent.remainingDistance <= navMeshAgent.stoppingDistance + 0.25f || navMeshAgent.isPathStale)
+                {
+                    _escapeDestination = FindEscapeDestination(transform.position);
+                    navMeshAgent.SetDestination(_escapeDestination);
+                }
+            }
+
+            bool moving = hasActiveNavAgent && navMeshAgent && !navMeshAgent.isStopped && navMeshAgent.velocity.sqrMagnitude > 0.0001f;
+            UpdateAnimatorState(moving, true, !moving);
+            return true;
+        }
+
+        if (_postKillCooldownTimer > 0f)
+        {
+            currentState = AgentState.BlendIn;
+            if (hasActiveNavAgent)
+            {
+                navMeshAgent.speed = walkSpeed;
+            }
+            ToggleWander(true);
+            bool moving = hasActiveNavAgent && navMeshAgent && !navMeshAgent.isStopped && navMeshAgent.velocity.sqrMagnitude > 0.0001f;
+            UpdateAnimatorState(moving, false, !moving);
+            return true;
+        }
+
+        return false;
+    }
+
+    private void HandleKillAttempt(Vector3 targetPos, float deltaTime)
+    {
+        if (navMeshAgent && navMeshAgent.isOnNavMesh)
+        {
+            navMeshAgent.isStopped = true;
+        }
+
+        FaceTarget(targetPos, deltaTime);
+        TryTriggerAttack();
+    }
+
+    private void EnsureChaseProgress(Vector3 destination, float deltaTime)
+    {
+        if (chaseStuckSpeedThreshold <= 0f || chaseStuckTime <= 0f)
+        {
+            return;
+        }
+
+        if (!(navMeshAgent && navMeshAgent.enabled && navMeshAgent.isOnNavMesh && !navMeshAgent.isStopped))
+        {
+            _chaseStuckTimer = 0f;
+            return;
+        }
+
+        float speed = navMeshAgent.velocity.magnitude;
+        if (speed <= chaseStuckSpeedThreshold)
+        {
+            _chaseStuckTimer += deltaTime;
+            if (_chaseStuckTimer >= chaseStuckTime)
+            {
+                navMeshAgent.SetDestination(destination);
+                _chaseStuckTimer = 0f;
+            }
+        }
+        else
+        {
+            _chaseStuckTimer = 0f;
+        }
+    }
+
+    private void HandleSearchHang(float deltaTime)
+    {
+        if (searchHangTime <= 0f || !(navMeshAgent && navMeshAgent.enabled && navMeshAgent.isOnNavMesh))
+        {
+            _searchHangTimer = 0f;
+            return;
+        }
+
+        if (!navMeshAgent.pathPending && navMeshAgent.remainingDistance <= navMeshAgent.stoppingDistance + 0.15f)
+        {
+            _searchHangTimer += deltaTime;
+            if (_searchHangTimer >= searchHangTime)
+            {
+                _hasLastKnownPosition = false;
+                currentState = AgentState.BlendIn;
+            }
+        }
+        else
+        {
+            _searchHangTimer = 0f;
+        }
+    }
+
+    private void FaceTarget(Vector3 targetPos, float deltaTime)
+    {
+        Vector3 toTarget = targetPos - transform.position;
+        toTarget.y = 0f;
+        if (toTarget.sqrMagnitude < 0.0001f)
+        {
+            return;
+        }
+
+        Quaternion desired = Quaternion.LookRotation(toTarget.normalized, Vector3.up);
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, desired, attackFacingSpeed * deltaTime);
+    }
+
+    private Vector3 FindEscapeDestination(Vector3 killPosition)
+    {
+        Vector3 threatOrigin = myHunter && !myHunter.IsDead ? myHunter.transform.position : killPosition;
+        Vector3 away = transform.position - threatOrigin;
+        if (away.sqrMagnitude < 0.01f)
+        {
+            away = -transform.forward;
+        }
+
+        away.y = 0f;
+        away = away.sqrMagnitude > 0.001f ? away.normalized : Vector3.forward;
+        float distance = Mathf.Max(2f, postKillEscapeDistance) * Random.Range(0.85f, 1.15f);
+        Vector3 candidate = transform.position + away * distance;
+
+        if (NavMesh.SamplePosition(candidate, out NavMeshHit hit, postKillEscapeDistance, NavMesh.AllAreas))
+        {
+            return hit.position;
+        }
+
+        Vector3 random = transform.position + Random.insideUnitSphere * postKillEscapeDistance;
+        if (NavMesh.SamplePosition(random, out hit, postKillEscapeDistance, NavMesh.AllAreas))
+        {
+            return hit.position;
+        }
+
+        return transform.position;
+    }
+
+    private void BeginEscapeRun()
+    {
+        if (!(navMeshAgent && navMeshAgent.enabled && navMeshAgent.isOnNavMesh))
+        {
+            return;
+        }
+
+        ToggleWander(false);
+        navMeshAgent.isStopped = false;
+        navMeshAgent.speed = walkSpeed * runMultiplier;
+        navMeshAgent.SetDestination(_escapeDestination);
     }
 
     private bool UpdatePerception(TriangleAgentController target, float deltaTime)
@@ -402,6 +672,12 @@ public class TriangleAgentController : MonoBehaviour
         if (IsTargetInFog(target))
         {
             return false;
+        }
+
+        // If this is our assigned target, trust the visual match without requiring "suspicious" motion.
+        if (target == myTarget)
+        {
+            return true;
         }
 
         return IsTargetNonDecoy(target);
@@ -681,12 +957,19 @@ public class TriangleAgentController : MonoBehaviour
 
     private void TryTriggerAttack()
     {
-        if (!animator || _attackTriggered)
+        if (!animator)
+        {
+            return;
+        }
+
+        if (_attackCooldownTimer > 0f)
         {
             return;
         }
 
         _attackTriggered = true;
+        _attackHoldTimer = attackAnimHoldSeconds;
+        _attackCooldownTimer = Mathf.Max(attackRepeatCooldown, 0.01f);
         if (!string.IsNullOrEmpty(attackTrigger) && HasParameter(animator, attackTrigger, AnimatorControllerParameterType.Trigger))
         {
             animator.SetTrigger(attackTrigger);

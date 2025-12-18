@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
@@ -24,6 +25,7 @@ public class NpcGameDirector : MonoBehaviour
     [SerializeField, Tooltip("Player controller participating in the triangle. Optional when triangle mode is off.")] private TriangleAgentController playerAgent;
     [SerializeField, Tooltip("Optional extra player-controlled agents to include in the hunt loop.")] private List<TriangleAgentController> additionalPlayerAgents = new List<TriangleAgentController>();
     [SerializeField, Tooltip("How many distinct NPC prefabs to spawn for the triangle hunt. Must not exceed unique target prefabs.")] private int triangleTargetCount = 3;
+    [SerializeField, Tooltip("Seconds to wait after a triangle kill before remapping hunt targets.")] private float triangleRetargetDelay = 1.5f;
     [Header("Difficulty")]
     [Range(0f, 1f)] [SerializeField, Tooltip("0 = easiest, 1 = hardest. Applied to all triangle agents.")] private float aiDifficulty = 0.5f;
     [Header("Reveal Base (shared for triangle agents)")]
@@ -36,6 +38,7 @@ public class NpcGameDirector : MonoBehaviour
     private readonly List<Vector3> _usedSpawnPositions = new List<Vector3>();
     private readonly List<TriangleAgentController> _triangleTargets = new List<TriangleAgentController>();
     private NpcIdentity _currentTarget;
+    private Coroutine _triangleRemapRoutine;
 
     private void Start()
     {
@@ -79,6 +82,12 @@ public class NpcGameDirector : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (_triangleRemapRoutine != null)
+        {
+            StopCoroutine(_triangleRemapRoutine);
+            _triangleRemapRoutine = null;
+        }
+
         for (int i = 0; i < _activeNpcs.Count; i++)
         {
             Unsubscribe(_activeNpcs[i]);
@@ -392,8 +401,6 @@ public class NpcGameDirector : MonoBehaviour
                 HandleTriangleAgentDeath(triangleAgent);
             }
 
-            UpdatePlayerUiTarget();
-
             if (identity)
             {
                 identity.SetTarget(false);
@@ -672,29 +679,46 @@ public class NpcGameDirector : MonoBehaviour
             return;
         }
 
-        if (agents.Count == 1)
+        int count = agents.Count;
+
+        // Prepare targets so assignments can overlap and some agents may temporarily be unhunted.
+        List<TriangleAgentController> alive = new List<TriangleAgentController>();
+        for (int i = 0; i < count; i++)
         {
-            TriangleAgentController solo = agents[0];
-            solo.ResetForNewTarget(null);
-            if (solo == playerAgent)
+            TriangleAgentController a = agents[i];
+            if (a && !a.IsDead && !alive.Contains(a))
             {
-                _currentTarget = null;
-                ClearUi();
+                alive.Add(a);
             }
+        }
+
+        if (alive.Count == 0)
+        {
+            _currentTarget = null;
+            ClearUi();
             return;
         }
 
-        int count = agents.Count;
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < alive.Count; i++)
         {
-            TriangleAgentController agent = agents[i];
-            TriangleAgentController target = agents[(i + 1) % count];
-            TriangleAgentController hunter = agents[(i - 1 + count) % count];
-            agent.ResetForNewTarget(target, hunter);
+            TriangleAgentController agent = alive[i];
+            TriangleAgentController target = null;
+
+            if (alive.Count > 1)
+            {
+                List<TriangleAgentController> options = new List<TriangleAgentController>(alive);
+                options.Remove(agent);
+                if (options.Count > 0)
+                {
+                    target = options[Random.Range(0, options.Count)];
+                }
+            }
+
+            agent.ResetForNewTarget(target, null);
         }
 
         UpdatePlayerUiTarget();
-        LogDebug($"Triangle hunt loop configured for {count} agents.");
+        LogDebug($"Triangle hunt loop configured (random overlap) for {alive.Count} agents.");
     }
 
     private void SetupTriangleMapping()
@@ -728,6 +752,25 @@ public class NpcGameDirector : MonoBehaviour
             playerAgent = null;
         }
 
+        _currentTarget = null;
+        ClearUi();
+
+        if (_triangleRemapRoutine != null)
+        {
+            StopCoroutine(_triangleRemapRoutine);
+        }
+
+        _triangleRemapRoutine = StartCoroutine(RemapTriangleAfterDelay());
+    }
+
+    private IEnumerator RemapTriangleAfterDelay()
+    {
+        float delay = Mathf.Max(0f, triangleRetargetDelay);
+        if (delay > 0f)
+        {
+            yield return new WaitForSeconds(delay);
+        }
+
         List<TriangleAgentController> alive = GetAliveTriangleAgents();
         ConfigureHuntLoop(alive);
         if (alive.Count == 1)
@@ -736,8 +779,10 @@ public class NpcGameDirector : MonoBehaviour
         }
         else
         {
-            LogDebug($"Triangle agent died -> remapped hunt loop for {alive.Count} agents.");
+            LogDebug($"Triangle agent died -> remapped hunt loop for {alive.Count} agents after delay.");
         }
+
+        _triangleRemapRoutine = null;
     }
 
     private void SubscribeHealth(CharacterHealth health)

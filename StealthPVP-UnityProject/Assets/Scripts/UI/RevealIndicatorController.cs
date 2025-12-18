@@ -24,6 +24,10 @@ public class RevealIndicatorController : MonoBehaviour
     [SerializeField, Tooltip("Distance where the fill is clamped to minFillAmount.")] private float farDistanceForMinFill = 60f;
     [SerializeField, Tooltip("Distance where the fill reaches 0.3 (max hidden fill) right before popping to 1.0 when visible.")] private float nearDistanceForMaxFill = 10f;
     [SerializeField, Tooltip("Extra Z rotation applied to the circle so the fill origin aligns with player forward.")] private float compassRotationOffset = 90f;
+    [Header("Color")]
+    [SerializeField, Tooltip("Color when target is far (min fill).")] private Color farFillColor = new Color32(255, 218, 0, 255); // #FFDA00
+    [SerializeField, Tooltip("Color when target is near (max fill before visible).")] private Color nearFillColor = new Color32(255, 64, 0, 255); // #FF4000
+    [SerializeField, Tooltip("Extra distance added to nearDistanceForMaxFill before reaching near color.")] private float nearColorDistanceOffset = 2f;
 
     [Header("Visibility (driven by GameplayTuning)")] 
     [HideInInspector] [SerializeField] private float verticalFadeDuration = 0.4f;
@@ -133,7 +137,7 @@ public class RevealIndicatorController : MonoBehaviour
         if (compassCircle)
         {
             compassCircle.fillAmount = _currentFillAmount;
-            Color c = _circleBaseColor;
+            Color c = ComputeCircleColor(distanceToTarget, targetVisible);
             c.a = _currentCircleAlpha;
             compassCircle.color = c;
             bool circleVisible = _currentCircleAlpha > 0.001f;
@@ -204,6 +208,19 @@ public class RevealIndicatorController : MonoBehaviour
         float clampedMax = MaxFillBeforeVisible;
         float fill = Mathf.Lerp(clampedMin, clampedMax, t);
         return Mathf.Clamp(fill, clampedMin, clampedMax);
+    }
+
+    private Color ComputeCircleColor(float distanceToTarget, bool targetVisible)
+    {
+        float far = Mathf.Max(farDistanceForMinFill, nearDistanceForMaxFill);
+        float near = Mathf.Max(0.0001f, nearDistanceForMaxFill + nearColorDistanceOffset);
+        if (Mathf.Approximately(far, near))
+        {
+            far += 0.001f;
+        }
+
+        float t = targetVisible ? 1f : Mathf.InverseLerp(far, near, distanceToTarget);
+        return Color.Lerp(farFillColor, nearFillColor, t);
     }
 
     private bool IsTargetVisible(Transform target)
