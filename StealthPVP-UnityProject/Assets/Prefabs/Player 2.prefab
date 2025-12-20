@@ -214,7 +214,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 4
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 300f4fe95da8c48cdacbfe1800ab5f54, type: 2}
+  - {fileID: 2100000, guid: 34e920b85964344a39935fb3c050359e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -7098,9 +7098,11 @@ GameObject:
   - component: {fileID: 5941336483230033581}
   - component: {fileID: 1202477659159655595}
   - component: {fileID: 4474624741856799096}
-  - component: {fileID: 9134023850950813770}
+  - component: {fileID: 5309476073554680408}
+  - component: {fileID: 1855048793163545688}
+  - component: {fileID: 5703283200672734699}
   m_Layer: 0
-  m_Name: Player
+  m_Name: Player 2
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7242,7 +7244,7 @@ MonoBehaviour:
   moveSpeed: 2.5
   runMultiplier: 3.5
   rotationSpeed: 720
-  inputRouter: {fileID: 0}
+  inputRouter: {fileID: 5309476073554680408}
   groundMask:
     serializedVersion: 2
     m_Bits: 264
@@ -7272,6 +7274,7 @@ MonoBehaviour:
   wallJumpHorizontalSpeed: 11
   wallContactLinger: 0.15
   wallJumpCooldown: 0
+  overrideCamera: {fileID: 0}
   groundedStateLinger: 0.12
   waterLayerMask:
     serializedVersion: 2
@@ -7332,7 +7335,7 @@ MonoBehaviour:
   ragdollBodies: []
   disableAnimatorOnRagdoll: 1
   initializeAsKinematic: 1
-  deathImpulseForce: 12
+  deathImpulseForce: 33
   impulseMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -7399,6 +7402,15 @@ MonoBehaviour:
   targetJumpBool: isJumping
   targetAttackTag: Attack
   decoyIdleRadius: 6
+  attackRepeatCooldown: 1.1
+  attackAnimHoldSeconds: 0.6
+  attackFacingSpeed: 720
+  postKillEscapeDuration: 1.5
+  postKillEscapeDistance: 12
+  postKillCooldownSeconds: 2.5
+  chaseStuckSpeedThreshold: 0.1
+  chaseStuckTime: 1
+  searchHangTime: 1.5
   revealAbility: {fileID: 4474624741856799096}
   revealAbilityId: Reveal
   difficulty: 0.5
@@ -7439,7 +7451,7 @@ MonoBehaviour:
   useInput: 1
   isPlayer: 1
   overrideKey: 0
---- !u!114 &9134023850950813770
+--- !u!114 &5309476073554680408
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -7448,24 +7460,105 @@ MonoBehaviour:
   m_GameObject: {fileID: 5601125754130475395}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 089ecd5965865497d92dafac84512e40, type: 3}
+  m_Script: {fileID: 11500000, guid: ff14bb8168ab24c489956e4229b4cdba, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerInputRouter
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInputRouterGamepad
+  inputCamera: {fileID: 0}
   runKey: 304
-  stopKey: 120
+  stopKey: 115
   jumpKey: 32
   dashKey: 114
   interactKey: 101
-  horizontalAxis: Horizontal
-  verticalAxis: Vertical
+  horizontalAxis: Horizontal2
+  verticalAxis: Vertical2
+  keyboardOnlyMovement: 0
+  moveLeftKey: 97
+  moveRightKey: 100
+  moveUpKey: 119
+  moveDownKey: 115
   attackRayDistance: 250
   attackGroundMask:
     serializedVersion: 2
-    m_Bits: 264
+    m_Bits: 2043
   maximumRayDistance: 250
   groundMask:
     serializedVersion: 2
-    m_Bits: 264
+    m_Bits: 0
+  moveHorizontalAxis: Horizontal2
+  moveVerticalAxis: Vertical2
+  aimHorizontalAxis: AimHorizontal2
+  aimVerticalAxis: AimVertical2
+  aimHorizontalFallbackAxes:
+  - 4th Axis
+  - Axis4
+  - RightStickHorizontal
+  - RightStickX
+  - 4th axis
+  aimVerticalFallbackAxes:
+  - 5th Axis
+  - Axis5
+  - RightStickVertical
+  - RightStickY
+  - 5th axis
+  primaryTriggerAxis: 
+  triggerPressThreshold: 0.5
+  invertTriggerAxis: 0
+  useTriggerForPrimary: 0
+  primaryButton: Fire1
+  jumpButton: Jump
+  dashButton: 
+  runButton: 
+  interactButton: 
+  debugInputs: 1
+  aimDistance: 8
+  aimDeadZone: 0.15
+--- !u!114 &1855048793163545688
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601125754130475395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce0492d5a6e0e4d889682a63912c800b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RevealIndicatorController
+  playerTransform: {fileID: 2149196381008729807}
+  playerVisionSource: {fileID: 2925403330456065289}
+  compassRoot: {fileID: 1309074069415978334}
+  compassCircle: {fileID: 2262486777146242820}
+  worldCamera: {fileID: 0}
+  revealAbility: {fileID: 4474624741856799096}
+  fogManager: {fileID: 0}
+  currentTarget: {fileID: 0}
+  minFillAmount: 0.15
+  farDistanceForMinFill: 60
+  nearDistanceForMaxFill: 10
+  compassRotationOffset: 90
+  farFillColor: {r: 1, g: 0.85490197, b: 0, a: 1}
+  nearFillColor: {r: 1, g: 0.2509804, b: 0, a: 1}
+  nearColorDistanceOffset: 2
+  verticalFadeDuration: 0.4
+  circleFadeDuration: 0.2
+  alwaysShowWhenTargetSet: 1
+--- !u!114 &5703283200672734699
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601125754130475395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7547770540554a92ab06e56e90c5cd7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FogHidable
+  isAlly: 0
+  debugLogs: 0
+  minimapColor: {r: 1, g: 0, b: 0, a: 1}
+  minimapSprite: {fileID: 0}
+  minimapIgnoreFog: 0
 --- !u!1 &5631832183318855960
 GameObject:
   m_ObjectHideFlags: 0

@@ -25,6 +25,7 @@ public class NpcGameDirector : MonoBehaviour
     [SerializeField, Tooltip("Player controller participating in the triangle. Optional when triangle mode is off.")] private TriangleAgentController playerAgent;
     [SerializeField, Tooltip("Optional extra player-controlled agents to include in the hunt loop.")] private List<TriangleAgentController> additionalPlayerAgents = new List<TriangleAgentController>();
     [SerializeField, Tooltip("How many distinct NPC prefabs to spawn for the triangle hunt. Must not exceed unique target prefabs.")] private int triangleTargetCount = 3;
+    [SerializeField, Tooltip("If true, only decoys are spawned (no triangle agents or targets).")] private bool decoysOnlyMode = false;
     [SerializeField, Tooltip("Seconds to wait after a triangle kill before remapping hunt targets.")] private float triangleRetargetDelay = 1.5f;
     [Header("Difficulty")]
     [Range(0f, 1f)] [SerializeField, Tooltip("0 = easiest, 1 = hardest. Applied to all triangle agents.")] private float aiDifficulty = 0.5f;
@@ -44,6 +45,11 @@ public class NpcGameDirector : MonoBehaviour
     {
         Debug.Log("[NpcGameDirector] Start called", this);
         _usedSpawnPositions.Clear();
+        if (decoysOnlyMode)
+        {
+            SpawnDecoys();
+            return;
+        }
         RegisterPlayerAgents();
         ApplyDifficultyToAgents();
 
@@ -105,6 +111,13 @@ public class NpcGameDirector : MonoBehaviour
             UnsubscribeHealth(health);
         }
         _triangleAgents.Clear();
+    }
+
+    public void EnableDecoysOnlyMode()
+    {
+        decoysOnlyMode = true;
+        useTriangleTargets = false;
+        spawnNewTargetOnDeath = false;
     }
 
     private void SpawnInitialNpcs()
@@ -385,6 +398,10 @@ public class NpcGameDirector : MonoBehaviour
         }
 
         dead.Died -= OnNpcDied;
+        if (decoysOnlyMode)
+        {
+            return;
+        }
         // Death can fire from a CharacterHealth on a different GameObject than the NpcIdentity (e.g., player identity on a child).
         NpcIdentity identity = dead.GetComponent<NpcIdentity>() ?? dead.GetComponentInChildren<NpcIdentity>(true) ?? dead.GetComponentInParent<NpcIdentity>();
 

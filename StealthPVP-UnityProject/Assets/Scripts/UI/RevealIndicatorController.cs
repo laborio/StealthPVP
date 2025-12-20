@@ -32,6 +32,7 @@ public class RevealIndicatorController : MonoBehaviour
     [Header("Visibility (driven by GameplayTuning)")] 
     [HideInInspector] [SerializeField] private float verticalFadeDuration = 0.4f;
     [HideInInspector] [SerializeField] private float circleFadeDuration = 0.2f;
+    [SerializeField, Tooltip("If true, compass is visible whenever a target is set (ignores reveal ability state).")] private bool alwaysShowWhenTargetSet = true;
 
     private float _verticalAlpha;
     private float _currentCircleAlpha;
@@ -50,6 +51,27 @@ public class RevealIndicatorController : MonoBehaviour
     {
         currentTarget = null;
         Debug.Log("[RevealIndicatorController] ClearTarget", this);
+    }
+
+    public void ConfigurePlayer(Transform player, VisionSource vision, AbilityRunner ability, Camera camera = null)
+    {
+        playerTransform = player;
+        playerVisionSource = vision;
+        revealAbility = ability;
+        if (camera)
+        {
+            worldCamera = camera;
+        }
+    }
+
+    public void SetWorldCamera(Camera camera)
+    {
+        worldCamera = camera;
+    }
+
+    public void SetFogManager(FogOfWarManager manager)
+    {
+        fogManager = manager;
     }
 
     public void ApplyFadeConfig(float verticalFade, float circleFade)
@@ -121,6 +143,10 @@ public class RevealIndicatorController : MonoBehaviour
         UpdateVerticalAlpha();
 
         float abilityAlpha = revealAbility ? revealAbility.ActiveNormalized : 0f;
+        if (alwaysShowWhenTargetSet && hasTarget)
+        {
+            abilityAlpha = Mathf.Max(abilityAlpha, 1f);
+        }
 
         float desiredCircleAlpha = 0f;
         float desiredFillAmount = 0f;

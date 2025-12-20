@@ -42,6 +42,8 @@ public partial class SimpleCharacterController : MonoBehaviour
     [SerializeField] private float wallJumpHorizontalSpeed = 6f;
     [SerializeField, Range(0f, 0.5f)] private float wallContactLinger = 0.15f;
     [SerializeField, Range(0f, 1f)] private float wallJumpCooldown = 0.2f;
+    [Header("Camera Override")]
+    [SerializeField, Tooltip("Optional camera set per player; falls back to MainCamera.")] private Camera overrideCamera;
 
     [Header("State Smoothing")]
     [SerializeField, Range(0f, 0.5f)] private float groundedStateLinger = 0.12f;
@@ -85,7 +87,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     {
         _characterController = GetComponent<CharacterController>();
 
-        _camera = Camera.main;
+        _camera = overrideCamera ? overrideCamera : Camera.main;
         _cameraTransform = _camera ? _camera.transform : null;
         if (!characterAnimations)
         {
@@ -94,10 +96,10 @@ public partial class SimpleCharacterController : MonoBehaviour
         if (!inputRouter)
         {
             inputRouter = GetComponent<PlayerInputRouter>();
-            if (!inputRouter)
-            {
-                inputRouter = Object.FindFirstObjectByType<PlayerInputRouter>();
-            }
+        }
+        if (inputRouter)
+        {
+            inputRouter.SetInputCamera(_camera);
         }
         CacheRangeIndicator();
         SetRangeIndicatorActive(false);
@@ -910,5 +912,26 @@ public partial class SimpleCharacterController : MonoBehaviour
         top.y = bounds.max.y - radius;
 
         return Physics.CheckCapsule(bottom, top, radius, waterLayerMask, QueryTriggerInteraction.Collide);
+    }
+
+    public void SetCamera(Camera camera)
+    {
+        overrideCamera = camera;
+        _camera = camera ? camera : Camera.main;
+        _cameraTransform = _camera ? _camera.transform : null;
+
+        if (inputRouter)
+        {
+            inputRouter.SetInputCamera(_camera);
+        }
+    }
+
+    public void SetInputRouter(PlayerInputRouter router)
+    {
+        inputRouter = router;
+        if (inputRouter)
+        {
+            inputRouter.SetInputCamera(_camera);
+        }
     }
 }

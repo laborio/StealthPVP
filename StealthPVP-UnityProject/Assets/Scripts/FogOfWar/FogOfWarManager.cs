@@ -25,15 +25,20 @@ public class FogOfWarManager : MonoBehaviour
     [Header("Vision")]
     public bool useLineOfSight = true;
     public LayerMask fogBlockerMask = Physics.DefaultRaycastLayers;
-
     [Tooltip("Optionally assign vision sources manually; otherwise we auto-find them.")]
     public List<VisionSource> visionSources = new List<VisionSource>();
+    [Tooltip("If false, only the provided visionSources list is used (no auto-discovery).")]
+    public bool autoFindVisionSources = true;
 
     [Header("Smoothing")]
     [Tooltip("Smooths the fog edges without requiring very high texture resolution.")]
     public bool enableEdgeSmoothing = true;
     [Range(0, 4)] public int blurRadiusCells = 1;
     [Range(1, 4)] public int blurIterations = 1;
+    [Header("Debug")]
+    [SerializeField, Tooltip("If true, logs vision sources and samples near them each frame.")] private bool debugLogs = false;
+    [SerializeField, Tooltip("Optional extra world position to sample for debug.")] private Transform debugSampleTarget;
+    [SerializeField, Tooltip("Seconds between debug logs.")] private float debugLogInterval = 1f;
 
     private bool[,] visible;
     private Texture2D fogTexture;
@@ -45,6 +50,7 @@ public class FogOfWarManager : MonoBehaviour
     private bool initialized;
     private int cachedGridSizeX;
     private int cachedGridSizeZ;
+    private float _nextDebugLogTime;
 
     private static readonly int FogTexId = Shader.PropertyToID("_FogOfWarTex");
     private static readonly int FogWorldMinId = Shader.PropertyToID("_FogWorldMin");
@@ -155,17 +161,30 @@ public class FogOfWarManager : MonoBehaviour
             visionSources = new List<VisionSource>();
         }
 
+        // Remove nulls and duplicates.
         for (int i = visionSources.Count - 1; i >= 0; i--)
         {
-            if (visionSources[i] == null)
+            VisionSource src = visionSources[i];
+            if (src == null || visionSources.IndexOf(src) != i)
             {
                 visionSources.RemoveAt(i);
             }
         }
 
-        if (visionSources.Count == 0)
+        if (!autoFindVisionSources)
         {
-            visionSources.AddRange(FindObjectsByType<VisionSource>(FindObjectsSortMode.None));
+            return;
+        }
+
+        // Merge in any scene VisionSources not already tracked (e.g., players spawned at runtime).
+        VisionSource[] found = FindObjectsByType<VisionSource>(FindObjectsSortMode.None);
+        for (int i = 0; i < found.Length; i++)
+        {
+            VisionSource src = found[i];
+            if (src && !visionSources.Contains(src))
+            {
+                visionSources.Add(src);
+            }
         }
     }
 
@@ -184,6 +203,7 @@ public class FogOfWarManager : MonoBehaviour
         RefreshVisionSourcesList();
         if (visionSources.Count == 0)
         {
+            Debug.LogWarning($"[FogOfWarManager:{name}] No vision sources; fog stays fully hidden.");
             return;
         }
 
@@ -191,6 +211,10 @@ public class FogOfWarManager : MonoBehaviour
         StampAllVisionSources();
         ApplyEdgeSmoothingIfNeeded();
         UploadTexture();
+        if (debugLogs)
+        {
+            TryDebugLog();
+        }
     }
 
     private void ClearVisibilityGrid()
@@ -219,6 +243,37 @@ public class FogOfWarManager : MonoBehaviour
 
             StampCircleWithOptionalLOS(source.transform.position, source.CurrentRadius);
         }
+    }
+
+    private void TryDebugLog()
+    {
+        if (Time.time < _nextDebugLogTime)
+        {
+            return;
+        }
+
+        _nextDebugLogTime = Time.time + Mathf.Max(0.1f, debugLogInterval);
+
+        string msg = $"[FogOfWarManager:{name}] visionCount={visionSources.Count}";
+        for (int i = 0; i < visionSources.Count; i++)
+        {
+            VisionSource vs = visionSources[i];
+            if (!vs)
+            {
+                continue;
+            }
+
+            float sample = SampleFog01(vs.transform.position);
+            msg += $" | vs[{i}] {vs.name} pos={vs.transform.position:F1} radius={vs.CurrentRadius:F1} sampleAtSource={sample:F2}";
+        }
+
+        if (debugSampleTarget)
+        {
+            float s = SampleFog01(debugSampleTarget.position);
+            msg += $" | sample(debugTarget={debugSampleTarget.name})={s:F2}";
+        }
+
+        Debug.Log(msg, this);
     }
 
     private void StampCircleWithOptionalLOS(Vector3 srcPos, float radius)
@@ -394,6 +449,11 @@ public class FogOfWarManager : MonoBehaviour
         Shader.SetGlobalVector(FogWorldMinId, new Vector4(worldMin.x, 0f, worldMin.y, 0f));
         Shader.SetGlobalVector(FogWorldMaxId, new Vector4(worldMax.x, 0f, worldMax.y, 0f));
         Shader.SetGlobalTexture(FogTexId, fogTexture);
+    }
+
+    public void PushShaderProperties()
+    {
+        PushGlobalShaderProperties();
     }
 
     private void OnDrawGizmosSelected()

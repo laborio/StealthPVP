@@ -10938,6 +10938,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FogHidable
   isAlly: 0
+  debugLogs: 0
   minimapColor: {r: 0.7647059, g: 0.09803922, b: 0.6666667, a: 1}
   minimapSprite: {fileID: 0}
   minimapIgnoreFog: 0

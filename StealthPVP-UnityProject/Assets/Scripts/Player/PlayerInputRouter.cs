@@ -5,6 +5,8 @@ using UnityEngine;
 /// </summary>
 public class PlayerInputRouter : MonoBehaviour
 {
+    [Header("Camera/Input Source")]
+    [SerializeField, Tooltip("Optional camera to raycast from for click/aim. Defaults to Camera.main.")] private Camera inputCamera;
     [Header("Input Keys")]
     [SerializeField] private KeyCode runKey = KeyCode.LeftShift;
     [SerializeField] private KeyCode stopKey = KeyCode.S;
@@ -13,6 +15,12 @@ public class PlayerInputRouter : MonoBehaviour
     [SerializeField] private KeyCode interactKey = KeyCode.E;
     [SerializeField] private string horizontalAxis = "Horizontal";
     [SerializeField] private string verticalAxis = "Vertical";
+    [Header("Keyboard Only Movement (optional)")]
+    [SerializeField, Tooltip("If true, movement axis is built from keyboard keys only (ignores joystick axes).")] private bool keyboardOnlyMovement = false;
+    [SerializeField] private KeyCode moveLeftKey = KeyCode.A;
+    [SerializeField] private KeyCode moveRightKey = KeyCode.D;
+    [SerializeField] private KeyCode moveUpKey = KeyCode.W;
+    [SerializeField] private KeyCode moveDownKey = KeyCode.S;
     [Header("Attack")]
     [SerializeField, Tooltip("Maximum ray distance for attack aiming.")] private float attackRayDistance = 250f;
     [SerializeField, Tooltip("Layers considered for attack aim / range indicator.")] private LayerMask attackGroundMask = Physics.DefaultRaycastLayers;
@@ -24,7 +32,7 @@ public class PlayerInputRouter : MonoBehaviour
     /// <summary>
     /// Polls the underlying Unity input system and returns a snapshot for this frame.
     /// </summary>
-    public PlayerInputSnapshot PollInput()
+    public virtual PlayerInputSnapshot PollInput()
     {
         PlayerInputSnapshot snapshot = new PlayerInputSnapshot
         {
@@ -36,7 +44,7 @@ public class PlayerInputRouter : MonoBehaviour
             PrimaryPressed = Input.GetMouseButtonDown(0),
             PrimaryHeld = Input.GetMouseButton(0),
             PrimaryReleased = Input.GetMouseButtonUp(0),
-            MoveAxis = new Vector2(
+            MoveAxis = keyboardOnlyMovement ? BuildKeyboardMoveAxis() : new Vector2(
                 string.IsNullOrEmpty(horizontalAxis) ? 0f : Input.GetAxisRaw(horizontalAxis),
                 string.IsNullOrEmpty(verticalAxis) ? 0f : Input.GetAxisRaw(verticalAxis))
         };
@@ -63,10 +71,10 @@ public class PlayerInputRouter : MonoBehaviour
     {
         target = default;
 
-        Camera currentCamera = Camera.main;
+        Camera currentCamera = ResolveCamera();
         if (!currentCamera)
         {
-            Debug.LogWarning("PlayerInputRouter: No camera tagged as MainCamera found for click-to-move.", this);
+            Debug.LogWarning("PlayerInputRouter: No camera available for click-to-move.", this);
             return false;
         }
 
@@ -84,7 +92,7 @@ public class PlayerInputRouter : MonoBehaviour
     {
         point = default;
 
-        Camera currentCamera = Camera.main;
+        Camera currentCamera = ResolveCamera();
         if (!currentCamera)
         {
             return false;
@@ -104,6 +112,58 @@ public class PlayerInputRouter : MonoBehaviour
     {
         maximumRayDistance = Mathf.Max(0f, maximumRayDistance);
         attackRayDistance = Mathf.Max(0f, attackRayDistance);
+    }
+
+    public Camera ResolveCamera()
+    {
+        if (inputCamera)
+        {
+            return inputCamera;
+        }
+
+        return Camera.main;
+    }
+
+    public void SetInputCamera(Camera camera)
+    {
+        inputCamera = camera;
+    }
+
+    public void SetAxes(string horizontal, string vertical)
+    {
+        horizontalAxis = horizontal;
+        verticalAxis = vertical;
+    }
+
+    public void SetKeyboardOnlyMovement(bool value)
+    {
+        keyboardOnlyMovement = value;
+    }
+
+    private Vector2 BuildKeyboardMoveAxis()
+    {
+        float x = 0f;
+        if (Input.GetKey(moveLeftKey))
+        {
+            x -= 1f;
+        }
+        if (Input.GetKey(moveRightKey))
+        {
+            x += 1f;
+        }
+
+        float y = 0f;
+        if (Input.GetKey(moveDownKey))
+        {
+            y -= 1f;
+        }
+        if (Input.GetKey(moveUpKey))
+        {
+            y += 1f;
+        }
+
+        Vector2 axis = new Vector2(x, y);
+        return axis.sqrMagnitude > 1f ? axis.normalized : axis;
     }
 }
 

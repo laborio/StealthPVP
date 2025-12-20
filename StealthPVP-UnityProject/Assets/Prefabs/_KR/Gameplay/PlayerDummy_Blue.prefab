@@ -6299,6 +6299,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FogHidable
   isAlly: 0
+  debugLogs: 0
   minimapColor: {r: 0.011764706, g: 0.16862746, b: 1, a: 1}
   minimapSprite: {fileID: 0}
   minimapIgnoreFog: 0
@@ -12902,8 +12903,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8945044522417601190}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.84215754, z: -0, w: -0.5392316}
-  m_LocalPosition: {x: 5.160363, y: 0.4945974, z: -6.10106}
+  m_LocalRotation: {x: 0.000000029802322, y: -0.6274923, z: 0.000000029802322, w: 0.77862275}
+  m_LocalPosition: {x: 27.478352, y: 0.6370305, z: 25.600658}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
