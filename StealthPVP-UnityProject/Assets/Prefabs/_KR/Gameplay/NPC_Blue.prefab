@@ -10854,6 +10854,7 @@ MonoBehaviour:
   bloodVfx: {fileID: 6176224393807613766}
   characterAnimations: {fileID: 5985314486009331514}
   navMeshAgent: {fileID: 0}
+  behavioursToDisable: []
   cameraShake: {fileID: 0}
   lethalShakeMagnitude: 0
   lethalShakeDuration: 0
@@ -10915,7 +10916,7 @@ MonoBehaviour:
   wanderPoints: []
   wanderRadius: 75
   repathInterval: 0.25
-  idleTimeRange: {x: 0.5, y: 3}
+  idleTimeRange: {x: 3, y: 10}
   stopOnDeath: 1
   animator: {fileID: 0}
   walkingBoolName: isWalking
@@ -10937,6 +10938,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FogHidable
   isAlly: 0
+  debugLogs: 0
   minimapColor: {r: 0.011764706, g: 0.16862746, b: 1, a: 1}
   minimapSprite: {fileID: 0}
   minimapIgnoreFog: 0

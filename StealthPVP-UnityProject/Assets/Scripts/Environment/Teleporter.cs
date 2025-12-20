@@ -21,7 +21,7 @@ public class Teleporter : MonoBehaviour, IContextualAction
     [SerializeField, Tooltip("Higher number wins when multiple actions overlap.")] private int actionPriority = 200;
 
     [Header("Camera")]
-    [SerializeField, Tooltip("Optional override; defaults to the main camera service.")] private CameraService cameraService;
+    [SerializeField, Tooltip("Optional override; defaults to Camera.main.")] private Camera mainCameraOverride;
     [SerializeField, Tooltip("Delay before the camera starts moving toward the destination.")] private float cameraMoveDelay = 0f;
     [SerializeField, Tooltip("Curve applied to camera movement during teleport.")] private AnimationCurve cameraMoveCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
@@ -34,6 +34,10 @@ public class Teleporter : MonoBehaviour, IContextualAction
     private Collider _ownCollider;
     private SimpleCharacterController _activePlayer;
     private Transform _previousCameraTarget;
+    private Vector3 _previousCameraPosition;
+    private Quaternion _previousCameraRotation;
+    private Camera _activeCamera;
+    private CameraController _cameraController;
     private Transform _cameraTargetProxy;
     private bool _playerInRange;
     private SimpleCharacterController _playerInTrigger;
@@ -117,19 +121,22 @@ public class Teleporter : MonoBehaviour, IContextualAction
         _playerCharacterController = null;
         _playerCollider = null;
         Teleporter destination = twinTeleporter;
-        CameraService controller = ResolveCameraService();
-        Transform previousCameraTarget = controller ? controller.CurrentTarget : null;
-        _previousCameraTarget = previousCameraTarget;
+        _activeCamera = mainCameraOverride ? mainCameraOverride : Camera.main;
+        _cameraController = _activeCamera ? _activeCamera.GetComponent<CameraController>() : null;
+        _previousCameraTarget = _cameraController ? _cameraController.CurrentTarget : null;
+        _previousCameraPosition = _activeCamera ? _activeCamera.transform.position : Vector3.zero;
+        _previousCameraRotation = _activeCamera ? _activeCamera.transform.rotation : Quaternion.identity;
         Vector3 startPosition = player ? player.transform.position : transform.position;
         Vector3 endPosition = destination ? destination.GetExitPosition() : GetExitPosition();
+        Vector3 cameraOffset = _activeCamera ? _activeCamera.transform.position - startPosition : Vector3.zero;
 
         SetTeleporterActive(true);
         player?.BeginTeleportState();
 
-        if (controller)
+        if (_cameraController)
         {
             Transform target = GetCameraTargetForDestination(destination, startPosition, endPosition);
-            controller.SetTarget(target);
+            _cameraController.SetTarget(target);
         }
 
         float elapsed = 0f;
@@ -143,6 +150,11 @@ public class Teleporter : MonoBehaviour, IContextualAction
             if (_cameraTargetProxy)
             {
                 _cameraTargetProxy.position = Vector3.Lerp(startPosition, endPosition, cameraT);
+                if (!_cameraController && _activeCamera)
+                {
+                    _activeCamera.transform.position = _cameraTargetProxy.position + cameraOffset;
+                    _activeCamera.transform.rotation = _previousCameraRotation;
+                }
             }
             yield return null;
         }
@@ -153,10 +165,15 @@ public class Teleporter : MonoBehaviour, IContextualAction
             player.RefreshContextActionsFromOverlaps();
         }
 
-        if (controller)
+        if (_cameraController)
         {
-            Transform targetToRestore = player ? player.transform : previousCameraTarget;
-            controller.SetTarget(targetToRestore);
+            Transform targetToRestore = player ? player.transform : _previousCameraTarget;
+            _cameraController.SetTarget(targetToRestore);
+        }
+        else if (_activeCamera)
+        {
+            _activeCamera.transform.position = endPosition + cameraOffset;
+            _activeCamera.transform.rotation = _previousCameraRotation;
         }
 
         player?.EndTeleportState();
@@ -165,6 +182,10 @@ public class Teleporter : MonoBehaviour, IContextualAction
         _busy = false;
         _activePlayer = null;
         _previousCameraTarget = null;
+        _activeCamera = null;
+        _cameraController = null;
+        _previousCameraPosition = Vector3.zero;
+        _previousCameraRotation = Quaternion.identity;
         _teleportRoutine = null;
     }
 
@@ -223,24 +244,6 @@ public class Teleporter : MonoBehaviour, IContextualAction
         {
             teleporterAnimator.SetBool(onBoolName, active);
         }
-    }
-
-    private CameraService ResolveCameraService()
-    {
-        if (cameraService)
-        {
-            return cameraService;
-        }
-
-        Camera mainCamera = Camera.main;
-        if (mainCamera && mainCamera.TryGetComponent(out CameraService attachedService))
-        {
-            cameraService = attachedService;
-            return cameraService;
-        }
-
-        cameraService = Object.FindFirstObjectByType<CameraService>();
-        return cameraService;
     }
 
     private bool ValidatePlayerRange(SimpleCharacterController player)
@@ -335,10 +338,14 @@ public class Teleporter : MonoBehaviour, IContextualAction
             _activePlayer = null;
         }
 
-        CameraService controller = ResolveCameraService();
-        if (controller && _previousCameraTarget)
+        if (_cameraController && _previousCameraTarget)
         {
-            controller.SetTarget(_previousCameraTarget);
+            _cameraController.SetTarget(_previousCameraTarget);
+        }
+        else if (_activeCamera)
+        {
+            _activeCamera.transform.position = _previousCameraPosition;
+            _activeCamera.transform.rotation = _previousCameraRotation;
         }
 
         _previousCameraTarget = null;

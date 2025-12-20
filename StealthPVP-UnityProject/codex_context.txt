@@ -1,0 +1,33 @@
+Codex Project Context (manual notes)
+===================================
+
+- Game loop: Triangle agents (player + NPCs) hunt each other. NpcGameDirector maps targets, applies global difficulty, reveal timings, and now drives the player RevealIndicatorController target.
+- Multiplayer folder must not be touched.
+
+Reveal/abilities
+- All reveal timing/cooldown values live in GameplayTuning asset (revealCooldown/revealHold/revealFade). GameplayTuningApplier pushes these into the player AbilityRunner and NpcGameDirector (which forwards to triangle agents).
+- High-ground “overlook” now only accelerates reveal cooldown while grounded: multipliers (level1/level2) come from GameplayTuning; heights come from VisionSource level1MinHeight/level2MinHeight. HighGroundRevealController uses VisionSource + CharacterController to accelerate AbilityRunner cooldown; it no longer auto-triggers reveal or hides UI.
+- AbilityRunner supports SetInputEnabled, TriggerWithDurations, and AccelerateCooldown(multiplier, dt).
+
+Indicators/UI
+- RevealIndicatorController is player-only. Arrow/circle show only while reveal is active: circle when target is visible (fog check via FogOfWarManager), arrow otherwise. Hidden when no reveal. Fades are matched to reveal fade via GameplayTuningApplier.
+- NpcGameDirector has an optional playerRevealIndicator field; it auto-finds one at Start if unassigned and pushes targets via UpdatePlayerUiTarget.
+- Canvas cooldown text is handled by GameUiManager reading the player AbilityRunner.
+
+Tuning propagation
+- GameplayTuningApplier: assign GameplayTuning asset, NpcGameDirector, player AbilityRunner, RevealIndicatorController, HighGroundRevealController. It also applies vision radii/height settings to all VisionSources (unless you turn off auto-apply).
+- NpcGameDirector: difficulty slider is the single source; per-agent sliders are hidden. It also stores base reveal values and applies them to triangle agents on register/respawn.
+- TriangleAgentController: consumes AbilityRunner for reveal; perception uses VisionSource + FogOfWarManager + decoy heuristics. SetRevealBase is used by director/difficulty to override base values.
+
+Reveal indicator visibility rule
+- Reveal inactive: arrow and circle hidden.
+- Reveal active: if target visible (fog SampleFog01 > 0.5), show circle; otherwise show arrow.
+
+Scene organization (intended)
+- SCRIPTS/Systems: GameplayTuningApplier, FogOfWarManager, etc.
+- SCRIPTS/Directors: NpcGameDirector.
+- SCRIPTS/UI: GameUiManager (canvas).
+- SCRIPTS/WorldIndicators: RevealIndicatorController (player-only world sprites).
+
+Known removed items
+- AbilityConfig and NpcUiManager were removed. AbilityRunner no longer reads external configs.

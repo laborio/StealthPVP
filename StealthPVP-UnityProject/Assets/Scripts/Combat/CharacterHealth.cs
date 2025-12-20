@@ -27,6 +27,17 @@ public class CharacterHealth : MonoBehaviour, IDamageable
         LogDebug($"Awake health={CurrentHealth}/{maxHealth}");
     }
 
+    /// <summary>
+    /// Revives this health component, resetting death state and restoring health.
+    /// </summary>
+    /// <param name="healthAmount">If > 0, sets the current health to this value; otherwise uses maxHealth.</param>
+    public void Revive(float healthAmount = -1f)
+    {
+        IsDead = false;
+        _hasLastDamage = false;
+        CurrentHealth = healthAmount > 0f ? Mathf.Min(healthAmount, maxHealth) : maxHealth;
+    }
+
     public void ApplyDamage(DamagePayload payload)
     {
         if (IsDead || invulnerable)

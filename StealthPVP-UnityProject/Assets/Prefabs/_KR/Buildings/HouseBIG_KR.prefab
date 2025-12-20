@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3140870752163430677}
   - component: {fileID: 1962825644610627909}
   - component: {fileID: 1329083288641678889}
-  m_Layer: 9
+  m_Layer: 8
   m_Name: HouseBig_KR
   m_TagString: Wall
   m_Icon: {fileID: 0}
@@ -27,13 +27,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 334500213036291548}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
   m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6280400589827903157}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!33 &3140870752163430677
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -123,9 +123,9 @@ GameObject:
   - component: {fileID: 7592240844194862013}
   - component: {fileID: 7676207249060463491}
   - component: {fileID: 2282662141030294252}
-  m_Layer: 9
+  m_Layer: 8
   m_Name: HouseRoof1F
-  m_TagString: Untagged
+  m_TagString: Wall
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
@@ -247,7 +247,7 @@ GameObject:
   - component: {fileID: 1416966208862297463}
   - component: {fileID: 6894819542313952020}
   - component: {fileID: 5595048540474237179}
-  m_Layer: 9
+  m_Layer: 8
   m_Name: HouseRoof2F
   m_TagString: Wall
   m_Icon: {fileID: 0}

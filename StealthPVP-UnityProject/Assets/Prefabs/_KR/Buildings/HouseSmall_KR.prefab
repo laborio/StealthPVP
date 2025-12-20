@@ -45,7 +45,7 @@ GameObject:
   - component: {fileID: 5164137047238901550}
   - component: {fileID: 2421371406102659447}
   - component: {fileID: 1165098103837437225}
-  m_Layer: 9
+  m_Layer: 8
   m_Name: HouseSmall_KR
   m_TagString: Wall
   m_Icon: {fileID: 0}
@@ -157,7 +157,7 @@ GameObject:
   - component: {fileID: 4103145601216482495}
   - component: {fileID: 7404132502177671524}
   - component: {fileID: 2059202459014751328}
-  m_Layer: 9
+  m_Layer: 8
   m_Name: HouseRoof
   m_TagString: Wall
   m_Icon: {fileID: 0}

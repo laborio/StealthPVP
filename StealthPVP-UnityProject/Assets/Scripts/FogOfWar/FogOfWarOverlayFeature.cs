@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering.RenderGraphModule;
+using System;
 
 /// <summary>
 /// URP renderer feature that draws the fog overlay as a full-screen pass using depth to reconstruct world XZ.
@@ -43,6 +44,16 @@ public class FogOfWarOverlayFeature : ScriptableRendererFeature
                 return;
             }
 
+            Camera cam = renderingData.cameraData.camera;
+            FogOfWarCameraBinder binder = cam ? cam.GetComponent<FogOfWarCameraBinder>() : null;
+            FogOfWarManager fog = binder ? binder.FogManager : null;
+            if (!fog)
+            {
+                return;
+            }
+
+            fog.PushShaderProperties();
+
             CommandBuffer cmd = CommandBufferPool.Get();
             using (new ProfilingScope(cmd, sampler))
             {
@@ -57,6 +68,7 @@ public class FogOfWarOverlayFeature : ScriptableRendererFeature
         private class PassData
         {
             public Material material;
+            public FogOfWarManager fog;
         }
 
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -68,10 +80,19 @@ public class FogOfWarOverlayFeature : ScriptableRendererFeature
 
             const string passName = "FogOfWarOverlay";
             UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
+            UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
+            Camera cam = cameraData?.camera;
+            FogOfWarCameraBinder binder = cam ? cam.GetComponent<FogOfWarCameraBinder>() : null;
+            FogOfWarManager fog = binder ? binder.FogManager : null;
+            if (!fog)
+            {
+                return;
+            }
 
             using (var builder = renderGraph.AddRasterRenderPass<PassData>(passName, out var passData, sampler))
             {
                 passData.material = material;
+                passData.fog = fog;
 
                 // Target the active color attachment, keep depth read-only for depth texture sampling.
                 builder.SetRenderAttachment(resourceData.activeColorTexture, 0, AccessFlags.Write);
@@ -83,6 +104,7 @@ public class FogOfWarOverlayFeature : ScriptableRendererFeature
                     var cmd = context.cmd;
                     using (new ProfilingScope(cmd, sampler))
                     {
+                        data.fog.PushShaderProperties();
                         CoreUtils.DrawFullScreen(cmd, data.material);
                     }
                 });

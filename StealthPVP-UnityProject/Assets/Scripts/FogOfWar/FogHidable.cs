@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 /// <summary>
 /// Hides the attached renderers whenever the unit is inside fog.
@@ -9,6 +10,7 @@ public class FogHidable : MonoBehaviour
 
     private Renderer[] cachedRenderers;
     private FogOfWarManager fogManager;
+    [SerializeField] private bool debugLogs;
 
     [Header("Minimap")]
     [Tooltip("Color used for the minimap icon if a MinimapIconManager is present.")]
@@ -24,26 +26,83 @@ public class FogHidable : MonoBehaviour
         fogManager = FindObjectOfType<FogOfWarManager>();
     }
 
-    private void LateUpdate()
+    private void OnEnable()
     {
-        if (fogManager == null)
-        {
-            return;
-        }
+        RenderPipelineManager.beginCameraRendering += HandleBeginCameraRendering;
+        RenderPipelineManager.endCameraRendering += HandleEndCameraRendering;
+    }
 
+    private void OnDisable()
+    {
+        RenderPipelineManager.beginCameraRendering -= HandleBeginCameraRendering;
+        RenderPipelineManager.endCameraRendering -= HandleEndCameraRendering;
+    }
+
+    private void HandleBeginCameraRendering(ScriptableRenderContext context, Camera cam)
+    {
         if (isAlly)
         {
             return;
         }
 
-        bool visible = fogManager.SampleFog01(transform.position) > 0.5f;
+        FogOfWarManager activeFog = ResolveFog(cam);
+        if (!activeFog)
+        {
+            if (debugLogs)
+            {
+                Debug.LogWarning($"[FogHidable] No fog manager for {name} on camera {cam.name}", this);
+            }
+            return;
+        }
+
+        bool visible = activeFog.SampleFog01(transform.position) > 0.5f;
+        if (debugLogs)
+        {
+            Debug.Log($"[FogHidable] {name} cam={cam.name} fog={activeFog.name} visible={visible}");
+        }
+
+        ApplyVisibility(!visible);
+    }
+
+    private void HandleEndCameraRendering(ScriptableRenderContext context, Camera cam)
+    {
+        // Reset to visible so the next camera can decide independently.
+        ApplyVisibility(false);
+    }
+
+    private void ApplyVisibility(bool forceOff)
+    {
+        if (cachedRenderers == null || cachedRenderers.Length == 0)
+        {
+            return;
+        }
+
         for (int i = 0; i < cachedRenderers.Length; i++)
         {
             Renderer r = cachedRenderers[i];
             if (r != null)
             {
-                r.enabled = visible;
+                r.forceRenderingOff = forceOff;
             }
         }
+    }
+
+    private FogOfWarManager ResolveFog(Camera cam)
+    {
+        if (FogOfWarCameraBinder.CurrentFog)
+        {
+            return FogOfWarCameraBinder.CurrentFog;
+        }
+
+        if (cam)
+        {
+            FogOfWarCameraBinder binder = cam.GetComponent<FogOfWarCameraBinder>();
+            if (binder && binder.FogManager)
+            {
+                return binder.FogManager;
+            }
+        }
+
+        return fogManager;
     }
 }
