@@ -5841,7 +5841,6 @@ GameObject:
   - component: {fileID: 1722403452703001479}
   - component: {fileID: 3335759634405975724}
   - component: {fileID: 5925778477965415538}
-  - component: {fileID: -5098590683816553468}
   - component: {fileID: 2026173931981255905}
   - component: {fileID: 8656996853188989829}
   - component: {fileID: 5199270325616618518}
@@ -6059,52 +6058,6 @@ MonoBehaviour:
   minimapColor: {r: 0.7647059, g: 0.09803922, b: 0.6666667, a: 1}
   minimapSprite: {fileID: 0}
   minimapIgnoreFog: 0
---- !u!114 &-5098590683816553468
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3862951192762057215}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7f11f7937f143466d9571ae2d4f74bc7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TriangleAgentController
-  myTarget: {fileID: 0}
-  myHunter: {fileID: 0}
-  knownTarget: {fileID: 0}
-  lastKnownPosition: {x: 0, y: 0, z: 0}
-  currentState: 0
-  walkSpeed: 2.5
-  runMultiplier: 3.5
-  disableWanderWhileChasing: 1
-  killRange: 1.75
-  navMeshAgent: {fileID: 1722403452703001479}
-  characterHealth: {fileID: 8202753440923050041}
-  identity: {fileID: 3335759634405975724}
-  animator: {fileID: 5966920758261546895}
-  wanderAgent: {fileID: 0}
-  walkBool: isWalking
-  runBool: isRunning
-  idleBool: isIdle
-  attackTrigger: Attack
-  visionSource: {fileID: 5199270325616618518}
-  fogMemoryDuration: 2
-  revealCooldownSeconds: 30
-  revealFullVisibilitySeconds: 2
-  revealFadeSeconds: 1
-  autoReveal: 1
-  revealConfirmDistance: 10
-  revealSuspicionRadius: 8
-  targetRunBool: isRunning
-  targetJumpBool: isJumping
-  targetAttackTag: Attack
-  decoyIdleRadius: 6
-  abilityConfig: {fileID: 11400000, guid: 6dc990a5bbbf74c8d898192900ba6d19, type: 2}
-  revealAbility: {fileID: -2057773324724296808}
-  revealAbilityId: Reveal
-  difficulty: 0.5
 --- !u!114 &2026173931981255905
 MonoBehaviour:
   m_ObjectHideFlags: 0

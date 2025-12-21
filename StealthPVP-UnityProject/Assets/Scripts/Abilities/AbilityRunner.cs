@@ -90,6 +90,13 @@ public class AbilityRunner : MonoBehaviour
         _fadeSeconds = Mathf.Max(0f, fade);
     }
 
+    public void ResetState()
+    {
+        _cooldownTimer = 0f;
+        _holdTimer = 0f;
+        _fadeTimer = 0f;
+    }
+
     public void SetInputEnabled(bool enabled)
     {
         _inputEnabled = enabled;

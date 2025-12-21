@@ -21535,6 +21535,8 @@ GameObject:
   - component: {fileID: 6138229842044069515}
   - component: {fileID: 8481327206142215975}
   - component: {fileID: 5973011174228879007}
+  - component: {fileID: 3982418650527562001}
+  - component: {fileID: -7253609879480470544}
   m_Layer: 0
   m_Name: NPC_Green
   m_TagString: NPC
@@ -21705,12 +21707,12 @@ NavMeshAgent:
   m_GameObject: {fileID: 8308234682327654559}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 0.5
+  m_Radius: 0.7
   m_Speed: 2.5
-  m_Acceleration: 8
+  m_Acceleration: 32
   avoidancePriority: 50
-  m_AngularSpeed: 360
-  m_StoppingDistance: 0
+  m_AngularSpeed: 720
+  m_StoppingDistance: 2
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
@@ -21747,16 +21749,31 @@ MonoBehaviour:
   agent: {fileID: 3306620444987402973}
   wanderPoints: []
   wanderRadius: 75
-  repathInterval: 0.25
+  repathInterval: 0.05
   idleTimeRange: {x: 3, y: 10}
-  stopOnDeath: 1
+  stopOnDeath: 0
   animator: {fileID: 0}
   walkingBoolName: isWalking
   idleBoolName: isIdle
-  moveSpeedThreshold: 0.1
-  moveStopSpeedThreshold: 0.05
+  moveSpeedThreshold: 1
+  moveStopSpeedThreshold: 0
+  scaleAnimatorWithSpeed: 1
+  minAnimatorSpeed: 0.15
+  maxAnimatorSpeed: 1
+  requireFullSpeedToWalk: 1
+  fullSpeedFraction: 0.5
+  slowToIdleDelay: 0.5
+  resumeDelay: 0.5
+  slowStopsMovement: 1
+  avoidCrowdCongestion: 1
+  crowdCheckInterval: 0.5
+  crowdProbeRadius: 8
+  crowdNeighborThreshold: 2
+  crowdSlowSpeedFraction: 0.7
+  crowdRepathCooldown: 0.5
+  crowdDestinationSamples: 6
   stuckSpeedThreshold: 0.05
-  stuckTime: 1.5
+  stuckTime: 0.5
 --- !u!114 &5973011174228879007
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21774,6 +21791,48 @@ MonoBehaviour:
   minimapColor: {r: 0.023529412, g: 0.7529412, b: 0.34509805, a: 1}
   minimapSprite: {fileID: 0}
   minimapIgnoreFog: 0
+--- !u!114 &3982418650527562001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8308234682327654559}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4c5299d045524897a37346a54dffe04, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NpcSoftPush
+  agent: {fileID: 3306620444987402973}
+  pushTrigger: {fileID: -7253609879480470544}
+  pushRadius: 1.6
+  pushSpeed: 2.75
+  playerMask:
+    serializedVersion: 2
+    m_Bits: 0
+  requirePlayerController: 1
+  autoCreateTrigger: 1
+--- !u!135 &-7253609879480470544
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8308234682327654559}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 1.6
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &8553775122156935885
 GameObject:
   m_ObjectHideFlags: 0

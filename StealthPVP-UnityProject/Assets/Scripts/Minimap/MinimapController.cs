@@ -1,48 +1,181 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Bridges world positions to minimap UI space and exposes fog sampling helpers.
+/// Highlights minimap section images based on the tracked target entering world section areas.
 /// </summary>
+[DisallowMultipleComponent]
 public class MinimapController : MonoBehaviour
 {
     [Header("References")]
-    public FogOfWarManager fog;
-    public RectTransform mapRect;      // RawImage rect covering the minimap area
-    public RectTransform iconsRoot;    // Parent for icon RectTransforms
-    public RawImage backgroundImage;   // Optional: background render texture or static map
+    [SerializeField] private Transform sectionsRoot;
+    [SerializeField] private NpcIdentity targetIdentity;
 
-    [Header("World bounds (auto-filled from FogOfWarManager)")]
-    public Vector2 worldMin;
-    public Vector2 worldMax;
+    [Header("Colors")]
+    [SerializeField] private Color defaultSectionColor = new Color32(91, 91, 91, 255); // #5B5B5B
+    [SerializeField] private Color highlightSectionColor = Color.yellow;
+
+    private readonly Dictionary<string, Image> _sections = new Dictionary<string, Image>();
+    private readonly HashSet<string> _highlightedSections = new HashSet<string>();
 
     private void Awake()
     {
-        if (fog == null)
+        CacheSections();
+    }
+
+    private void OnEnable()
+    {
+        MinimapSectionArea.TargetPresenceChanged += HandleAreaPresenceChanged;
+        if (_sections.Count == 0)
         {
-            fog = FindObjectOfType<FogOfWarManager>();
+            CacheSections();
+        }
+        RefreshTargetState();
+    }
+
+    private void OnDisable()
+    {
+        MinimapSectionArea.TargetPresenceChanged -= HandleAreaPresenceChanged;
+    }
+
+    public void SetTarget(NpcIdentity identity)
+    {
+        if (targetIdentity == identity)
+        {
+            return;
         }
 
-        if (fog != null)
+        targetIdentity = identity;
+        ClearHighlights();
+        RefreshTargetState();
+    }
+
+    private void CacheSections()
+    {
+        _sections.Clear();
+
+        if (!sectionsRoot)
         {
-            worldMin = fog.worldMin;
-            worldMax = fog.worldMax;
+            Transform found = transform.Find("Sections");
+            sectionsRoot = found ? found : transform;
+        }
+
+        if (!sectionsRoot)
+        {
+            return;
+        }
+
+        Image[] images = sectionsRoot.GetComponentsInChildren<Image>(true);
+        for (int i = 0; i < images.Length; i++)
+        {
+            Image image = images[i];
+            if (!image)
+            {
+                continue;
+            }
+
+            string key = image.gameObject.name;
+            if (string.IsNullOrEmpty(key) || _sections.ContainsKey(key))
+            {
+                continue;
+            }
+
+            _sections.Add(key, image);
+            image.color = defaultSectionColor;
         }
     }
 
-    /// <summary>
-    /// Converts world position to local anchored position inside the minimap rect.
-    /// </summary>
-    public Vector2 WorldToMinimap(Vector3 worldPos)
+    private void HandleAreaPresenceChanged(MinimapSectionArea area, NpcIdentity identity, bool entered)
     {
-        float nx = Mathf.InverseLerp(worldMin.x, worldMax.x, worldPos.x);
-        float nz = Mathf.InverseLerp(worldMin.y, worldMax.y, worldPos.z);
-        Vector2 size = mapRect.rect.size;
-        return new Vector2((nx - 0.5f) * size.x, (nz - 0.5f) * size.y);
+        if (!area || identity != targetIdentity)
+        {
+            return;
+        }
+
+        string sectionId = area.SectionId;
+        if (string.IsNullOrEmpty(sectionId))
+        {
+            return;
+        }
+
+        if (!_sections.TryGetValue(sectionId, out Image image) || !image)
+        {
+            return;
+        }
+
+        if (entered)
+        {
+            image.color = highlightSectionColor;
+            _highlightedSections.Add(sectionId);
+        }
+        else
+        {
+            image.color = defaultSectionColor;
+            _highlightedSections.Remove(sectionId);
+        }
     }
 
-    public bool IsVisible(Vector3 worldPos)
+    private void RefreshTargetState()
     {
-        return fog != null && fog.SampleFog01(worldPos) > 0.5f;
+        if (!targetIdentity)
+        {
+            return;
+        }
+
+        IReadOnlyList<MinimapSectionArea> areas = MinimapSectionArea.Instances;
+        if (areas == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < areas.Count; i++)
+        {
+            MinimapSectionArea area = areas[i];
+            if (!area)
+            {
+                continue;
+            }
+
+            if (area.IsInside(targetIdentity))
+            {
+                ApplySectionState(area.SectionId, true);
+            }
+        }
+    }
+
+    private void ApplySectionState(string sectionId, bool highlighted)
+    {
+        if (string.IsNullOrEmpty(sectionId))
+        {
+            return;
+        }
+
+        if (!_sections.TryGetValue(sectionId, out Image image) || !image)
+        {
+            return;
+        }
+
+        image.color = highlighted ? highlightSectionColor : defaultSectionColor;
+        if (highlighted)
+        {
+            _highlightedSections.Add(sectionId);
+        }
+        else
+        {
+            _highlightedSections.Remove(sectionId);
+        }
+    }
+
+    private void ClearHighlights()
+    {
+        foreach (var pair in _sections)
+        {
+            if (pair.Value)
+            {
+                pair.Value.color = defaultSectionColor;
+            }
+        }
+        _highlightedSections.Clear();
     }
 }

@@ -9,6 +9,7 @@ public class HighGroundRevealController : MonoBehaviour
     [SerializeField] private AbilityRunner abilityRunner;
     [SerializeField] private VisionSource visionSource;
     [SerializeField] private CharacterController characterController;
+    [SerializeField, Tooltip("If false, the height-based reveal cooldown acceleration is disabled.")] private bool enableHeightCooldown = false;
 
     [Header("Overlook Config (driven by GameplayTuning)")]
     [HideInInspector] [SerializeField] private float level1CooldownMultiplier = 2f;
@@ -16,6 +17,11 @@ public class HighGroundRevealController : MonoBehaviour
 
     private void Update()
     {
+        if (!enableHeightCooldown)
+        {
+            return;
+        }
+
         if (!abilityRunner)
         {
             return;

@@ -1018,7 +1018,6 @@ GameObject:
   m_Component:
   - component: {fileID: 31295993}
   - component: {fileID: 31295995}
-  - component: {fileID: 31295994}
   m_Layer: 0
   m_Name: Minimap
   m_TagString: Untagged
@@ -1047,25 +1046,6 @@ RectTransform:
   m_AnchoredPosition: {x: -20, y: 42}
   m_SizeDelta: {x: 271.2718, y: 304.5859}
   m_Pivot: {x: 1, y: 0}
---- !u!114 &31295994
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 31295992}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 05fc4b86499f84937980629ad910662a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MinimapIconManager
-  minimap: {fileID: 31295995}
-  iconsRoot: {fileID: 2004426931}
-  iconPrefab: {fileID: 5040346438681130340, guid: ccd087f4cd81f4b008295b5cbca90fe6, type: 3}
-  iconSize: {x: 12, y: 12}
-  defaultColor: {r: 1, g: 0, b: 0, a: 1}
-  defaultSprite: {fileID: 0}
-  refreshInterval: 0.5
 --- !u!114 &31295995
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15779,17 +15759,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ac160cd4a4934e6ab2317bb431738a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VisionSource
---- !u!114 &1127182003 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 5941336483230033581, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
-  m_PrefabInstance: {fileID: 114566483}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7f11f7937f143466d9571ae2d4f74bc7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TriangleAgentController
 --- !u!1 &1127209698
 GameObject:
   m_ObjectHideFlags: 0
