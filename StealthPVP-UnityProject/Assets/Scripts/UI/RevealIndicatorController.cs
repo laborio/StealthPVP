@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,6 +16,7 @@ public class RevealIndicatorController : MonoBehaviour
     [SerializeField] private Camera worldCamera;
     [SerializeField] private AbilityRunner revealAbility;
     [SerializeField, Tooltip("Fog manager used to determine visibility (target must be out of fog). Optional.")] private FogOfWarManager fogManager;
+    [SerializeField, Tooltip("Optional fog manager name to auto-find (e.g., Fog_P1 or Fog_P2).")] private string fogManagerNameHint;
 
     [Header("Targets")]
     [SerializeField] private NpcIdentity currentTarget;
@@ -38,8 +40,13 @@ public class RevealIndicatorController : MonoBehaviour
     private float _currentCircleAlpha;
     private float _currentFillAmount;
     private Color _circleBaseColor = Color.white;
+    private NpcIdentity _selfIdentity;
+    private float _nextAutoFindTime;
+    private float _nextFogFindTime;
 
     private const float MaxFillBeforeVisible = 0.3f;
+    private const float AutoFindInterval = 0.5f;
+    private const float FogFindInterval = 0.5f;
 
     public void SetTarget(NpcIdentity identity)
     {
@@ -62,11 +69,15 @@ public class RevealIndicatorController : MonoBehaviour
         {
             worldCamera = camera;
         }
+
+        CacheSelfIdentity();
+        TryAutoAssignFogManager(force: true);
     }
 
     public void SetWorldCamera(Camera camera)
     {
         worldCamera = camera;
+        TryAutoAssignFogManager(force: true);
     }
 
     public void SetFogManager(FogOfWarManager manager)
@@ -78,6 +89,11 @@ public class RevealIndicatorController : MonoBehaviour
     {
         verticalFadeDuration = Mathf.Max(0f, verticalFade);
         circleFadeDuration = Mathf.Max(0f, circleFade);
+    }
+
+    public void SetAlwaysShowWhenTargetSet(bool value)
+    {
+        alwaysShowWhenTargetSet = value;
     }
 
     private void Awake()
@@ -94,8 +110,15 @@ public class RevealIndicatorController : MonoBehaviour
 
         if (!fogManager)
         {
-            fogManager = Object.FindFirstObjectByType<FogOfWarManager>();
+            TryAutoAssignFogManager(force: true);
         }
+
+        CacheSelfIdentity();
+    }
+
+    private void OnEnable()
+    {
+        TryAutoAssignTarget(force: true);
     }
 
     private void Update()
@@ -105,6 +128,9 @@ public class RevealIndicatorController : MonoBehaviour
 
     private void UpdateIndicator()
     {
+        TryAutoAssignTarget();
+        TryAutoAssignFogManager();
+
         if (!playerTransform || !compassRoot || !compassCircle)
         {
             Debug.LogWarning("[RevealIndicatorController] Missing refs (player/compass/circle).", this);
@@ -136,6 +162,225 @@ public class RevealIndicatorController : MonoBehaviour
 
         bool targetVisible = IsTargetVisible(targetTransform);
         UpdateVisibility(targetVisible, hasTarget: true, distanceToTarget: toTarget.magnitude);
+    }
+
+    private void TryAutoAssignFogManager(bool force = false)
+    {
+        if (fogManager)
+        {
+            return;
+        }
+
+        if (!force && Time.time < _nextFogFindTime)
+        {
+            return;
+        }
+
+        _nextFogFindTime = Time.time + FogFindInterval;
+
+        if (!worldCamera)
+        {
+            worldCamera = Camera.main;
+        }
+
+        if (TryResolveFogName(out string fogName))
+        {
+            FogOfWarManager namedFog = FindFogByName(fogName);
+            if (namedFog)
+            {
+                fogManager = namedFog;
+                return;
+            }
+        }
+
+        FogOfWarCameraBinder binder = worldCamera ? worldCamera.GetComponent<FogOfWarCameraBinder>() : null;
+        if (binder && binder.FogManager)
+        {
+            fogManager = binder.FogManager;
+            return;
+        }
+
+        FogOfWarManager[] fogs = UnityEngine.Object.FindObjectsByType<FogOfWarManager>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        if (playerVisionSource && fogs != null)
+        {
+            for (int i = 0; i < fogs.Length; i++)
+            {
+                FogOfWarManager fog = fogs[i];
+                if (!fog || fog.visionSources == null)
+                {
+                    continue;
+                }
+
+                for (int j = 0; j < fog.visionSources.Count; j++)
+                {
+                    if (fog.visionSources[j] == playerVisionSource)
+                    {
+                        fogManager = fog;
+                        return;
+                    }
+                }
+            }
+        }
+
+        if (playerTransform)
+        {
+            FogOfWarManager fogFromPlayer = playerTransform.GetComponentInChildren<FogOfWarManager>(true)
+                ?? playerTransform.GetComponentInParent<FogOfWarManager>();
+            if (fogFromPlayer)
+            {
+                fogManager = fogFromPlayer;
+                return;
+            }
+        }
+
+        if (fogs != null && fogs.Length == 1)
+        {
+            fogManager = fogs[0];
+        }
+    }
+
+    private bool TryResolveFogName(out string fogName)
+    {
+        fogName = string.IsNullOrWhiteSpace(fogManagerNameHint) ? null : fogManagerNameHint.Trim();
+        if (!string.IsNullOrEmpty(fogName))
+        {
+            return true;
+        }
+
+        string sourceName = null;
+        if (playerTransform)
+        {
+            sourceName = playerTransform.name;
+        }
+        else if (transform.root)
+        {
+            sourceName = transform.root.name;
+        }
+        else if (worldCamera)
+        {
+            sourceName = worldCamera.name;
+        }
+        else
+        {
+            sourceName = name;
+        }
+
+        if (string.IsNullOrEmpty(sourceName))
+        {
+            return false;
+        }
+
+        string upper = sourceName.ToUpperInvariant();
+        if (upper.Contains("PLAYER1") || upper.Contains("P1"))
+        {
+            fogName = "Fog_P1";
+            return true;
+        }
+
+        if (upper.Contains("PLAYER2") || upper.Contains("P2"))
+        {
+            fogName = "Fog_P2";
+            return true;
+        }
+
+        return false;
+    }
+
+    private static FogOfWarManager FindFogByName(string fogName)
+    {
+        if (string.IsNullOrEmpty(fogName))
+        {
+            return null;
+        }
+
+        FogOfWarManager[] fogs = UnityEngine.Object.FindObjectsByType<FogOfWarManager>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        if (fogs == null || fogs.Length == 0)
+        {
+            return null;
+        }
+
+        for (int i = 0; i < fogs.Length; i++)
+        {
+            FogOfWarManager fog = fogs[i];
+            if (!fog)
+            {
+                continue;
+            }
+
+            if (string.Equals(fog.name, fogName, StringComparison.OrdinalIgnoreCase))
+            {
+                return fog;
+            }
+        }
+
+        return null;
+    }
+
+    private void TryAutoAssignTarget(bool force = false)
+    {
+        if (currentTarget && (!_selfIdentity || currentTarget != _selfIdentity))
+        {
+            return;
+        }
+
+        if (!force && Time.time < _nextAutoFindTime)
+        {
+            return;
+        }
+
+        _nextAutoFindTime = Time.time + AutoFindInterval;
+
+        if (!_selfIdentity)
+        {
+            CacheSelfIdentity();
+        }
+
+        RevealIndicatorController[] indicators = UnityEngine.Object.FindObjectsByType<RevealIndicatorController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        if (indicators == null || indicators.Length == 0)
+        {
+            return;
+        }
+
+        for (int i = 0; i < indicators.Length; i++)
+        {
+            RevealIndicatorController indicator = indicators[i];
+            if (!indicator || indicator == this)
+            {
+                continue;
+            }
+
+            NpcIdentity identity = ResolveIdentity(indicator.transform);
+            if (!identity)
+            {
+                continue;
+            }
+
+            if (_selfIdentity && identity == _selfIdentity)
+            {
+                continue;
+            }
+
+            SetTarget(identity);
+            return;
+        }
+    }
+
+    private void CacheSelfIdentity()
+    {
+        Transform root = playerTransform ? playerTransform : transform;
+        _selfIdentity = ResolveIdentity(root);
+    }
+
+    private static NpcIdentity ResolveIdentity(Transform root)
+    {
+        if (!root)
+        {
+            return null;
+        }
+
+        return root.GetComponent<NpcIdentity>()
+            ?? root.GetComponentInChildren<NpcIdentity>(true)
+            ?? root.GetComponentInParent<NpcIdentity>();
     }
 
     private void UpdateVisibility(bool targetVisible, bool hasTarget, float distanceToTarget)
