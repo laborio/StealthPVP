@@ -20,6 +20,15 @@ public class LocalVersusGameManager : MonoBehaviour
     [Header("Fog Of War (optional per-player)")]
     [SerializeField] private FogOfWarManager player1Fog;
     [SerializeField] private FogOfWarManager player2Fog;
+    [Header("Player-Only Visuals")]
+    [SerializeField, Tooltip("Layer name for player 1-only visuals.")] private string player1OnlyLayer = "Player1Only";
+    [SerializeField, Tooltip("Layer name for player 2-only visuals.")] private string player2OnlyLayer = "Player2Only";
+    [SerializeField, Tooltip("Child object names to restrict to the owning player camera.")] private string[] playerOnlyObjectNames = { "PlayerCompass", "T_ClickArea", "ClickArea", "WSCanvas", "RangeIndicator" };
+    [Header("UI/Reveal")]
+    [SerializeField] private GameUiManager player1Ui;
+    [SerializeField] private GameUiManager player2Ui;
+    [SerializeField, Tooltip("Reveal key for player 1 (keyboard/mouse).")] private KeyCode player1RevealKey = KeyCode.F;
+    [SerializeField, Tooltip("Reveal key for player 2 (gamepad).")] private KeyCode player2RevealKey = KeyCode.JoystickButton4;
     [Header("Input Axes")]
     [SerializeField, Tooltip("Keyboard-only horizontal axis name for player 1.")] private string player1HorizontalAxis = "Horizontal";
     [SerializeField, Tooltip("Keyboard-only vertical axis name for player 1.")] private string player1VerticalAxis = "Vertical";
@@ -100,6 +109,8 @@ public class LocalVersusGameManager : MonoBehaviour
         }
 
         UpdateFogBindings();
+        UpdateRevealBindings();
+        UpdatePlayerOnlyVisuals();
     }
 
     private GameObject SpawnPlayer(GameObject prefab, GameObject existing, Vector3 position, Quaternion rotation, Camera camera, ref CharacterHealth cachedHealth)
@@ -289,6 +300,7 @@ public class LocalVersusGameManager : MonoBehaviour
         UpdateRoleIndicators();
         UpdateCompasses();
         UpdateFogBindings();
+        UpdateRevealBindings();
         _respawnInProgress = false;
     }
 
@@ -320,6 +332,7 @@ public class LocalVersusGameManager : MonoBehaviour
         if (player1Compass)
         {
             player1Compass.ConfigurePlayer(_player1Instance ? _player1Instance.transform : null, vision1, ability1, player1Camera);
+            player1Compass.SetAlwaysShowWhenTargetSet(false);
             player1Compass.SetTarget(id2);
             if (player1Fog)
             {
@@ -330,6 +343,7 @@ public class LocalVersusGameManager : MonoBehaviour
         if (player2Compass)
         {
             player2Compass.ConfigurePlayer(_player2Instance ? _player2Instance.transform : null, vision2, ability2, player2Camera);
+            player2Compass.SetAlwaysShowWhenTargetSet(false);
             player2Compass.SetTarget(id1);
             if (player2Fog)
             {
@@ -351,6 +365,34 @@ public class LocalVersusGameManager : MonoBehaviour
     private AbilityRunner GetAbility(GameObject root)
     {
         return root ? root.GetComponent<AbilityRunner>() ?? root.GetComponentInChildren<AbilityRunner>(true) : null;
+    }
+
+    private void UpdateRevealBindings()
+    {
+        AbilityRunner ability1 = GetAbility(_player1Instance);
+        AbilityRunner ability2 = GetAbility(_player2Instance);
+
+        if (ability1)
+        {
+            ability1.SetUseInput(true);
+            ability1.SetOverrideKey(player1RevealKey);
+        }
+
+        if (ability2)
+        {
+            ability2.SetUseInput(true);
+            ability2.SetOverrideKey(player2RevealKey);
+        }
+
+        if (player1Ui)
+        {
+            player1Ui.SetRevealAbility(ability1);
+        }
+
+        if (player2Ui)
+        {
+            player2Ui.SetRevealAbility(ability2);
+        }
     }
 
     private void UpdateFogBindings()
@@ -556,5 +598,93 @@ public class LocalVersusGameManager : MonoBehaviour
             vision.level1Radius = 18f;
             vision.level2Radius = 22f;
         }
+    }
+
+    private void UpdatePlayerOnlyVisuals()
+    {
+        int player1LayerId = LayerMask.NameToLayer(player1OnlyLayer);
+        int player2LayerId = LayerMask.NameToLayer(player2OnlyLayer);
+        if (player1LayerId < 0 || player2LayerId < 0)
+        {
+            Debug.LogWarning($"[LocalVersusGameManager] Missing layers for player-only visuals. Define '{player1OnlyLayer}' and '{player2OnlyLayer}' in TagManager.", this);
+            return;
+        }
+
+        AssignPlayerOnlyLayer(_player1Instance, player1LayerId);
+        AssignPlayerOnlyLayer(_player2Instance, player2LayerId);
+
+        ApplyCameraCullingMask(player1Camera, player1LayerId, player2LayerId);
+        ApplyCameraCullingMask(player2Camera, player2LayerId, player1LayerId);
+    }
+
+    private void AssignPlayerOnlyLayer(GameObject root, int layer)
+    {
+        if (!root || playerOnlyObjectNames == null || playerOnlyObjectNames.Length == 0)
+        {
+            return;
+        }
+
+        Transform[] all = root.GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < all.Length; i++)
+        {
+            Transform t = all[i];
+            if (!t)
+            {
+                continue;
+            }
+
+            if (IsPlayerOnlyObjectName(t.name))
+            {
+                SetLayerRecursively(t, layer);
+            }
+        }
+    }
+
+    private bool IsPlayerOnlyObjectName(string objectName)
+    {
+        if (string.IsNullOrEmpty(objectName))
+        {
+            return false;
+        }
+
+        for (int i = 0; i < playerOnlyObjectNames.Length; i++)
+        {
+            if (objectName == playerOnlyObjectNames[i])
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void SetLayerRecursively(Transform root, int layer)
+    {
+        if (!root)
+        {
+            return;
+        }
+
+        root.gameObject.layer = layer;
+        for (int i = 0; i < root.childCount; i++)
+        {
+            SetLayerRecursively(root.GetChild(i), layer);
+        }
+    }
+
+    private void ApplyCameraCullingMask(Camera cam, int includeLayer, int excludeLayer)
+    {
+        if (!cam)
+        {
+            return;
+        }
+
+        int mask = cam.cullingMask;
+        mask |= 1 << includeLayer;
+        if (excludeLayer >= 0)
+        {
+            mask &= ~(1 << excludeLayer);
+        }
+        cam.cullingMask = mask;
     }
 }

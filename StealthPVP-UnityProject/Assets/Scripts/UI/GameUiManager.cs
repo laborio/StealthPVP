@@ -15,6 +15,11 @@ public class GameUiManager : MonoBehaviour
         UpdateRevealCooldown();
     }
 
+    public void SetRevealAbility(AbilityRunner ability)
+    {
+        revealAbility = ability;
+    }
+
     private void UpdateRevealCooldown()
     {
         if (!revealCooldownText || !revealAbility)

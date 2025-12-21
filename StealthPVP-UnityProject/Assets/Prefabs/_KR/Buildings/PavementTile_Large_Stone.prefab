@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5731434543391296613}
   - component: {fileID: 3749537145687295863}
   - component: {fileID: 1651848930491638661}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: PavementTile_Large_Stone
   m_TagString: Untagged
   m_Icon: {fileID: 0}

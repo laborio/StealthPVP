@@ -657,7 +657,7 @@ MonoBehaviour:
   enableEdgeSmoothing: 1
   blurRadiusCells: 2
   blurIterations: 4
-  debugLogs: 1
+  debugLogs: 0
   debugSampleTarget: {fileID: 0}
   debugLogInterval: 1
 --- !u!4 &13709385
@@ -1482,67 +1482,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 46196737}
   m_CullTransparentMesh: 1
---- !u!1001 &47623943
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 5973011174228879007, guid: 1b3796f71c82a49bcabb2e668959b559, type: 3}
-      propertyPath: debugLogs
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8308234682327654559, guid: 1b3796f71c82a49bcabb2e668959b559, type: 3}
-      propertyPath: m_Name
-      value: NPC_Green
-      objectReference: {fileID: 0}
-    - target: {fileID: 8548633111219101431, guid: 1b3796f71c82a49bcabb2e668959b559, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 99.4558
-      objectReference: {fileID: 0}
-    - target: {fileID: 8548633111219101431, guid: 1b3796f71c82a49bcabb2e668959b559, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 9.999697
-      objectReference: {fileID: 0}
-    - target: {fileID: 8548633111219101431, guid: 1b3796f71c82a49bcabb2e668959b559, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 16.702898
-      objectReference: {fileID: 0}
-    - target: {fileID: 8548633111219101431, guid: 1b3796f71c82a49bcabb2e668959b559, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8548633111219101431, guid: 1b3796f71c82a49bcabb2e668959b559, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8548633111219101431, guid: 1b3796f71c82a49bcabb2e668959b559, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8548633111219101431, guid: 1b3796f71c82a49bcabb2e668959b559, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8548633111219101431, guid: 1b3796f71c82a49bcabb2e668959b559, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8548633111219101431, guid: 1b3796f71c82a49bcabb2e668959b559, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8548633111219101431, guid: 1b3796f71c82a49bcabb2e668959b559, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 1b3796f71c82a49bcabb2e668959b559, type: 3}
 --- !u!1001 &66441891
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10707,7 +10646,7 @@ MonoBehaviour:
   enableEdgeSmoothing: 1
   blurRadiusCells: 2
   blurIterations: 4
-  debugLogs: 1
+  debugLogs: 0
   debugSampleTarget: {fileID: 0}
   debugLogInterval: 1
 --- !u!4 &688461683
@@ -15508,6 +15447,10 @@ MonoBehaviour:
   npcDirector: {fileID: 2030841396}
   player1Fog: {fileID: 688461682}
   player2Fog: {fileID: 13709384}
+  player1Ui: {fileID: 509893648}
+  player2Ui: {fileID: 1259809156}
+  player1RevealKey: 102
+  player2RevealKey: 335
   player1HorizontalAxis: Horizontal
   player1VerticalAxis: Vertical
   player2MoveHorizontalAxis: Horizontal2
@@ -34225,4 +34168,3 @@ SceneRoots:
   - {fileID: 2122717960}
   - {fileID: 280703719}
   - {fileID: 978842461}
-  - {fileID: 47623943}

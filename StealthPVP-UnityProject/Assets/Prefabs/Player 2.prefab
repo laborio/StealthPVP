@@ -7101,6 +7101,7 @@ GameObject:
   - component: {fileID: 5309476073554680408}
   - component: {fileID: 1855048793163545688}
   - component: {fileID: 5703283200672734699}
+  - component: {fileID: 4074577336645987941}
   m_Layer: 0
   m_Name: Player 2
   m_TagString: Player
@@ -7171,7 +7172,7 @@ CharacterController:
   m_Height: 1.87
   m_Radius: 0.4
   m_SlopeLimit: 45
-  m_StepOffset: 0.25
+  m_StepOffset: 0.32
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 1, z: 0}
@@ -7531,6 +7532,7 @@ MonoBehaviour:
   worldCamera: {fileID: 0}
   revealAbility: {fileID: 4474624741856799096}
   fogManager: {fileID: 0}
+  fogManagerNameHint: Fog_P2
   currentTarget: {fileID: 0}
   minFillAmount: 0.15
   farDistanceForMinFill: 60
@@ -7559,6 +7561,20 @@ MonoBehaviour:
   minimapColor: {r: 1, g: 0, b: 0, a: 1}
   minimapSprite: {fileID: 0}
   minimapIgnoreFog: 0
+--- !u!114 &4074577336645987941
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601125754130475395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5f35b7618d644dcc8536b3f20e4ef96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NpcIdentity
+  identifierColor: {r: 0.0014684978, g: 0.31132078, b: 0.17612365, a: 1}
+  targetIndicator: {fileID: 0}
 --- !u!1 &5631832183318855960
 GameObject:
   m_ObjectHideFlags: 0

@@ -135,4 +135,15 @@ public class AbilityRunner : MonoBehaviour
     {
         _resolvedKey = overrideKey != KeyCode.None ? overrideKey : KeyCode.F;
     }
+
+    public void SetOverrideKey(KeyCode key)
+    {
+        overrideKey = key;
+        ResolveConfig();
+    }
+
+    public void SetUseInput(bool enabled)
+    {
+        useInput = enabled;
+    }
 }
