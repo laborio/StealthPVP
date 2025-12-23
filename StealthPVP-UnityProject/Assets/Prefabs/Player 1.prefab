@@ -7095,13 +7095,13 @@ GameObject:
   - component: {fileID: 5931815322622634413}
   - component: {fileID: 2925403330456065289}
   - component: {fileID: 3406844457852400002}
-  - component: {fileID: 5941336483230033581}
   - component: {fileID: 1202477659159655595}
   - component: {fileID: 4474624741856799096}
   - component: {fileID: 9134023850950813770}
   - component: {fileID: 7041976273030326785}
   - component: {fileID: 6570091286333075232}
   - component: {fileID: -7557276612643445217}
+  - component: {fileID: 3599039430386326984}
   m_Layer: 0
   m_Name: Player 1
   m_TagString: Player
@@ -7142,7 +7142,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: 41e4f636152bc4001ac42ea6a67e3f36, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
-  m_ApplyRootMotion: 1
+  m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
@@ -7361,60 +7361,6 @@ MonoBehaviour:
   destroyDelayAfterFreeze: 5
   npcDeadTriggerName: NPCDead
   ragdollGravityMultiplier: 1.8
---- !u!114 &5941336483230033581
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5601125754130475395}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7f11f7937f143466d9571ae2d4f74bc7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TriangleAgentController
-  myTarget: {fileID: 0}
-  myHunter: {fileID: 0}
-  knownTarget: {fileID: 0}
-  lastKnownPosition: {x: 0, y: 0, z: 0}
-  currentState: 0
-  walkSpeed: 2.5
-  runMultiplier: 3.5
-  disableWanderWhileChasing: 1
-  killRange: 1.75
-  navMeshAgent: {fileID: 0}
-  characterHealth: {fileID: 5931815322622634413}
-  identity: {fileID: 0}
-  animator: {fileID: 2600605261231814864}
-  wanderAgent: {fileID: 0}
-  walkBool: isWalking
-  runBool: isRunning
-  idleBool: isIdle
-  attackTrigger: Attack
-  visionSource: {fileID: 2925403330456065289}
-  fogMemoryDuration: 2
-  revealCooldownSeconds: 30
-  revealFullVisibilitySeconds: 2
-  revealFadeSeconds: 1
-  autoReveal: 1
-  revealConfirmDistance: 10
-  revealSuspicionRadius: 8
-  targetRunBool: isRunning
-  targetJumpBool: isJumping
-  targetAttackTag: Attack
-  decoyIdleRadius: 6
-  attackRepeatCooldown: 1.1
-  attackAnimHoldSeconds: 0.6
-  attackFacingSpeed: 720
-  postKillEscapeDuration: 1.5
-  postKillEscapeDistance: 12
-  postKillCooldownSeconds: 2.5
-  chaseStuckSpeedThreshold: 0.1
-  chaseStuckTime: 1
-  searchHangTime: 1.5
-  revealAbility: {fileID: 4474624741856799096}
-  revealAbilityId: Reveal
-  difficulty: 0.5
 --- !u!114 &1202477659159655595
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7511,11 +7457,10 @@ MonoBehaviour:
   nearDistanceForMaxFill: 10
   compassRotationOffset: 90
   farFillColor: {r: 1, g: 0.85490197, b: 0, a: 1}
-  nearFillColor: {r: 1, g: 0.2509804, b: 0, a: 1}
+  nearFillColor: {r: 1, g: 0.83026266, b: 0, a: 1}
   nearColorDistanceOffset: 2
-  verticalFadeDuration: 0.4
   circleFadeDuration: 0.2
-  alwaysShowWhenTargetSet: 1
+  alwaysShowWhenTargetSet: 0
 --- !u!114 &6570091286333075232
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7547,6 +7492,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NpcIdentity
   identifierColor: {r: 0.10256896, g: 0.0992791, b: 0.21698111, a: 1}
   targetIndicator: {fileID: 0}
+--- !u!208 &3599039430386326984
+NavMeshObstacle:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5601125754130475395}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Shape: 0
+  m_Extents: {x: 0.5, y: 0.965, z: 0.5}
+  m_MoveThreshold: 0.1
+  m_Carve: 0
+  m_CarveOnlyStationary: 1
+  m_Center: {x: 0, y: 0.8, z: 0}
+  m_TimeToStationary: 0.5
 --- !u!1 &5631832183318855960
 GameObject:
   m_ObjectHideFlags: 0

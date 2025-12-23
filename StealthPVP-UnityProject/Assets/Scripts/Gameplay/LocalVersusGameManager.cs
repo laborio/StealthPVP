@@ -27,6 +27,11 @@ public class LocalVersusGameManager : MonoBehaviour
     [Header("UI/Reveal")]
     [SerializeField] private GameUiManager player1Ui;
     [SerializeField] private GameUiManager player2Ui;
+    [Header("Minimap")]
+    [SerializeField] private MinimapController player1Minimap;
+    [SerializeField] private MinimapController player2Minimap;
+    [Header("Tuning")]
+    [SerializeField] private GameplayTuning gameplayTuning;
     [SerializeField, Tooltip("Reveal key for player 1 (keyboard/mouse).")] private KeyCode player1RevealKey = KeyCode.F;
     [SerializeField, Tooltip("Reveal key for player 2 (gamepad).")] private KeyCode player2RevealKey = KeyCode.JoystickButton4;
     [Header("Input Axes")]
@@ -67,6 +72,7 @@ public class LocalVersusGameManager : MonoBehaviour
             npcDirector.EnableDecoysOnlyMode();
         }
         AutoAssignCompasses();
+        ResolveGameplayTuning();
     }
 
     private void Start()
@@ -87,6 +93,20 @@ public class LocalVersusGameManager : MonoBehaviour
         if (Display.displays.Length > 1)
         {
             Display.displays[1].Activate();
+        }
+    }
+
+    private void ResolveGameplayTuning()
+    {
+        if (gameplayTuning)
+        {
+            return;
+        }
+
+        GameplayTuningApplier applier = FindFirstObjectByType<GameplayTuningApplier>();
+        if (applier && applier.Tuning)
+        {
+            gameplayTuning = applier.Tuning;
         }
     }
 
@@ -284,7 +304,30 @@ public class LocalVersusGameManager : MonoBehaviour
             return;
         }
 
+        ResetRevealCooldown(dead);
         StartCoroutine(HandleRespawnAndSwap());
+    }
+
+    private void ResetRevealCooldown(CharacterHealth dead)
+    {
+        AbilityRunner ability = null;
+        if (dead == _player1Health)
+        {
+            ability = GetAbility(_player1Instance);
+        }
+        else if (dead == _player2Health)
+        {
+            ability = GetAbility(_player2Instance);
+        }
+        else
+        {
+            ability = dead.GetComponentInParent<AbilityRunner>() ?? dead.GetComponentInChildren<AbilityRunner>(true);
+        }
+
+        if (ability)
+        {
+            ability.ResetState();
+        }
     }
 
     private IEnumerator HandleRespawnAndSwap()
@@ -328,7 +371,6 @@ public class LocalVersusGameManager : MonoBehaviour
         VisionSource vision2 = GetVision(_player2Instance);
         AbilityRunner ability1 = GetAbility(_player1Instance);
         AbilityRunner ability2 = GetAbility(_player2Instance);
-
         if (player1Compass)
         {
             player1Compass.ConfigurePlayer(_player1Instance ? _player1Instance.transform : null, vision1, ability1, player1Camera);
@@ -350,7 +392,57 @@ public class LocalVersusGameManager : MonoBehaviour
                 player2Compass.SetFogManager(player2Fog);
             }
         }
+
+        ApplyRevealTuning(ability1, player1Compass);
+        ApplyRevealTuning(ability2, player2Compass);
+        UpdateMinimaps(id1, id2);
     }
+
+    private void UpdateMinimaps(NpcIdentity player1Target, NpcIdentity player2Target)
+    {
+        if (!player1Minimap && player1Ui)
+        {
+            player1Minimap = player1Ui.GetComponentInChildren<MinimapController>(true);
+        }
+
+        if (!player2Minimap && player2Ui)
+        {
+            player2Minimap = player2Ui.GetComponentInChildren<MinimapController>(true);
+        }
+
+        if (player1Minimap)
+        {
+            player1Minimap.SetTarget(player2Target);
+        }
+
+        if (player2Minimap)
+        {
+            player2Minimap.SetTarget(player1Target);
+        }
+    }
+
+    private void ApplyRevealTuning(AbilityRunner ability, RevealIndicatorController indicator)
+    {
+        if (!gameplayTuning)
+        {
+            ResolveGameplayTuning();
+            if (!gameplayTuning)
+            {
+                return;
+            }
+        }
+
+        if (ability)
+        {
+            ability.ApplyOverrides(gameplayTuning.revealCooldown, gameplayTuning.revealHold, gameplayTuning.revealFade);
+        }
+
+        if (indicator)
+        {
+            indicator.ApplyFadeConfig(gameplayTuning.revealFade, gameplayTuning.revealFade);
+        }
+    }
+
 
     private NpcIdentity GetIdentity(GameObject root)
     {
@@ -366,6 +458,7 @@ public class LocalVersusGameManager : MonoBehaviour
     {
         return root ? root.GetComponent<AbilityRunner>() ?? root.GetComponentInChildren<AbilityRunner>(true) : null;
     }
+
 
     private void UpdateRevealBindings()
     {

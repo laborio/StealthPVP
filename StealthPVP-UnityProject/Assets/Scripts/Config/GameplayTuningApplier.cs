@@ -8,12 +8,13 @@ using UnityEngine;
 public class GameplayTuningApplier : MonoBehaviour
 {
     [SerializeField] private GameplayTuning tuning;
-    [SerializeField] private NpcGameDirector director;
     [SerializeField] private AbilityRunner playerRevealAbility;
     [SerializeField, Tooltip("Optional player reveal indicator to apply fade settings.")] private RevealIndicatorController playerRevealIndicator;
     [SerializeField, Tooltip("Apply to all VisionSources found in the scene.")] private bool autoApplyVisionSources = true;
     [SerializeField, Tooltip("Optional explicit VisionSources to override when autoApplyVisionSources is false.")] private VisionSource[] visionSources;
     [SerializeField, Tooltip("Optional player high-ground reveal controller.")] private HighGroundRevealController playerHighGroundReveal;
+
+    public GameplayTuning Tuning => tuning;
 
     private void Start()
     {
@@ -28,12 +29,6 @@ public class GameplayTuningApplier : MonoBehaviour
 
     public void Apply()
     {
-        if (director)
-        {
-            director.SetDifficulty(tuning.aiDifficulty);
-            director.SetRevealBase(tuning.revealCooldown, tuning.revealHold, tuning.revealFade);
-        }
-
         if (playerRevealAbility)
         {
             playerRevealAbility.ApplyOverrides(tuning.revealCooldown, tuning.revealHold, tuning.revealFade);

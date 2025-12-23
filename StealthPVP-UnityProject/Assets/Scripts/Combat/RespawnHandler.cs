@@ -5,7 +5,6 @@ using UnityEngine.AI;
 
 /// <summary>
 /// Handles respawning characters by restoring health, ragdoll, animation, and position after death.
-/// Works for both player and NPC triangle hunters.
 /// </summary>
 [DisallowMultipleComponent]
 public class RespawnHandler : MonoBehaviour
@@ -119,22 +118,6 @@ public class RespawnHandler : MonoBehaviour
             health.Revive();
         }
 
-        NotifyDirector();
-    }
-
-    private void NotifyDirector()
-    {
-        TriangleAgentController triangleAgent = GetComponent<TriangleAgentController>() ?? GetComponentInChildren<TriangleAgentController>(true);
-        if (!triangleAgent)
-        {
-            return;
-        }
-
-        NpcGameDirector director = FindFirstObjectByType<NpcGameDirector>();
-        if (director)
-        {
-            director.RegisterRespawnedAgent(triangleAgent);
-        }
     }
 
     private Transform ResolveRespawnPoint()
@@ -166,18 +149,19 @@ public class RespawnHandler : MonoBehaviour
             return;
         }
 
-        // Use TriangleAgentController instances as "players" to avoid relying on SimpleCharacterController.
-        var agents = FindObjectsByType<TriangleAgentController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-        for (int i = 0; i < agents.Length; i++)
+        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+        for (int i = 0; i < players.Length; i++)
         {
-            TriangleAgentController agent = agents[i];
-            if (agent)
+            GameObject player = players[i];
+            if (!player)
             {
-                Transform t = agent.transform;
-                if (t && !results.Contains(t))
-                {
-                    results.Add(t);
-                }
+                continue;
+            }
+
+            Transform t = player.transform;
+            if (t && !results.Contains(t))
+            {
+                results.Add(t);
             }
         }
     }

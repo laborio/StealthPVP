@@ -32,11 +32,9 @@ public class RevealIndicatorController : MonoBehaviour
     [SerializeField, Tooltip("Extra distance added to nearDistanceForMaxFill before reaching near color.")] private float nearColorDistanceOffset = 2f;
 
     [Header("Visibility (driven by GameplayTuning)")] 
-    [HideInInspector] [SerializeField] private float verticalFadeDuration = 0.4f;
     [HideInInspector] [SerializeField] private float circleFadeDuration = 0.2f;
     [SerializeField, Tooltip("If true, compass is visible whenever a target is set (ignores reveal ability state).")] private bool alwaysShowWhenTargetSet = true;
 
-    private float _verticalAlpha;
     private float _currentCircleAlpha;
     private float _currentFillAmount;
     private Color _circleBaseColor = Color.white;
@@ -87,7 +85,6 @@ public class RevealIndicatorController : MonoBehaviour
 
     public void ApplyFadeConfig(float verticalFade, float circleFade)
     {
-        verticalFadeDuration = Mathf.Max(0f, verticalFade);
         circleFadeDuration = Mathf.Max(0f, circleFade);
     }
 
@@ -385,8 +382,6 @@ public class RevealIndicatorController : MonoBehaviour
 
     private void UpdateVisibility(bool targetVisible, bool hasTarget, float distanceToTarget)
     {
-        UpdateVerticalAlpha();
-
         float abilityAlpha = revealAbility ? revealAbility.ActiveNormalized : 0f;
         if (alwaysShowWhenTargetSet && hasTarget)
         {
@@ -444,19 +439,6 @@ public class RevealIndicatorController : MonoBehaviour
                 circleRect.localEulerAngles = new Vector3(0f, 0f, -angle);
             }
         }
-    }
-
-    private void UpdateVerticalAlpha()
-    {
-        float verticalTarget = 0f;
-        if (playerVisionSource)
-        {
-            float threshold = playerVisionSource.level2MinHeight;
-            float playerY = playerTransform ? playerTransform.position.y : 0f;
-            verticalTarget = playerY >= threshold ? 1f : 0f;
-        }
-
-        _verticalAlpha = SmoothTowards(_verticalAlpha, verticalTarget, verticalFadeDuration);
     }
 
     private float SmoothTowards(float current, float target, float duration)
