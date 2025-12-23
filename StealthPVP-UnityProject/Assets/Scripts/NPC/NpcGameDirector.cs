@@ -23,12 +23,15 @@ public class NpcGameDirector : MonoBehaviour
 
     private readonly List<NpcIdentity> _activeNpcs = new List<NpcIdentity>();
     private readonly List<Vector3> _usedSpawnPositions = new List<Vector3>();
+    private readonly List<Transform> _spawnPool = new List<Transform>();
+    private int _spawnPoolIndex;
     private NpcIdentity _currentTarget;
 
     private void Start()
     {
         LogDebug("Start called");
         _usedSpawnPositions.Clear();
+        ResetSpawnPool();
 
         if (decoysOnlyMode)
         {
@@ -142,14 +145,13 @@ public class NpcGameDirector : MonoBehaviour
         {
             if (minSpawnSeparation <= 0f || _usedSpawnPositions.Count == 0 || spawnPoints.Count == 1)
             {
-                return spawnPoints[Random.Range(0, spawnPoints.Count)];
+                return GetNextSpawnPointFromPool();
             }
 
-            List<Transform> candidates = new List<Transform>();
             float minDistSqr = minSpawnSeparation * minSpawnSeparation;
-            for (int i = 0; i < spawnPoints.Count; i++)
+            for (int i = _spawnPoolIndex; i < _spawnPool.Count; i++)
             {
-                Transform point = spawnPoints[i];
+                Transform point = _spawnPool[i];
                 if (!point)
                 {
                     continue;
@@ -168,19 +170,73 @@ public class NpcGameDirector : MonoBehaviour
 
                 if (farEnough)
                 {
-                    candidates.Add(point);
+                    if (i != _spawnPoolIndex)
+                    {
+                        Transform swap = _spawnPool[_spawnPoolIndex];
+                        _spawnPool[_spawnPoolIndex] = point;
+                        _spawnPool[i] = swap;
+                    }
+
+                    Transform chosen = _spawnPool[_spawnPoolIndex];
+                    _spawnPoolIndex++;
+                    return chosen;
                 }
             }
 
-            if (candidates.Count > 0)
-            {
-                return candidates[Random.Range(0, candidates.Count)];
-            }
-
-            return spawnPoints[Random.Range(0, spawnPoints.Count)];
+            return GetNextSpawnPointFromPool();
         }
 
         return null;
+    }
+
+    private Transform GetNextSpawnPointFromPool()
+    {
+        if (spawnPoints == null || spawnPoints.Count == 0)
+        {
+            return null;
+        }
+
+        if (_spawnPool.Count == 0 || _spawnPoolIndex >= _spawnPool.Count)
+        {
+            ResetSpawnPool();
+        }
+
+        if (_spawnPool.Count == 0)
+        {
+            return null;
+        }
+
+        Transform next = _spawnPool[_spawnPoolIndex];
+        _spawnPoolIndex++;
+        return next;
+    }
+
+    private void ResetSpawnPool()
+    {
+        _spawnPool.Clear();
+        _spawnPoolIndex = 0;
+
+        if (spawnPoints == null || spawnPoints.Count == 0)
+        {
+            return;
+        }
+
+        for (int i = 0; i < spawnPoints.Count; i++)
+        {
+            Transform point = spawnPoints[i];
+            if (point)
+            {
+                _spawnPool.Add(point);
+            }
+        }
+
+        for (int i = _spawnPool.Count - 1; i > 0; i--)
+        {
+            int swapIndex = Random.Range(0, i + 1);
+            Transform swap = _spawnPool[i];
+            _spawnPool[i] = _spawnPool[swapIndex];
+            _spawnPool[swapIndex] = swap;
+        }
     }
 
     private void TrySnapToNavMesh(GameObject instance, float sampleRadius)
