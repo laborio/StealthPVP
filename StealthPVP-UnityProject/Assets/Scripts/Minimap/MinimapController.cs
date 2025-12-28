@@ -11,14 +11,16 @@ public class MinimapController : MonoBehaviour
     [Header("References")]
     [SerializeField] private Transform sectionsRoot;
     [SerializeField] private NpcIdentity targetIdentity;
+    [SerializeField] private NpcIdentity ownerIdentity;
 
     [Header("Colors")]
     [SerializeField] private Color defaultSectionColor = new Color32(91, 91, 91, 255); // #5B5B5B
     [SerializeField] private Color highlightSectionColor = Color.yellow;
+    [SerializeField] private Color ownerSectionColor = Color.white;
 
     private readonly Dictionary<string, Image> _sections = new Dictionary<string, Image>();
-    private readonly HashSet<string> _highlightedSections = new HashSet<string>();
-    private readonly Dictionary<string, int> _sectionPresenceCounts = new Dictionary<string, int>();
+    private readonly Dictionary<string, int> _targetPresenceCounts = new Dictionary<string, int>();
+    private readonly Dictionary<string, int> _ownerPresenceCounts = new Dictionary<string, int>();
 
     private void Awake()
     {
@@ -32,7 +34,7 @@ public class MinimapController : MonoBehaviour
         {
             CacheSections();
         }
-        RefreshTargetState();
+        RefreshIdentityStates();
     }
 
     private void OnDisable()
@@ -49,7 +51,19 @@ public class MinimapController : MonoBehaviour
 
         targetIdentity = identity;
         ClearHighlights();
-        RefreshTargetState();
+        RefreshIdentityStates();
+    }
+
+    public void SetOwner(NpcIdentity identity)
+    {
+        if (ownerIdentity == identity)
+        {
+            return;
+        }
+
+        ownerIdentity = identity;
+        ClearHighlights();
+        RefreshIdentityStates();
     }
 
     private void CacheSections()
@@ -89,7 +103,7 @@ public class MinimapController : MonoBehaviour
 
     private void HandleAreaPresenceChanged(MinimapSectionArea area, NpcIdentity identity, bool entered)
     {
-        if (!area || identity != targetIdentity)
+        if (!area || !identity)
         {
             return;
         }
@@ -105,16 +119,19 @@ public class MinimapController : MonoBehaviour
             return;
         }
 
-        UpdateSectionPresence(sectionId, entered);
-    }
-
-    private void RefreshTargetState()
-    {
-        if (!targetIdentity)
+        if (identity == targetIdentity)
         {
-            return;
+            UpdateSectionPresence(sectionId, entered, isTarget: true);
         }
 
+        if (identity == ownerIdentity)
+        {
+            UpdateSectionPresence(sectionId, entered, isTarget: false);
+        }
+    }
+
+    private void RefreshIdentityStates()
+    {
         IReadOnlyList<MinimapSectionArea> areas = MinimapSectionArea.Instances;
         if (areas == null)
         {
@@ -129,14 +146,19 @@ public class MinimapController : MonoBehaviour
                 continue;
             }
 
-            if (area.IsInside(targetIdentity))
+            if (targetIdentity && area.IsInside(targetIdentity))
             {
-                UpdateSectionPresence(area.SectionId, true);
+                UpdateSectionPresence(area.SectionId, true, isTarget: true);
+            }
+
+            if (ownerIdentity && area.IsInside(ownerIdentity))
+            {
+                UpdateSectionPresence(area.SectionId, true, isTarget: false);
             }
         }
     }
 
-    private void UpdateSectionPresence(string sectionId, bool entered)
+    private void UpdateSectionPresence(string sectionId, bool entered, bool isTarget)
     {
         if (string.IsNullOrEmpty(sectionId))
         {
@@ -148,22 +170,43 @@ public class MinimapController : MonoBehaviour
             return;
         }
 
+        Dictionary<string, int> counts = isTarget ? _targetPresenceCounts : _ownerPresenceCounts;
         int count = 0;
-        _sectionPresenceCounts.TryGetValue(sectionId, out count);
+        counts.TryGetValue(sectionId, out count);
         count = entered ? count + 1 : Mathf.Max(0, count - 1);
 
         if (count > 0)
         {
-            _sectionPresenceCounts[sectionId] = count;
-            image.color = highlightSectionColor;
-            _highlightedSections.Add(sectionId);
+            counts[sectionId] = count;
         }
         else
         {
-            _sectionPresenceCounts.Remove(sectionId);
-            image.color = defaultSectionColor;
-            _highlightedSections.Remove(sectionId);
+            counts.Remove(sectionId);
         }
+
+        UpdateSectionColor(sectionId, image);
+    }
+
+    private void UpdateSectionColor(string sectionId, Image image)
+    {
+        if (!image)
+        {
+            return;
+        }
+
+        if (_targetPresenceCounts.ContainsKey(sectionId))
+        {
+            image.color = highlightSectionColor;
+            return;
+        }
+
+        if (_ownerPresenceCounts.ContainsKey(sectionId))
+        {
+            image.color = ownerSectionColor;
+            return;
+        }
+
+        image.color = defaultSectionColor;
     }
 
     private void ClearHighlights()
@@ -175,7 +218,7 @@ public class MinimapController : MonoBehaviour
                 pair.Value.color = defaultSectionColor;
             }
         }
-        _highlightedSections.Clear();
-        _sectionPresenceCounts.Clear();
+        _targetPresenceCounts.Clear();
+        _ownerPresenceCounts.Clear();
     }
 }
