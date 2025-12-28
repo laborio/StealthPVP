@@ -15,6 +15,8 @@ public class PlayerInputRouter : MonoBehaviour
     [SerializeField] private KeyCode interactKey = KeyCode.E;
     [SerializeField] private string horizontalAxis = "Horizontal";
     [SerializeField] private string verticalAxis = "Vertical";
+    [Header("Input State")]
+    [SerializeField, Tooltip("If false, this router ignores all input.")] private bool inputEnabled = true;
     [Header("Keyboard Only Movement (optional)")]
     [SerializeField, Tooltip("If true, movement axis is built from keyboard keys only (ignores joystick axes).")] private bool keyboardOnlyMovement = false;
     [SerializeField] private KeyCode moveLeftKey = KeyCode.A;
@@ -34,6 +36,11 @@ public class PlayerInputRouter : MonoBehaviour
     /// </summary>
     public virtual PlayerInputSnapshot PollInput()
     {
+        if (!inputEnabled)
+        {
+            return default;
+        }
+
         PlayerInputSnapshot snapshot = new PlayerInputSnapshot
         {
             RunHeld = Input.GetKey(runKey),
@@ -128,6 +135,13 @@ public class PlayerInputRouter : MonoBehaviour
     {
         inputCamera = camera;
     }
+
+    public void SetInputEnabled(bool enabled)
+    {
+        inputEnabled = enabled;
+    }
+
+    protected bool IsInputEnabled => inputEnabled;
 
     public void SetAxes(string horizontal, string vertical)
     {

@@ -40,6 +40,12 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
 
     public override PlayerInputSnapshot PollInput()
     {
+        if (!IsInputEnabled)
+        {
+            _previousPrimaryHeld = false;
+            return default;
+        }
+
         float triggerValue = SafeGetAxisRaw(primaryTriggerAxis);
         if (invertTriggerAxis)
         {

@@ -9,31 +9,56 @@ using UnityEngine.AI;
 [DisallowMultipleComponent]
 public class LocalVersusGameManager : MonoBehaviour
 {
+    private enum PlayerSlot
+    {
+        Player1,
+        Player2,
+        Player3
+    }
+
+    private enum SharedGamepadTarget
+    {
+        Player2,
+        Player3
+    }
+
     [Header("Players")]
     [SerializeField] private GameObject player1Prefab;
     [SerializeField, Tooltip("Player 2 prefab created in editor (duplicate of player1 with gamepad input router).")] private GameObject player2Prefab;
+    [SerializeField, Tooltip("Player 3 prefab created in editor (duplicate of player1 with gamepad input router).")] private GameObject player3Prefab;
     [SerializeField] private Camera player1Camera;
     [SerializeField] private Camera player2Camera;
+    [SerializeField] private Camera player3Camera;
     [SerializeField, Tooltip("Compass UI for player 1 (points to hunted target).")] private RevealIndicatorController player1Compass;
     [SerializeField, Tooltip("Compass UI for player 2 (points to hunted target).")] private RevealIndicatorController player2Compass;
+    [SerializeField, Tooltip("Compass UI for player 3 (points to hunted target).")] private RevealIndicatorController player3Compass;
     [SerializeField, Tooltip("Optional decoy spawner; will be forced to decoys-only.")] private NpcGameDirector npcDirector;
     [Header("Fog Of War (optional per-player)")]
     [SerializeField] private FogOfWarManager player1Fog;
     [SerializeField] private FogOfWarManager player2Fog;
+    [SerializeField] private FogOfWarManager player3Fog;
     [Header("Player-Only Visuals")]
     [SerializeField, Tooltip("Layer name for player 1-only visuals.")] private string player1OnlyLayer = "Player1Only";
     [SerializeField, Tooltip("Layer name for player 2-only visuals.")] private string player2OnlyLayer = "Player2Only";
+    [SerializeField, Tooltip("Layer name for player 3-only visuals.")] private string player3OnlyLayer = "Player3Only";
     [SerializeField, Tooltip("Child object names to restrict to the owning player camera.")] private string[] playerOnlyObjectNames = { "PlayerCompass", "T_ClickArea", "ClickArea", "WSCanvas", "RangeIndicator" };
     [Header("UI/Reveal")]
     [SerializeField] private GameUiManager player1Ui;
     [SerializeField] private GameUiManager player2Ui;
+    [SerializeField] private GameUiManager player3Ui;
+    [Header("UI/Targets")]
+    [SerializeField, Tooltip("Target image prefab for player 1 (dark).")] private GameObject targetImageDarkPrefab;
+    [SerializeField, Tooltip("Target image prefab for player 2 (green).")] private GameObject targetImageGreenPrefab;
+    [SerializeField, Tooltip("Target image prefab for player 3 (purple).")] private GameObject targetImagePurplePrefab;
     [Header("Minimap")]
     [SerializeField] private MinimapController player1Minimap;
     [SerializeField] private MinimapController player2Minimap;
+    [SerializeField] private MinimapController player3Minimap;
     [Header("Tuning")]
     [SerializeField] private GameplayTuning gameplayTuning;
     [SerializeField, Tooltip("Reveal key for player 1 (keyboard/mouse).")] private KeyCode player1RevealKey = KeyCode.F;
     [SerializeField, Tooltip("Reveal key for player 2 (gamepad).")] private KeyCode player2RevealKey = KeyCode.JoystickButton4;
+    [SerializeField, Tooltip("Reveal key for player 3 (gamepad).")] private KeyCode player3RevealKey = KeyCode.Joystick2Button4;
     [Header("Input Axes")]
     [SerializeField, Tooltip("Keyboard-only horizontal axis name for player 1.")] private string player1HorizontalAxis = "Horizontal";
     [SerializeField, Tooltip("Keyboard-only vertical axis name for player 1.")] private string player1VerticalAxis = "Vertical";
@@ -41,6 +66,10 @@ public class LocalVersusGameManager : MonoBehaviour
     [SerializeField, Tooltip("Gamepad vertical axis for player 2.")] private string player2MoveVerticalAxis = "Vertical2";
     [SerializeField, Tooltip("Gamepad aim horizontal axis for player 2.")] private string player2AimHorizontalAxis = "AimHorizontal2";
     [SerializeField, Tooltip("Gamepad aim vertical axis for player 2.")] private string player2AimVerticalAxis = "AimVertical2";
+    [SerializeField, Tooltip("Gamepad horizontal axis for player 3.")] private string player3MoveHorizontalAxis = "Horizontal3";
+    [SerializeField, Tooltip("Gamepad vertical axis for player 3.")] private string player3MoveVerticalAxis = "Vertical3";
+    [SerializeField, Tooltip("Gamepad aim horizontal axis for player 3.")] private string player3AimHorizontalAxis = "AimHorizontal3";
+    [SerializeField, Tooltip("Gamepad aim vertical axis for player 3.")] private string player3AimVerticalAxis = "AimVertical3";
     [Header("Player 2 KeyCodes")]
     [SerializeField, Tooltip("If false, primary keycode is ignored so trigger/aim-only can be used.")] private bool player2UsePrimaryKeycode = true;
     [SerializeField] private KeyCode player2PrimaryKeyCode = KeyCode.JoystickButton12;
@@ -48,6 +77,17 @@ public class LocalVersusGameManager : MonoBehaviour
     [SerializeField] private KeyCode player2DashKeyCode = KeyCode.Joystick1Button1;
     [SerializeField] private KeyCode player2RunKeyCode = KeyCode.Joystick1Button5;
     [SerializeField] private KeyCode player2InteractKeyCode = KeyCode.Joystick1Button3;
+    [Header("Player 3 KeyCodes")]
+    [SerializeField, Tooltip("If false, primary keycode is ignored so trigger/aim-only can be used.")] private bool player3UsePrimaryKeycode = true;
+    [SerializeField] private KeyCode player3PrimaryKeyCode = KeyCode.Joystick2Button12;
+    [SerializeField] private KeyCode player3JumpKeyCode = KeyCode.Joystick2Button0;
+    [SerializeField] private KeyCode player3DashKeyCode = KeyCode.Joystick2Button1;
+    [SerializeField] private KeyCode player3RunKeyCode = KeyCode.Joystick2Button5;
+    [SerializeField] private KeyCode player3InteractKeyCode = KeyCode.Joystick2Button3;
+    [Header("Gamepad Assignment")]
+    [SerializeField, Tooltip("If true, a single gamepad controls either player 2 or player 3 (toggle below).")] private bool shareSingleGamepadBetweenPlayer2And3 = true;
+    [SerializeField, Tooltip("When sharing a single gamepad, select which player receives input.")] private SharedGamepadTarget sharedGamepadTarget = SharedGamepadTarget.Player2;
+    [SerializeField, Tooltip("If true, player 3 uses player 2 input bindings (useful when sharing one controller).")] private bool player3UsePlayer2Bindings = true;
 
     [Header("Spawning")]
     [SerializeField] private List<Transform> spawnPoints = new List<Transform>();
@@ -59,14 +99,16 @@ public class LocalVersusGameManager : MonoBehaviour
 
     private GameObject _player1Instance;
     private GameObject _player2Instance;
+    private GameObject _player3Instance;
     private CharacterHealth _player1Health;
     private CharacterHealth _player2Health;
+    private CharacterHealth _player3Health;
     private bool _hunterIsPlayer1 = true;
     private bool _respawnInProgress;
 
     private void Awake()
     {
-        ActivateSecondDisplay();
+        ActivateDisplays();
         if (npcDirector)
         {
             npcDirector.EnableDecoysOnlyMode();
@@ -86,13 +128,14 @@ public class LocalVersusGameManager : MonoBehaviour
     {
         UnsubscribeHealth(_player1Health);
         UnsubscribeHealth(_player2Health);
+        UnsubscribeHealth(_player3Health);
     }
 
-    private void ActivateSecondDisplay()
+    private void ActivateDisplays()
     {
-        if (Display.displays.Length > 1)
+        for (int i = 1; i < Display.displays.Length && i <= 2; i++)
         {
-            Display.displays[1].Activate();
+            Display.displays[i].Activate();
         }
     }
 
@@ -112,18 +155,49 @@ public class LocalVersusGameManager : MonoBehaviour
 
     private void SpawnOrRespawnPlayers(bool initialSpawn)
     {
-        if (!TryPickSpawnPair(out Vector3 p1, out Vector3 p2, out Quaternion r1, out Quaternion r2))
+        bool usePlayer3 = player3Prefab;
+        Vector3 p1;
+        Vector3 p2;
+        Vector3 p3 = Vector3.zero;
+        Quaternion r1;
+        Quaternion r2;
+        Quaternion r3 = Quaternion.identity;
+
+        if (usePlayer3)
         {
-            Debug.LogWarning("[LocalVersusGameManager] Failed to find two spawn points; using origin offsets.");
-            p1 = Vector3.zero;
-            p2 = p1 + new Vector3(minSpawnSeparation, 0f, 0f);
-            r1 = r2 = Quaternion.identity;
+            if (!TryPickSpawnTriple(out p1, out p2, out p3, out r1, out r2, out r3))
+            {
+                Debug.LogWarning("[LocalVersusGameManager] Failed to find three spawn points; using origin offsets.");
+                p1 = Vector3.zero;
+                p2 = p1 + new Vector3(minSpawnSeparation, 0f, 0f);
+                p3 = p2 + new Vector3(minSpawnSeparation, 0f, 0f);
+                r1 = r2 = r3 = Quaternion.identity;
+            }
+        }
+        else
+        {
+            if (!TryPickSpawnPair(out p1, out p2, out r1, out r2))
+            {
+                Debug.LogWarning("[LocalVersusGameManager] Failed to find two spawn points; using origin offsets.");
+                p1 = Vector3.zero;
+                p2 = p1 + new Vector3(minSpawnSeparation, 0f, 0f);
+                r1 = r2 = Quaternion.identity;
+            }
         }
 
-        _player1Instance = SpawnPlayer(player1Prefab, _player1Instance, p1, r1, player1Camera, ref _player1Health);
-        _player2Instance = SpawnPlayer(player2Prefab, _player2Instance, p2, r2, player2Camera, ref _player2Health);
+        _player1Instance = SpawnPlayer(player1Prefab, _player1Instance, p1, r1, player1Camera, PlayerSlot.Player1, ref _player1Health);
+        _player2Instance = SpawnPlayer(player2Prefab, _player2Instance, p2, r2, player2Camera, PlayerSlot.Player2, ref _player2Health);
+        if (usePlayer3)
+        {
+            _player3Instance = SpawnPlayer(player3Prefab, _player3Instance, p3, r3, player3Camera, PlayerSlot.Player3, ref _player3Health);
+        }
+        else
+        {
+            _player3Instance = null;
+            _player3Health = null;
+        }
 
-        if (initialSpawn)
+        if (initialSpawn && !usePlayer3)
         {
             _hunterIsPlayer1 = true;
         }
@@ -131,9 +205,10 @@ public class LocalVersusGameManager : MonoBehaviour
         UpdateFogBindings();
         UpdateRevealBindings();
         UpdatePlayerOnlyVisuals();
+        UpdateInputAssignments();
     }
 
-    private GameObject SpawnPlayer(GameObject prefab, GameObject existing, Vector3 position, Quaternion rotation, Camera camera, ref CharacterHealth cachedHealth)
+    private GameObject SpawnPlayer(GameObject prefab, GameObject existing, Vector3 position, Quaternion rotation, Camera camera, PlayerSlot slot, ref CharacterHealth cachedHealth)
     {
         if (!prefab)
         {
@@ -158,11 +233,11 @@ public class LocalVersusGameManager : MonoBehaviour
             controller.SetCamera(camera);
         }
 
-        PlayerInputRouter inputRouter = EnsureInputRouter(instance, camera == player1Camera);
+        PlayerInputRouter inputRouter = EnsureInputRouter(instance, slot);
         if (inputRouter)
         {
             inputRouter.SetInputCamera(camera);
-            ConfigureInputRouter(inputRouter, camera == player1Camera);
+            ConfigureInputRouter(inputRouter, slot);
             if (controller)
             {
                 controller.SetInputRouter(inputRouter);
@@ -268,6 +343,91 @@ public class LocalVersusGameManager : MonoBehaviour
         return true;
     }
 
+    private bool TryPickSpawnTriple(out Vector3 p1, out Vector3 p2, out Vector3 p3, out Quaternion r1, out Quaternion r2, out Quaternion r3)
+    {
+        p1 = p2 = p3 = Vector3.zero;
+        r1 = r2 = r3 = Quaternion.identity;
+
+        List<Transform> valid = new List<Transform>();
+        for (int i = 0; i < spawnPoints.Count; i++)
+        {
+            if (spawnPoints[i])
+            {
+                valid.Add(spawnPoints[i]);
+            }
+        }
+
+        if (valid.Count < 3)
+        {
+            return false;
+        }
+
+        float minSqr = minSpawnSeparation * minSpawnSeparation;
+        float bestScore = float.MinValue;
+        Vector3 bestP1 = Vector3.zero;
+        Vector3 bestP2 = Vector3.zero;
+        Vector3 bestP3 = Vector3.zero;
+        Quaternion bestR1 = Quaternion.identity;
+        Quaternion bestR2 = Quaternion.identity;
+        Quaternion bestR3 = Quaternion.identity;
+
+        for (int i = 0; i < valid.Count - 2; i++)
+        {
+            Transform a = valid[i];
+            Vector3 sampleA = SampleNav(a.position);
+            for (int j = i + 1; j < valid.Count - 1; j++)
+            {
+                Transform b = valid[j];
+                Vector3 sampleB = SampleNav(b.position);
+                for (int k = j + 1; k < valid.Count; k++)
+                {
+                    Transform c = valid[k];
+                    Vector3 sampleC = SampleNav(c.position);
+
+                    float ab = (sampleA - sampleB).sqrMagnitude;
+                    float ac = (sampleA - sampleC).sqrMagnitude;
+                    float bc = (sampleB - sampleC).sqrMagnitude;
+                    float minPair = Mathf.Min(ab, Mathf.Min(ac, bc));
+
+                    if (minPair > bestScore)
+                    {
+                        bestScore = minPair;
+                        bestP1 = sampleA;
+                        bestP2 = sampleB;
+                        bestP3 = sampleC;
+                        bestR1 = a.rotation;
+                        bestR2 = b.rotation;
+                        bestR3 = c.rotation;
+                    }
+
+                    if (minPair >= minSqr)
+                    {
+                        p1 = sampleA;
+                        p2 = sampleB;
+                        p3 = sampleC;
+                        r1 = a.rotation;
+                        r2 = b.rotation;
+                        r3 = c.rotation;
+                        return true;
+                    }
+                }
+            }
+        }
+
+        if (bestScore <= float.MinValue)
+        {
+            return false;
+        }
+
+        p1 = bestP1;
+        p2 = bestP2;
+        p3 = bestP3;
+        r1 = bestR1;
+        r2 = bestR2;
+        r3 = bestR3;
+        return true;
+    }
+
     private Vector3 SampleNav(Vector3 origin)
     {
         if (NavMesh.SamplePosition(origin, out NavMeshHit hit, navMeshSampleRadius, NavMesh.AllAreas))
@@ -321,6 +481,10 @@ public class LocalVersusGameManager : MonoBehaviour
         {
             ability = GetAbility(_player2Instance);
         }
+        else if (dead == _player3Health)
+        {
+            ability = GetAbility(_player3Instance);
+        }
         else
         {
             ability = dead.GetComponentInParent<AbilityRunner>() ?? dead.GetComponentInChildren<AbilityRunner>(true);
@@ -340,7 +504,10 @@ public class LocalVersusGameManager : MonoBehaviour
             yield return new WaitForSeconds(respawnDelay);
         }
 
-        _hunterIsPlayer1 = !_hunterIsPlayer1;
+        if (!_player3Instance)
+        {
+            _hunterIsPlayer1 = !_hunterIsPlayer1;
+        }
         RespawnDeadPlayer(dead);
         UpdateRoleIndicators();
         UpdateCompasses();
@@ -372,37 +539,75 @@ public class LocalVersusGameManager : MonoBehaviour
 
         bool isPlayer1 = dead == _player1Health;
         bool isPlayer2 = dead == _player2Health;
-        if (!isPlayer1 && !isPlayer2)
+        bool isPlayer3 = dead == _player3Health;
+        if (!isPlayer1 && !isPlayer2 && !isPlayer3)
         {
             return;
         }
 
-        Transform avoidTransform = isPlayer1
-            ? (_player2Instance ? _player2Instance.transform : null)
-            : (_player1Instance ? _player1Instance.transform : null);
-
-        if (!TryPickRespawnPoint(avoidTransform, out Vector3 position, out Quaternion rotation))
+        List<Transform> avoidTransforms = new List<Transform>(2);
+        if (isPlayer1)
         {
-            Vector3 fallback = avoidTransform ? avoidTransform.position : Vector3.zero;
+            if (_player2Instance)
+            {
+                avoidTransforms.Add(_player2Instance.transform);
+            }
+            if (_player3Instance)
+            {
+                avoidTransforms.Add(_player3Instance.transform);
+            }
+        }
+        else if (isPlayer2)
+        {
+            if (_player1Instance)
+            {
+                avoidTransforms.Add(_player1Instance.transform);
+            }
+            if (_player3Instance)
+            {
+                avoidTransforms.Add(_player3Instance.transform);
+            }
+        }
+        else if (isPlayer3)
+        {
+            if (_player1Instance)
+            {
+                avoidTransforms.Add(_player1Instance.transform);
+            }
+            if (_player2Instance)
+            {
+                avoidTransforms.Add(_player2Instance.transform);
+            }
+        }
+
+        if (!TryPickRespawnPoint(avoidTransforms, out Vector3 position, out Quaternion rotation))
+        {
+            Vector3 fallback = avoidTransforms.Count > 0 && avoidTransforms[0] ? avoidTransforms[0].position : Vector3.zero;
             position = fallback + new Vector3(minSpawnSeparation, 0f, 0f);
             rotation = Quaternion.identity;
         }
 
         if (isPlayer1)
         {
-            _player1Instance = SpawnPlayer(player1Prefab, _player1Instance, position, rotation, player1Camera, ref _player1Health);
+            _player1Instance = SpawnPlayer(player1Prefab, _player1Instance, position, rotation, player1Camera, PlayerSlot.Player1, ref _player1Health);
             ForcePlayerRespawn(_player1Instance, position, rotation);
+        }
+        else if (isPlayer2)
+        {
+            _player2Instance = SpawnPlayer(player2Prefab, _player2Instance, position, rotation, player2Camera, PlayerSlot.Player2, ref _player2Health);
+            ForcePlayerRespawn(_player2Instance, position, rotation);
         }
         else
         {
-            _player2Instance = SpawnPlayer(player2Prefab, _player2Instance, position, rotation, player2Camera, ref _player2Health);
-            ForcePlayerRespawn(_player2Instance, position, rotation);
+            _player3Instance = SpawnPlayer(player3Prefab, _player3Instance, position, rotation, player3Camera, PlayerSlot.Player3, ref _player3Health);
+            ForcePlayerRespawn(_player3Instance, position, rotation);
         }
 
         UpdatePlayerOnlyVisuals();
+        UpdateInputAssignments();
     }
 
-    private bool TryPickRespawnPoint(Transform avoidTransform, out Vector3 position, out Quaternion rotation)
+    private bool TryPickRespawnPoint(List<Transform> avoidTransforms, out Vector3 position, out Quaternion rotation)
     {
         position = Vector3.zero;
         rotation = Quaternion.identity;
@@ -421,7 +626,7 @@ public class LocalVersusGameManager : MonoBehaviour
             return false;
         }
 
-        Vector3 avoidPosition = avoidTransform ? SampleNav(avoidTransform.position) : Vector3.zero;
+        bool hasAvoids = avoidTransforms != null && avoidTransforms.Count > 0;
         float bestDist = float.MinValue;
         Transform best = null;
         Vector3 bestPos = Vector3.zero;
@@ -430,7 +635,26 @@ public class LocalVersusGameManager : MonoBehaviour
         {
             Transform candidate = valid[i];
             Vector3 sampled = SampleNav(candidate.position);
-            float dist = avoidTransform ? (sampled - avoidPosition).sqrMagnitude : 0f;
+            float dist = 0f;
+            if (hasAvoids)
+            {
+                float closest = float.MaxValue;
+                for (int j = 0; j < avoidTransforms.Count; j++)
+                {
+                    Transform avoid = avoidTransforms[j];
+                    if (!avoid)
+                    {
+                        continue;
+                    }
+                    Vector3 avoidSample = SampleNav(avoid.position);
+                    float sqr = (sampled - avoidSample).sqrMagnitude;
+                    if (sqr < closest)
+                    {
+                        closest = sqr;
+                    }
+                }
+                dist = closest == float.MaxValue ? 0f : closest;
+            }
             if (best == null || dist > bestDist)
             {
                 best = candidate;
@@ -468,6 +692,26 @@ public class LocalVersusGameManager : MonoBehaviour
     {
         NpcIdentity id1 = GetIdentity(_player1Instance);
         NpcIdentity id2 = GetIdentity(_player2Instance);
+        NpcIdentity id3 = GetIdentity(_player3Instance);
+
+        if (_player3Instance)
+        {
+            if (id1)
+            {
+                id1.SetTarget(true);
+            }
+
+            if (id2)
+            {
+                id2.SetTarget(true);
+            }
+
+            if (id3)
+            {
+                id3.SetTarget(true);
+            }
+            return;
+        }
 
         if (id1)
         {
@@ -484,38 +728,95 @@ public class LocalVersusGameManager : MonoBehaviour
     {
         NpcIdentity id1 = GetIdentity(_player1Instance);
         NpcIdentity id2 = GetIdentity(_player2Instance);
+        NpcIdentity id3 = GetIdentity(_player3Instance);
         VisionSource vision1 = GetVision(_player1Instance);
         VisionSource vision2 = GetVision(_player2Instance);
+        VisionSource vision3 = GetVision(_player3Instance);
         AbilityRunner ability1 = GetAbility(_player1Instance);
         AbilityRunner ability2 = GetAbility(_player2Instance);
-        if (player1Compass)
-        {
-            player1Compass.ConfigurePlayer(_player1Instance ? _player1Instance.transform : null, vision1, ability1, player1Camera);
-            player1Compass.SetAlwaysShowWhenTargetSet(false);
-            player1Compass.SetTarget(id2);
-            if (player1Fog)
-            {
-                player1Compass.SetFogManager(player1Fog);
-            }
-        }
-
-        if (player2Compass)
-        {
-            player2Compass.ConfigurePlayer(_player2Instance ? _player2Instance.transform : null, vision2, ability2, player2Camera);
-            player2Compass.SetAlwaysShowWhenTargetSet(false);
-            player2Compass.SetTarget(id1);
-            if (player2Fog)
-            {
-                player2Compass.SetFogManager(player2Fog);
-            }
-        }
+        AbilityRunner ability3 = GetAbility(_player3Instance);
+        bool hasPlayer3 = _player3Instance != null;
+        NpcIdentity target1 = id2;
+        NpcIdentity target2 = hasPlayer3 ? (id3 ? id3 : id1) : id1;
+        NpcIdentity target3 = hasPlayer3 ? id1 : null;
+        ConfigureRevealIndicators(_player1Instance, player1Compass, target1, vision1, ability1, player1Camera, player1Fog);
+        ConfigureRevealIndicators(_player2Instance, player2Compass, target2, vision2, ability2, player2Camera, player2Fog);
+        ConfigureRevealIndicators(_player3Instance, player3Compass, target3, vision3, ability3, player3Camera, player3Fog);
 
         ApplyRevealTuning(ability1, player1Compass);
         ApplyRevealTuning(ability2, player2Compass);
-        UpdateMinimaps(id1, id2);
+        ApplyRevealTuning(ability3, player3Compass);
+        UpdateMinimaps(target1, target2, target3);
+        UpdateTargetImages(id1, id2, id3, target1, target2, target3);
     }
 
-    private void UpdateMinimaps(NpcIdentity player1Target, NpcIdentity player2Target)
+    private void ConfigureRevealIndicators(GameObject playerInstance, RevealIndicatorController primaryCompass, NpcIdentity target,
+        VisionSource vision, AbilityRunner ability, Camera camera, FogOfWarManager fog)
+    {
+        Transform playerTransform = playerInstance ? playerInstance.transform : null;
+        ConfigureRevealIndicator(primaryCompass, playerTransform, vision, ability, camera, fog, target);
+
+        if (!playerInstance)
+        {
+            return;
+        }
+
+        RevealIndicatorController[] indicators = playerInstance.GetComponentsInChildren<RevealIndicatorController>(true);
+        if (indicators == null || indicators.Length == 0)
+        {
+            return;
+        }
+
+        for (int i = 0; i < indicators.Length; i++)
+        {
+            RevealIndicatorController indicator = indicators[i];
+            if (!indicator || indicator == primaryCompass)
+            {
+                continue;
+            }
+
+            ConfigureRevealIndicator(indicator, playerTransform, vision, ability, camera, fog, target);
+        }
+    }
+
+    private void ConfigureRevealIndicator(RevealIndicatorController indicator, Transform playerTransform, VisionSource vision, AbilityRunner ability,
+        Camera camera, FogOfWarManager fog, NpcIdentity target)
+    {
+        if (!indicator)
+        {
+            return;
+        }
+
+        indicator.ConfigurePlayer(playerTransform, vision, ability, camera);
+        indicator.SetAlwaysShowWhenTargetSet(false);
+        indicator.SetTarget(target);
+        if (fog)
+        {
+            indicator.SetFogManager(fog);
+        }
+        ApplyRevealFade(indicator);
+    }
+
+    private void ApplyRevealFade(RevealIndicatorController indicator)
+    {
+        if (!indicator)
+        {
+            return;
+        }
+
+        if (!gameplayTuning)
+        {
+            ResolveGameplayTuning();
+            if (!gameplayTuning)
+            {
+                return;
+            }
+        }
+
+        indicator.ApplyFadeConfig(gameplayTuning.revealFade, gameplayTuning.revealFade);
+    }
+
+    private void UpdateMinimaps(NpcIdentity player1Target, NpcIdentity player2Target, NpcIdentity player3Target)
     {
         if (!player1Minimap && player1Ui)
         {
@@ -527,14 +828,65 @@ public class LocalVersusGameManager : MonoBehaviour
             player2Minimap = player2Ui.GetComponentInChildren<MinimapController>(true);
         }
 
+        if (!player3Minimap && player3Ui)
+        {
+            player3Minimap = player3Ui.GetComponentInChildren<MinimapController>(true);
+        }
+
         if (player1Minimap)
         {
-            player1Minimap.SetTarget(player2Target);
+            player1Minimap.SetTarget(player1Target);
         }
 
         if (player2Minimap)
         {
-            player2Minimap.SetTarget(player1Target);
+            player2Minimap.SetTarget(player2Target);
+        }
+
+        if (player3Minimap)
+        {
+            player3Minimap.SetTarget(player3Target);
+        }
+    }
+
+    private void UpdateTargetImages(NpcIdentity id1, NpcIdentity id2, NpcIdentity id3,
+        NpcIdentity player1Target, NpcIdentity player2Target, NpcIdentity player3Target)
+    {
+        UpdateTargetImage(player1Ui, ResolveTargetPrefab(id1, id2, id3, player1Target));
+        UpdateTargetImage(player2Ui, ResolveTargetPrefab(id1, id2, id3, player2Target));
+        UpdateTargetImage(player3Ui, ResolveTargetPrefab(id1, id2, id3, player3Target));
+    }
+
+    private GameObject ResolveTargetPrefab(NpcIdentity id1, NpcIdentity id2, NpcIdentity id3, NpcIdentity target)
+    {
+        if (!target)
+        {
+            return null;
+        }
+
+        if (target == id1)
+        {
+            return targetImageDarkPrefab;
+        }
+
+        if (target == id2)
+        {
+            return targetImageGreenPrefab;
+        }
+
+        if (target == id3)
+        {
+            return targetImagePurplePrefab;
+        }
+
+        return null;
+    }
+
+    private void UpdateTargetImage(GameUiManager ui, GameObject prefab)
+    {
+        if (ui)
+        {
+            ui.SetTargetImagePrefab(prefab);
         }
     }
 
@@ -581,6 +933,7 @@ public class LocalVersusGameManager : MonoBehaviour
     {
         AbilityRunner ability1 = GetAbility(_player1Instance);
         AbilityRunner ability2 = GetAbility(_player2Instance);
+        AbilityRunner ability3 = GetAbility(_player3Instance);
 
         if (ability1)
         {
@@ -594,6 +947,12 @@ public class LocalVersusGameManager : MonoBehaviour
             ability2.SetOverrideKey(player2RevealKey);
         }
 
+        if (ability3)
+        {
+            ability3.SetUseInput(true);
+            ability3.SetOverrideKey(player3RevealKey);
+        }
+
         if (player1Ui)
         {
             player1Ui.SetRevealAbility(ability1);
@@ -603,6 +962,11 @@ public class LocalVersusGameManager : MonoBehaviour
         {
             player2Ui.SetRevealAbility(ability2);
         }
+
+        if (player3Ui)
+        {
+            player3Ui.SetRevealAbility(ability3);
+        }
     }
 
     private void UpdateFogBindings()
@@ -611,6 +975,7 @@ public class LocalVersusGameManager : MonoBehaviour
 
         VisionSource vision1 = GetVision(_player1Instance);
         VisionSource vision2 = GetVision(_player2Instance);
+        VisionSource vision3 = GetVision(_player3Instance);
 
         if (player1Fog)
         {
@@ -634,14 +999,26 @@ public class LocalVersusGameManager : MonoBehaviour
             Debug.Log($"[LocalVersusGameManager] Bound player2 fog to vision {(vision2 ? vision2.name : "null")} worldMin={player2Fog.worldMin} worldMax={player2Fog.worldMax}", player2Fog);
         }
 
+        if (player3Fog)
+        {
+            player3Fog.autoFindVisionSources = false;
+            player3Fog.visionSources.Clear();
+            if (vision3)
+            {
+                player3Fog.visionSources.Add(vision3);
+            }
+            Debug.Log($"[LocalVersusGameManager] Bound player3 fog to vision {(vision3 ? vision3.name : "null")} worldMin={player3Fog.worldMin} worldMax={player3Fog.worldMax}", player3Fog);
+        }
+
         BindCameraToFog(player1Camera, player1Fog);
         BindCameraToFog(player2Camera, player2Fog);
+        BindCameraToFog(player3Camera, player3Fog);
 
     }
 
     private void TryAutoAssignFogManagers()
     {
-        if (player1Fog && player2Fog)
+        if (player1Fog && player2Fog && player3Fog)
         {
             return;
         }
@@ -664,6 +1041,12 @@ public class LocalVersusGameManager : MonoBehaviour
             player2Fog = fogs.Length > 1 ? fogs[1] : fogs[0];
             Debug.Log($"[LocalVersusGameManager] Auto-assigned player2Fog to {player2Fog.name}", this);
         }
+
+        if (!player3Fog)
+        {
+            player3Fog = fogs.Length > 2 ? fogs[2] : (fogs.Length > 1 ? fogs[1] : fogs[0]);
+            Debug.Log($"[LocalVersusGameManager] Auto-assigned player3Fog to {player3Fog.name}", this);
+        }
     }
 
     private void BindCameraToFog(Camera cam, FogOfWarManager fog)
@@ -682,14 +1065,14 @@ public class LocalVersusGameManager : MonoBehaviour
         Debug.Log($"[LocalVersusGameManager] Bound camera {cam.name} to fog {fog.name}", cam);
     }
 
-    private void ConfigureInputRouter(PlayerInputRouter router, bool isPlayer1)
+    private void ConfigureInputRouter(PlayerInputRouter router, PlayerSlot slot)
     {
         if (!router)
         {
             return;
         }
 
-        if (isPlayer1)
+        if (slot == PlayerSlot.Player1)
         {
             router.SetAxes(player1HorizontalAxis, player1VerticalAxis);
             router.SetKeyboardOnlyMovement(true);
@@ -702,15 +1085,74 @@ public class LocalVersusGameManager : MonoBehaviour
             return;
         }
 
-        gamepad.SetMoveAxes(player2MoveHorizontalAxis, player2MoveVerticalAxis);
-        gamepad.SetAimAxes(player2AimHorizontalAxis, player2AimVerticalAxis);
+        bool isPlayer2 = slot == PlayerSlot.Player2;
+        bool usePlayer2Bindings = isPlayer2 || player3UsePlayer2Bindings;
+
+        string moveHorizontal = usePlayer2Bindings ? player2MoveHorizontalAxis : player3MoveHorizontalAxis;
+        string moveVertical = usePlayer2Bindings ? player2MoveVerticalAxis : player3MoveVerticalAxis;
+        string aimHorizontal = usePlayer2Bindings ? player2AimHorizontalAxis : player3AimHorizontalAxis;
+        string aimVertical = usePlayer2Bindings ? player2AimVerticalAxis : player3AimVerticalAxis;
+        gamepad.SetMoveAxes(moveHorizontal, moveVertical);
+        gamepad.SetAimAxes(aimHorizontal, aimVertical);
         // Use keycodes only to avoid keyboard overlap.
         gamepad.SetButtonNames(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
-        KeyCode primary = player2UsePrimaryKeycode ? player2PrimaryKeyCode : KeyCode.None;
-        gamepad.SetButtonKeyCodes(primary, player2JumpKeyCode, player2DashKeyCode, player2RunKeyCode, player2InteractKeyCode);
+
+        bool usePrimaryKeycode = usePlayer2Bindings ? player2UsePrimaryKeycode : player3UsePrimaryKeycode;
+        KeyCode primary = usePrimaryKeycode ? (usePlayer2Bindings ? player2PrimaryKeyCode : player3PrimaryKeyCode) : KeyCode.None;
+        KeyCode jump = usePlayer2Bindings ? player2JumpKeyCode : player3JumpKeyCode;
+        KeyCode dash = usePlayer2Bindings ? player2DashKeyCode : player3DashKeyCode;
+        KeyCode run = usePlayer2Bindings ? player2RunKeyCode : player3RunKeyCode;
+        KeyCode interact = usePlayer2Bindings ? player2InteractKeyCode : player3InteractKeyCode;
+        gamepad.SetButtonKeyCodes(primary, jump, dash, run, interact);
     }
 
-    private PlayerInputRouter EnsureInputRouter(GameObject instance, bool isPlayer1)
+    private void UpdateInputAssignments()
+    {
+        PlayerInputRouter router2 = GetInputRouter(_player2Instance);
+        PlayerInputRouter router3 = GetInputRouter(_player3Instance);
+        AbilityRunner ability2 = GetAbility(_player2Instance);
+        AbilityRunner ability3 = GetAbility(_player3Instance);
+
+        if (shareSingleGamepadBetweenPlayer2And3 && _player3Instance)
+        {
+            bool enablePlayer2 = sharedGamepadTarget == SharedGamepadTarget.Player2;
+            bool enablePlayer3 = sharedGamepadTarget == SharedGamepadTarget.Player3;
+            SetInputEnabled(router2, enablePlayer2);
+            SetInputEnabled(router3, enablePlayer3);
+            SetAbilityInputEnabled(ability2, enablePlayer2);
+            SetAbilityInputEnabled(ability3, enablePlayer3);
+        }
+        else
+        {
+            SetInputEnabled(router2, true);
+            SetInputEnabled(router3, true);
+            SetAbilityInputEnabled(ability2, true);
+            SetAbilityInputEnabled(ability3, true);
+        }
+    }
+
+    private static void SetInputEnabled(PlayerInputRouter router, bool enabled)
+    {
+        if (router)
+        {
+            router.SetInputEnabled(enabled);
+        }
+    }
+
+    private static void SetAbilityInputEnabled(AbilityRunner ability, bool enabled)
+    {
+        if (ability)
+        {
+            ability.SetInputEnabled(enabled);
+        }
+    }
+
+    private PlayerInputRouter GetInputRouter(GameObject instance)
+    {
+        return instance ? instance.GetComponent<PlayerInputRouter>() ?? instance.GetComponentInChildren<PlayerInputRouter>(true) : null;
+    }
+
+    private PlayerInputRouter EnsureInputRouter(GameObject instance, PlayerSlot slot)
     {
         if (!instance)
         {
@@ -720,15 +1162,15 @@ public class LocalVersusGameManager : MonoBehaviour
         PlayerInputRouter router = instance.GetComponent<PlayerInputRouter>() ?? instance.GetComponentInChildren<PlayerInputRouter>(true);
         if (!router)
         {
-            router = isPlayer1
+            router = slot == PlayerSlot.Player1
                 ? instance.AddComponent<PlayerInputRouter>()
                 : (PlayerInputRouter)instance.AddComponent<PlayerInputRouterGamepad>();
         }
-        else if (isPlayer1 && router is PlayerInputRouterGamepad)
+        else if (slot == PlayerSlot.Player1 && router is PlayerInputRouterGamepad)
         {
             router = instance.AddComponent<PlayerInputRouter>();
         }
-        else if (!isPlayer1 && router is not PlayerInputRouterGamepad)
+        else if (slot != PlayerSlot.Player1 && router is not PlayerInputRouterGamepad)
         {
             router = instance.AddComponent<PlayerInputRouterGamepad>();
         }
@@ -738,7 +1180,7 @@ public class LocalVersusGameManager : MonoBehaviour
 
     private void AutoAssignCompasses()
     {
-        if (player1Compass && player2Compass)
+        if (player1Compass && player2Compass && player3Compass)
         {
             return;
         }
@@ -768,11 +1210,16 @@ public class LocalVersusGameManager : MonoBehaviour
             if (!player2Compass && player2Camera && display == player2Camera.targetDisplay)
             {
                 player2Compass = c;
+                continue;
+            }
+            if (!player3Compass && player3Camera && display == player3Camera.targetDisplay)
+            {
+                player3Compass = c;
             }
         }
 
-        // Fallback: just grab the first two distinct ones.
-        for (int i = 0; i < indicators.Length && (!player1Compass || !player2Compass); i++)
+        // Fallback: just grab the first three distinct ones.
+        for (int i = 0; i < indicators.Length && (!player1Compass || !player2Compass || !player3Compass); i++)
         {
             RevealIndicatorController c = indicators[i];
             if (!c)
@@ -789,6 +1236,12 @@ public class LocalVersusGameManager : MonoBehaviour
             if (!player2Compass && c != player1Compass)
             {
                 player2Compass = c;
+                continue;
+            }
+
+            if (!player3Compass && c != player1Compass && c != player2Compass)
+            {
+                player3Compass = c;
             }
         }
     }
@@ -814,17 +1267,27 @@ public class LocalVersusGameManager : MonoBehaviour
     {
         int player1LayerId = LayerMask.NameToLayer(player1OnlyLayer);
         int player2LayerId = LayerMask.NameToLayer(player2OnlyLayer);
-        if (player1LayerId < 0 || player2LayerId < 0)
+        bool usePlayer3 = _player3Instance || player3Prefab;
+        int player3LayerId = usePlayer3 ? LayerMask.NameToLayer(player3OnlyLayer) : -1;
+        if (player1LayerId < 0 || player2LayerId < 0 || (usePlayer3 && player3LayerId < 0))
         {
-            Debug.LogWarning($"[LocalVersusGameManager] Missing layers for player-only visuals. Define '{player1OnlyLayer}' and '{player2OnlyLayer}' in TagManager.", this);
+            Debug.LogWarning($"[LocalVersusGameManager] Missing layers for player-only visuals. Define '{player1OnlyLayer}', '{player2OnlyLayer}'{(usePlayer3 ? $" and '{player3OnlyLayer}'" : string.Empty)} in TagManager.", this);
             return;
         }
 
         AssignPlayerOnlyLayer(_player1Instance, player1LayerId);
         AssignPlayerOnlyLayer(_player2Instance, player2LayerId);
+        if (usePlayer3)
+        {
+            AssignPlayerOnlyLayer(_player3Instance, player3LayerId);
+        }
 
-        ApplyCameraCullingMask(player1Camera, player1LayerId, player2LayerId);
-        ApplyCameraCullingMask(player2Camera, player2LayerId, player1LayerId);
+        ApplyCameraCullingMask(player1Camera, player1LayerId, player2LayerId, player3LayerId);
+        ApplyCameraCullingMask(player2Camera, player2LayerId, player1LayerId, player3LayerId);
+        if (usePlayer3)
+        {
+            ApplyCameraCullingMask(player3Camera, player3LayerId, player1LayerId, player2LayerId);
+        }
     }
 
     private void AssignPlayerOnlyLayer(GameObject root, int layer)
@@ -882,7 +1345,7 @@ public class LocalVersusGameManager : MonoBehaviour
         }
     }
 
-    private void ApplyCameraCullingMask(Camera cam, int includeLayer, int excludeLayer)
+    private void ApplyCameraCullingMask(Camera cam, int includeLayer, params int[] excludeLayers)
     {
         if (!cam)
         {
@@ -891,9 +1354,16 @@ public class LocalVersusGameManager : MonoBehaviour
 
         int mask = cam.cullingMask;
         mask |= 1 << includeLayer;
-        if (excludeLayer >= 0)
+        if (excludeLayers != null)
         {
-            mask &= ~(1 << excludeLayer);
+            for (int i = 0; i < excludeLayers.Length; i++)
+            {
+                int exclude = excludeLayers[i];
+                if (exclude >= 0)
+                {
+                    mask &= ~(1 << exclude);
+                }
+            }
         }
         cam.cullingMask = mask;
     }
