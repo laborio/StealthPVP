@@ -50,6 +50,11 @@ public class LocalVersusGameManager : MonoBehaviour
     [SerializeField, Tooltip("Target image prefab for player 1 (dark).")] private GameObject targetImageDarkPrefab;
     [SerializeField, Tooltip("Target image prefab for player 2 (green).")] private GameObject targetImageGreenPrefab;
     [SerializeField, Tooltip("Target image prefab for player 3 (purple).")] private GameObject targetImagePurplePrefab;
+    [Header("UI/Scoreboard")]
+    [SerializeField] private ScoreboardController player1Scoreboard;
+    [SerializeField] private ScoreboardController player2Scoreboard;
+    [SerializeField] private ScoreboardController player3Scoreboard;
+    [SerializeField, Tooltip("Points awarded for killing the assigned target.")] private int scorePerTargetKill = 100;
     [Header("Minimap")]
     [SerializeField] private MinimapController player1Minimap;
     [SerializeField] private MinimapController player2Minimap;
@@ -105,6 +110,9 @@ public class LocalVersusGameManager : MonoBehaviour
     private CharacterHealth _player3Health;
     private bool _hunterIsPlayer1 = true;
     private bool _respawnInProgress;
+    private int _player1Score;
+    private int _player2Score;
+    private int _player3Score;
 
     private void Awake()
     {
@@ -122,6 +130,7 @@ public class LocalVersusGameManager : MonoBehaviour
         SpawnOrRespawnPlayers(initialSpawn: true);
         UpdateRoleIndicators();
         UpdateCompasses();
+        UpdateScoreboards();
     }
 
     private void OnDestroy()
@@ -466,8 +475,112 @@ public class LocalVersusGameManager : MonoBehaviour
             return;
         }
 
+        TryAwardScore(dead);
         ResetRevealCooldown(dead);
         StartCoroutine(HandleRespawnAndSwap(dead));
+    }
+
+    private void TryAwardScore(CharacterHealth dead)
+    {
+        if (!dead || scorePerTargetKill <= 0)
+        {
+            return;
+        }
+
+        if (!dead.TryGetLastDamage(out DamagePayload payload))
+        {
+            return;
+        }
+
+        CharacterHealth killerHealth = ResolveInstigatorHealth(payload);
+        if (!killerHealth || killerHealth == dead)
+        {
+            return;
+        }
+
+        PlayerSlot? killerSlot = ResolvePlayerSlot(killerHealth);
+        if (!killerSlot.HasValue)
+        {
+            return;
+        }
+
+        NpcIdentity deadIdentity = GetIdentity(dead.gameObject);
+        if (!deadIdentity)
+        {
+            return;
+        }
+
+        NpcIdentity id1 = GetIdentity(_player1Instance);
+        NpcIdentity id2 = GetIdentity(_player2Instance);
+        NpcIdentity id3 = GetIdentity(_player3Instance);
+        ResolveAssignedTargets(id1, id2, id3, out NpcIdentity target1, out NpcIdentity target2, out NpcIdentity target3);
+        NpcIdentity assignedTarget = killerSlot.Value switch
+        {
+            PlayerSlot.Player1 => target1,
+            PlayerSlot.Player2 => target2,
+            PlayerSlot.Player3 => target3,
+            _ => null
+        };
+
+        if (assignedTarget && assignedTarget == deadIdentity)
+        {
+            AddScore(killerSlot.Value, scorePerTargetKill);
+            UpdateScoreboards();
+        }
+    }
+
+    private CharacterHealth ResolveInstigatorHealth(DamagePayload payload)
+    {
+        GameObject instigator = payload.Instigator ? payload.Instigator : payload.Source;
+        if (!instigator)
+        {
+            return null;
+        }
+
+        return instigator.GetComponent<CharacterHealth>()
+            ?? instigator.GetComponentInParent<CharacterHealth>()
+            ?? instigator.GetComponentInChildren<CharacterHealth>(true);
+    }
+
+    private PlayerSlot? ResolvePlayerSlot(CharacterHealth health)
+    {
+        if (!health)
+        {
+            return null;
+        }
+
+        if (health == _player1Health)
+        {
+            return PlayerSlot.Player1;
+        }
+
+        if (health == _player2Health)
+        {
+            return PlayerSlot.Player2;
+        }
+
+        if (health == _player3Health)
+        {
+            return PlayerSlot.Player3;
+        }
+
+        return null;
+    }
+
+    private void AddScore(PlayerSlot slot, int amount)
+    {
+        switch (slot)
+        {
+            case PlayerSlot.Player1:
+                _player1Score += amount;
+                break;
+            case PlayerSlot.Player2:
+                _player2Score += amount;
+                break;
+            case PlayerSlot.Player3:
+                _player3Score += amount;
+                break;
+        }
     }
 
     private void ResetRevealCooldown(CharacterHealth dead)
@@ -735,10 +848,7 @@ public class LocalVersusGameManager : MonoBehaviour
         AbilityRunner ability1 = GetAbility(_player1Instance);
         AbilityRunner ability2 = GetAbility(_player2Instance);
         AbilityRunner ability3 = GetAbility(_player3Instance);
-        bool hasPlayer3 = _player3Instance != null;
-        NpcIdentity target1 = id2;
-        NpcIdentity target2 = hasPlayer3 ? (id3 ? id3 : id1) : id1;
-        NpcIdentity target3 = hasPlayer3 ? id1 : null;
+        ResolveAssignedTargets(id1, id2, id3, out NpcIdentity target1, out NpcIdentity target2, out NpcIdentity target3);
         ConfigureRevealIndicators(_player1Instance, player1Compass, target1, vision1, ability1, player1Camera, player1Fog);
         ConfigureRevealIndicators(_player2Instance, player2Compass, target2, vision2, ability2, player2Camera, player2Fog);
         ConfigureRevealIndicators(_player3Instance, player3Compass, target3, vision3, ability3, player3Camera, player3Fog);
@@ -748,6 +858,15 @@ public class LocalVersusGameManager : MonoBehaviour
         ApplyRevealTuning(ability3, player3Compass);
         UpdateMinimaps(target1, target2, target3);
         UpdateTargetImages(id1, id2, id3, target1, target2, target3);
+    }
+
+    private void ResolveAssignedTargets(NpcIdentity id1, NpcIdentity id2, NpcIdentity id3,
+        out NpcIdentity target1, out NpcIdentity target2, out NpcIdentity target3)
+    {
+        bool hasPlayer3 = _player3Instance != null;
+        target1 = id2;
+        target2 = hasPlayer3 ? (id3 ? id3 : id1) : id1;
+        target3 = hasPlayer3 ? id1 : null;
     }
 
     private void ConfigureRevealIndicators(GameObject playerInstance, RevealIndicatorController primaryCompass, NpcIdentity target,
@@ -835,16 +954,19 @@ public class LocalVersusGameManager : MonoBehaviour
 
         if (player1Minimap)
         {
+            player1Minimap.SetOwner(GetIdentity(_player1Instance));
             player1Minimap.SetTarget(player1Target);
         }
 
         if (player2Minimap)
         {
+            player2Minimap.SetOwner(GetIdentity(_player2Instance));
             player2Minimap.SetTarget(player2Target);
         }
 
         if (player3Minimap)
         {
+            player3Minimap.SetOwner(GetIdentity(_player3Instance));
             player3Minimap.SetTarget(player3Target);
         }
     }
@@ -888,6 +1010,60 @@ public class LocalVersusGameManager : MonoBehaviour
         {
             ui.SetTargetImagePrefab(prefab);
         }
+    }
+
+    private void UpdateScoreboards()
+    {
+        ResolveScoreboards();
+        bool updatedAny = false;
+        updatedAny |= UpdateScoreboard(player1Scoreboard);
+        updatedAny |= UpdateScoreboard(player2Scoreboard);
+        updatedAny |= UpdateScoreboard(player3Scoreboard);
+
+        if (updatedAny)
+        {
+            return;
+        }
+
+        ScoreboardController[] scoreboards = FindObjectsByType<ScoreboardController>(FindObjectsSortMode.None);
+        if (scoreboards == null || scoreboards.Length == 0)
+        {
+            return;
+        }
+
+        for (int i = 0; i < scoreboards.Length; i++)
+        {
+            UpdateScoreboard(scoreboards[i]);
+        }
+    }
+
+    private void ResolveScoreboards()
+    {
+        if (!player1Scoreboard && player1Ui)
+        {
+            player1Scoreboard = player1Ui.GetComponentInChildren<ScoreboardController>(true);
+        }
+
+        if (!player2Scoreboard && player2Ui)
+        {
+            player2Scoreboard = player2Ui.GetComponentInChildren<ScoreboardController>(true);
+        }
+
+        if (!player3Scoreboard && player3Ui)
+        {
+            player3Scoreboard = player3Ui.GetComponentInChildren<ScoreboardController>(true);
+        }
+    }
+
+    private bool UpdateScoreboard(ScoreboardController scoreboard)
+    {
+        if (!scoreboard)
+        {
+            return false;
+        }
+
+        scoreboard.SetScores(_player1Score, _player2Score, _player3Score);
+        return true;
     }
 
     private void ApplyRevealTuning(AbilityRunner ability, RevealIndicatorController indicator)

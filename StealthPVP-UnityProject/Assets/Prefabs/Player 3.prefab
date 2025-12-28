@@ -7251,7 +7251,7 @@ MonoBehaviour:
   fogManagerNameHint: Fog_P2
   currentTarget: {fileID: 0}
   minFillAmount: 0.15
-  maxFillAmount: 0.75
+  maxFillAmount: 0.6
   farDistanceForMinFill: 60
   nearDistanceForMaxFill: 10
   compassRotationOffset: 180
