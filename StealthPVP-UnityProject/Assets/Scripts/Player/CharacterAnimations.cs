@@ -12,6 +12,9 @@ public class CharacterAnimations : MonoBehaviour
     [SerializeField] private string walkingBoolName = "isWalking";
     [SerializeField] private string idleBoolName = "isIdle";
     [SerializeField] private string runningBoolName = "isRunning";
+    [SerializeField, Tooltip("Optional bool for backward run animation.")] private string runningBackwardBoolName = "isRunningBackward";
+    [SerializeField, Tooltip("Optional bool for strafing animation.")] private string strafingBoolName = "isStrafing";
+    [SerializeField, Tooltip("Optional float used by strafe blend tree (-1 left, 1 right).")] private string strafeDirectionFloatName = "strafeDirection";
     [SerializeField] private string jumpingBoolName = "isJumping";
     [SerializeField] private string fallingBoolName = "isFalling";
     [SerializeField] private string sittingBoolName = "isSitting";
@@ -39,6 +42,9 @@ public class CharacterAnimations : MonoBehaviour
     private int _walkingBoolHash;
     private int _idleBoolHash;
     private int _runningBoolHash;
+    private int _runningBackwardBoolHash;
+    private int _strafingBoolHash;
+    private int _strafeDirectionFloatHash;
     private int _jumpingBoolHash;
     private int _fallingBoolHash;
     private int _sittingBoolHash;
@@ -75,14 +81,17 @@ public class CharacterAnimations : MonoBehaviour
 
         SetBool(animator, _walkingBoolHash, walkingBoolName, data.IsWalking);
         SetBool(animator, _runningBoolHash, runningBoolName, data.IsRunning);
+        SetBool(animator, _runningBackwardBoolHash, runningBackwardBoolName, data.IsRunningBackward);
+        SetBool(animator, _strafingBoolHash, strafingBoolName, data.IsStrafing);
+        SetFloat(animator, _strafeDirectionFloatHash, strafeDirectionFloatName, data.StrafeDirection);
         SetBool(animator, _jumpingBoolHash, jumpingBoolName, data.IsJumping);
         SetBool(animator, _fallingBoolHash, fallingBoolName, data.IsFalling);
 
-        bool isIdle = !data.IsWalking && !data.IsRunning && !data.IsJumping && !data.IsFalling;
+        bool isIdle = !data.IsWalking && !data.IsRunning && !data.IsRunningBackward && !data.IsStrafing && !data.IsJumping && !data.IsFalling;
         SetBool(animator, _idleBoolHash, idleBoolName, isIdle);
 
         float animatorSpeed = 1f;
-        if (data.IsRunning)
+        if (data.IsRunning || data.IsRunningBackward)
         {
             float normalized = Mathf.Clamp(data.PlanarSpeed / Mathf.Max(0.001f, data.RunSpeed), 0f, 2f);
             animatorSpeed = runAnimationBaseSpeed * normalized;
@@ -106,7 +115,9 @@ public class CharacterAnimations : MonoBehaviour
             UpdateRunParticles(false);
         }
 
-        animator.speed = animatorSpeed;
+        bool isAttacking = !string.IsNullOrEmpty(attackStateTag)
+            && IsAnimatorInAttackState(animator, attackStateTag, _attackTagHash);
+        animator.speed = isAttacking ? 1f : animatorSpeed;
         UpdateUpperBodyLayerWeight();
     }
 
@@ -138,6 +149,9 @@ public class CharacterAnimations : MonoBehaviour
 
         SetBool(animator, _walkingBoolHash, walkingBoolName, false);
         SetBool(animator, _runningBoolHash, runningBoolName, false);
+        SetBool(animator, _runningBackwardBoolHash, runningBackwardBoolName, false);
+        SetBool(animator, _strafingBoolHash, strafingBoolName, false);
+        SetFloat(animator, _strafeDirectionFloatHash, strafeDirectionFloatName, 0f);
         SetBool(animator, _jumpingBoolHash, jumpingBoolName, false);
         SetBool(animator, _fallingBoolHash, fallingBoolName, false);
         SetBool(animator, _sittingBoolHash, sittingBoolName, false);
@@ -217,6 +231,9 @@ public class CharacterAnimations : MonoBehaviour
         _walkingBoolHash = HashOrZero(walkingBoolName);
         _idleBoolHash = HashOrZero(idleBoolName);
         _runningBoolHash = HashOrZero(runningBoolName);
+        _runningBackwardBoolHash = HashOrZero(runningBackwardBoolName);
+        _strafingBoolHash = HashOrZero(strafingBoolName);
+        _strafeDirectionFloatHash = HashOrZero(strafeDirectionFloatName);
         _jumpingBoolHash = HashOrZero(jumpingBoolName);
         _fallingBoolHash = HashOrZero(fallingBoolName);
         _sittingBoolHash = HashOrZero(sittingBoolName);
@@ -423,12 +440,32 @@ public class CharacterAnimations : MonoBehaviour
             targetAnimator.SetBool(parameterName, value);
         }
     }
+
+    private static void SetFloat(Animator targetAnimator, int hash, string parameterName, float value)
+    {
+        if (!targetAnimator)
+        {
+            return;
+        }
+
+        if (hash != 0)
+        {
+            targetAnimator.SetFloat(hash, value);
+        }
+        else if (!string.IsNullOrEmpty(parameterName))
+        {
+            targetAnimator.SetFloat(parameterName, value);
+        }
+    }
 }
 
 public struct CharacterLocomotionAnimationData
 {
     public bool IsWalking;
     public bool IsRunning;
+    public bool IsRunningBackward;
+    public bool IsStrafing;
+    public float StrafeDirection;
     public bool IsJumping;
     public bool IsFalling;
     public float PlanarSpeed;

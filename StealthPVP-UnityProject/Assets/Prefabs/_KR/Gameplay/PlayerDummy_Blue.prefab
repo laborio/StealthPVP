@@ -6178,6 +6178,9 @@ MonoBehaviour:
   walkingBoolName: isWalking
   idleBoolName: isIdle
   runningBoolName: isRunning
+  runningBackwardBoolName: isRunningBackward
+  strafingBoolName: isStrafing
+  strafeDirectionFloatName: strafeDirection
   jumpingBoolName: isJumping
   fallingBoolName: isFalling
   sittingBoolName: isSitting
@@ -12852,8 +12855,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8945044522417601190}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.00037011507, y: -0.41538295, z: 0.00016902389, w: -0.9096466}
-  m_LocalPosition: {x: 41.032375, y: 1.1441349, z: 27.657478}
+  m_LocalRotation: {x: 0.0006096904, y: -0.99831283, z: 0.010664524, w: 0.05707396}
+  m_LocalPosition: {x: 7.2152658, y: 0.6360321, z: 33.61328}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
