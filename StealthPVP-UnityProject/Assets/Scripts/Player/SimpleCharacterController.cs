@@ -28,9 +28,13 @@ public partial class SimpleCharacterController : MonoBehaviour
     [Header("Attack")]
     [SerializeField, Tooltip("Name of the animator trigger used for the attack animation.")] private string attackTriggerName = "Attack";
     [SerializeField, Tooltip("Optional range indicator shown while holding the attack button.")] private GameObject rangeIndicator;
+    [SerializeField, Tooltip("If true, keeps the range indicator visible during the attack animation.")] private bool showRangeIndicatorDuringAttack = true;
     [SerializeField, Tooltip("Rotation speed (deg/sec) when aligning to the attack aim.")] private float attackAimRotationSpeed = 1080f;
     [SerializeField, Tooltip("Layers considered for attack aiming.")] private LayerMask attackGroundMask = Physics.DefaultRaycastLayers;
-    [SerializeField, Tooltip("Minimum time movement stays locked after triggering an attack.")] private float attackLockMinDuration = 0.05f;
+    [SerializeField, Tooltip("Minimum time attack input stays locked after triggering an attack.")] private float attackLockMinDuration = 0.05f;
+    [SerializeField, Tooltip("If true, movement input is locked while an attack is active.")] private bool lockMovementDuringAttack = false;
+    [SerializeField, Range(-1f, 1f), Tooltip("Dot threshold to treat movement as opposite the attack aim (used for backward run).")] private float backwardRunDotThreshold = -0.2f;
+    [SerializeField, Range(0f, 1f), Tooltip("Abs(dot) threshold to treat movement as perpendicular to attack aim (used for strafing).")] private float strafeDotThreshold = 0.35f;
     [SerializeField, Tooltip("Impulse applied to rigidbodies when bumped by the CharacterController.")] private float rigidbodyPushForce = 3f;
     [SerializeField] private float dashSpeedMultiplier = 3f;
     [SerializeField] private float dashDuration = 0.25f;
@@ -80,6 +84,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     private bool _attackAimInProgress;
     private Quaternion _attackTargetRotation;
     private Vector3 _lastAimDirection = Vector3.forward;
+    private Vector3 _lastAttackAimDirection = Vector3.forward;
     private Transform _rangeIndicatorTransform;
     private float _attackLockTimer;
 
@@ -124,11 +129,23 @@ public partial class SimpleCharacterController : MonoBehaviour
         HandleBenchInput(requestedMovement, interactPressed);
         HandleAttackInput(inputSnapshot, isGrounded);
         UpdateAttackLockState(deltaTime);
+        bool attackStateActive = characterAnimations != null && characterAnimations.IsInAttackState();
+        bool shouldShowRangeIndicator = _attackChargeActive || (showRangeIndicatorDuringAttack && (_attackLockActive || attackStateActive));
+        SetRangeIndicatorActive(shouldShowRangeIndicator);
+        if (shouldShowRangeIndicator)
+        {
+            Vector3 indicatorDirection = _attackChargeActive ? _lastAimDirection : _lastAttackAimDirection;
+            if (indicatorDirection.sqrMagnitude < 0.0001f)
+            {
+                indicatorDirection = _lastAimDirection.sqrMagnitude > 0.0001f ? _lastAimDirection : transform.forward;
+            }
+            ApplyRangeIndicatorRotation(indicatorDirection);
+        }
         bool actionKeyAllowed = _seatingState == SeatingState.Standing;
         HandleActionInput(interactPressed && actionKeyAllowed, isGrounded);
 
         bool seatingLocked = _seatingState != SeatingState.Standing;
-        bool attackMovementLocked = _attackLockActive;
+        bool attackMovementLocked = lockMovementDuringAttack && _attackLockActive;
         bool movingToSeat = _seatingState == SeatingState.MovingToSeat;
         bool walkOverrideActive = movingToSeat;
         Vector2 movementInput = (seatingLocked || attackMovementLocked) ? Vector2.zero : movementInputRaw;
@@ -377,16 +394,30 @@ public partial class SimpleCharacterController : MonoBehaviour
         Vector3 planarMove = new Vector3(_currentPlanarVelocity.x, 0f, _currentPlanarVelocity.z);
         float planarSpeed = planarMove.magnitude;
 
+        bool isAttacking = attackStateActive;
+        Vector3 planarMoveDir = planarMove.sqrMagnitude > 0.0001f ? planarMove.normalized : Vector3.zero;
+        bool hasMoveDir = planarMoveDir.sqrMagnitude > 0.0001f;
+        bool hasAttackAim = _lastAttackAimDirection.sqrMagnitude > 0.0001f;
+        float moveAimDot = hasMoveDir && hasAttackAim ? Vector3.Dot(planarMoveDir, _lastAttackAimDirection) : 1f;
+        bool shouldRunBackward = isAttacking && hasMoveDir && hasAttackAim && moveAimDot <= backwardRunDotThreshold;
+        bool shouldStrafe = isAttacking && !shouldRunBackward && hasMoveDir && hasAttackAim && Mathf.Abs(moveAimDot) <= strafeDotThreshold;
+        float strafeDirection = 0f;
+        if (shouldStrafe)
+        {
+            float crossY = Vector3.Cross(planarMoveDir, _lastAttackAimDirection).y;
+            strafeDirection = Mathf.Sign(crossY);
+        }
+
         bool attackRotationApplied = ProcessAttackAimRotation(deltaTime);
 
-        if (!attackRotationApplied && planarMove.sqrMagnitude > 0.0001f)
+        if (!attackRotationApplied && !isAttacking && !shouldRunBackward && !shouldStrafe && planarMove.sqrMagnitude > 0.0001f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(planarMove.normalized, Vector3.up);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * deltaTime);
         }
 
         bool allowRunningAnimation = !walkOverrideActive;
-        _isRunning = allowRunningAnimation && !wantsToWalk && planarSpeed > 0.1f;
+        _isRunning = allowRunningAnimation && !wantsToWalk && planarSpeed > 0.1f && !shouldRunBackward && !shouldStrafe;
 
         bool consideredAirborne = !groundedForAnimation;
         if (consideredAirborne)
@@ -405,13 +436,16 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
 
         bool isAirborne = _isJumping || _isFalling;
-        bool isWalking = !isAirborne && planarSpeed > 0.1f && !_isRunning && !_isDashing;
-        bool isRunningEffective = !isAirborne && (_isRunning || _isDashing);
+        bool isWalking = !isAirborne && planarSpeed > 0.1f && !_isRunning && !_isDashing && !shouldRunBackward && !shouldStrafe;
+        bool isRunningEffective = !isAirborne && (_isRunning || _isDashing || shouldRunBackward);
 
         characterAnimations?.ApplyLocomotion(new CharacterLocomotionAnimationData
         {
             IsWalking = isWalking,
             IsRunning = isRunningEffective,
+            IsRunningBackward = shouldRunBackward,
+            IsStrafing = shouldStrafe,
+            StrafeDirection = shouldStrafe ? strafeDirection : 0f,
             IsJumping = _isJumping,
             IsFalling = _isFalling,
             PlanarSpeed = planarSpeed,
@@ -511,12 +545,9 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
 
         BeginAttackRotation(aimDirection);
+        _lastAttackAimDirection = aimDirection.sqrMagnitude > 0.0001f ? aimDirection.normalized : transform.forward;
         _attackLockActive = true;
         _attackLockTimer = Mathf.Max(attackLockMinDuration, 0f);
-        _isDashing = false;
-        _dashTimer = 0f;
-        _currentPlanarVelocity = Vector3.zero;
-        _hasMoveTarget = false;
         characterAnimations?.TriggerAttack(attackTriggerName);
     }
 
@@ -824,6 +855,8 @@ public partial class SimpleCharacterController : MonoBehaviour
         waterJumpVelocityMultiplier = Mathf.Clamp(waterJumpVelocityMultiplier, 0.1f, 1f);
         attackAimRotationSpeed = Mathf.Max(0f, attackAimRotationSpeed);
         attackLockMinDuration = Mathf.Max(0f, attackLockMinDuration);
+        backwardRunDotThreshold = Mathf.Clamp(backwardRunDotThreshold, -1f, 1f);
+        strafeDotThreshold = Mathf.Clamp(strafeDotThreshold, 0f, 1f);
         rigidbodyPushForce = Mathf.Max(0f, rigidbodyPushForce);
         CacheRangeIndicator();
     }

@@ -6178,6 +6178,9 @@ MonoBehaviour:
   walkingBoolName: isWalking
   idleBoolName: isIdle
   runningBoolName: isRunning
+  runningBackwardBoolName: isRunningBackward
+  strafingBoolName: isStrafing
+  strafeDirectionFloatName: strafeDirection
   jumpingBoolName: isJumping
   fallingBoolName: isFalling
   sittingBoolName: isSitting
@@ -6190,6 +6193,10 @@ MonoBehaviour:
   runAnimationBaseSpeed: 1
   jumpAnimationBaseSpeed: 1
   runParticleSystem: {fileID: 7560775613690615504}
+  controlUpperBodyLayerWeight: 1
+  upperBodyLayerName: Upper Body
+  upperBodyIdleWeight: 0
+  upperBodyAttackWeight: 1
   debugLogs: 0
 --- !u!114 &8202753440923050041
 MonoBehaviour:
@@ -12848,8 +12855,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8945044522417601190}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.79930794, z: -0.000000029802326, w: -0.6009217}
-  m_LocalPosition: {x: -13.028675, y: 0.6741731, z: -6.367406}
+  m_LocalRotation: {x: 0.0006096904, y: -0.99831283, z: 0.010664524, w: 0.05707396}
+  m_LocalPosition: {x: 7.2152658, y: 0.6360321, z: 33.61328}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

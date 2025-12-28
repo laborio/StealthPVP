@@ -76,6 +76,9 @@ public partial class SimpleCharacterController
         {
             IsWalking = false,
             IsRunning = false,
+            IsRunningBackward = false,
+            IsStrafing = false,
+            StrafeDirection = 0f,
             IsJumping = false,
             IsFalling = false,
             PlanarSpeed = 0f,

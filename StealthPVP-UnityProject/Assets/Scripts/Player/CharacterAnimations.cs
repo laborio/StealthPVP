@@ -12,6 +12,9 @@ public class CharacterAnimations : MonoBehaviour
     [SerializeField] private string walkingBoolName = "isWalking";
     [SerializeField] private string idleBoolName = "isIdle";
     [SerializeField] private string runningBoolName = "isRunning";
+    [SerializeField, Tooltip("Optional bool for backward run animation.")] private string runningBackwardBoolName = "isRunningBackward";
+    [SerializeField, Tooltip("Optional bool for strafing animation.")] private string strafingBoolName = "isStrafing";
+    [SerializeField, Tooltip("Optional float used by strafe blend tree (-1 left, 1 right).")] private string strafeDirectionFloatName = "strafeDirection";
     [SerializeField] private string jumpingBoolName = "isJumping";
     [SerializeField] private string fallingBoolName = "isFalling";
     [SerializeField] private string sittingBoolName = "isSitting";
@@ -28,12 +31,20 @@ public class CharacterAnimations : MonoBehaviour
 
     [Header("Effects")]
     [SerializeField] private ParticleSystem runParticleSystem;
+    [Header("Upper Body Layer")]
+    [SerializeField, Tooltip("If true, the upper-body layer weight is driven by attack state.")] private bool controlUpperBodyLayerWeight = true;
+    [SerializeField, Tooltip("Animator layer name for upper-body attack animations.")] private string upperBodyLayerName = "Upper Body";
+    [SerializeField, Range(0f, 1f), Tooltip("Layer weight when not attacking.")] private float upperBodyIdleWeight = 0f;
+    [SerializeField, Range(0f, 1f), Tooltip("Layer weight while attacking.")] private float upperBodyAttackWeight = 1f;
     [Header("Debug")]
     [SerializeField] private bool debugLogs = false;
 
     private int _walkingBoolHash;
     private int _idleBoolHash;
     private int _runningBoolHash;
+    private int _runningBackwardBoolHash;
+    private int _strafingBoolHash;
+    private int _strafeDirectionFloatHash;
     private int _jumpingBoolHash;
     private int _fallingBoolHash;
     private int _sittingBoolHash;
@@ -42,11 +53,13 @@ public class CharacterAnimations : MonoBehaviour
     private int _attackTriggerHash;
     private int _attackTagHash;
     private int _hitTriggerHash;
+    private int _upperBodyLayerIndex = -1;
 
     private void Awake()
     {
         ResolveAnimators();
         CacheHashes();
+        ResolveUpperBodyLayer();
     }
 
     private void OnValidate()
@@ -56,6 +69,7 @@ public class CharacterAnimations : MonoBehaviour
         jumpAnimationBaseSpeed = Mathf.Max(0.01f, jumpAnimationBaseSpeed);
         ResolveAnimators();
         CacheHashes();
+        ResolveUpperBodyLayer();
     }
 
     public void ApplyLocomotion(CharacterLocomotionAnimationData data)
@@ -67,14 +81,17 @@ public class CharacterAnimations : MonoBehaviour
 
         SetBool(animator, _walkingBoolHash, walkingBoolName, data.IsWalking);
         SetBool(animator, _runningBoolHash, runningBoolName, data.IsRunning);
+        SetBool(animator, _runningBackwardBoolHash, runningBackwardBoolName, data.IsRunningBackward);
+        SetBool(animator, _strafingBoolHash, strafingBoolName, data.IsStrafing);
+        SetFloat(animator, _strafeDirectionFloatHash, strafeDirectionFloatName, data.StrafeDirection);
         SetBool(animator, _jumpingBoolHash, jumpingBoolName, data.IsJumping);
         SetBool(animator, _fallingBoolHash, fallingBoolName, data.IsFalling);
 
-        bool isIdle = !data.IsWalking && !data.IsRunning && !data.IsJumping && !data.IsFalling;
+        bool isIdle = !data.IsWalking && !data.IsRunning && !data.IsRunningBackward && !data.IsStrafing && !data.IsJumping && !data.IsFalling;
         SetBool(animator, _idleBoolHash, idleBoolName, isIdle);
 
         float animatorSpeed = 1f;
-        if (data.IsRunning)
+        if (data.IsRunning || data.IsRunningBackward)
         {
             float normalized = Mathf.Clamp(data.PlanarSpeed / Mathf.Max(0.001f, data.RunSpeed), 0f, 2f);
             animatorSpeed = runAnimationBaseSpeed * normalized;
@@ -98,7 +115,10 @@ public class CharacterAnimations : MonoBehaviour
             UpdateRunParticles(false);
         }
 
-        animator.speed = animatorSpeed;
+        bool isAttacking = !string.IsNullOrEmpty(attackStateTag)
+            && IsAnimatorInAttackState(animator, attackStateTag, _attackTagHash);
+        animator.speed = isAttacking ? 1f : animatorSpeed;
+        UpdateUpperBodyLayerWeight();
     }
 
     public void SetSittingState(bool isSitting, float animationSpeed)
@@ -129,6 +149,9 @@ public class CharacterAnimations : MonoBehaviour
 
         SetBool(animator, _walkingBoolHash, walkingBoolName, false);
         SetBool(animator, _runningBoolHash, runningBoolName, false);
+        SetBool(animator, _runningBackwardBoolHash, runningBackwardBoolName, false);
+        SetBool(animator, _strafingBoolHash, strafingBoolName, false);
+        SetFloat(animator, _strafeDirectionFloatHash, strafeDirectionFloatName, 0f);
         SetBool(animator, _jumpingBoolHash, jumpingBoolName, false);
         SetBool(animator, _fallingBoolHash, fallingBoolName, false);
         SetBool(animator, _sittingBoolHash, sittingBoolName, false);
@@ -148,6 +171,7 @@ public class CharacterAnimations : MonoBehaviour
         string triggerName = string.IsNullOrEmpty(overrideTrigger) ? attackTriggerName : overrideTrigger;
         int hash = HashOrZero(triggerName);
         TriggerOnAnimators(triggerName, hash);
+        UpdateUpperBodyLayerWeight();
     }
 
     public void TriggerHit(string overrideTrigger = null)
@@ -207,6 +231,9 @@ public class CharacterAnimations : MonoBehaviour
         _walkingBoolHash = HashOrZero(walkingBoolName);
         _idleBoolHash = HashOrZero(idleBoolName);
         _runningBoolHash = HashOrZero(runningBoolName);
+        _runningBackwardBoolHash = HashOrZero(runningBackwardBoolName);
+        _strafingBoolHash = HashOrZero(strafingBoolName);
+        _strafeDirectionFloatHash = HashOrZero(strafeDirectionFloatName);
         _jumpingBoolHash = HashOrZero(jumpingBoolName);
         _fallingBoolHash = HashOrZero(fallingBoolName);
         _sittingBoolHash = HashOrZero(sittingBoolName);
@@ -215,6 +242,44 @@ public class CharacterAnimations : MonoBehaviour
         _attackTriggerHash = HashOrZero(attackTriggerName);
         _attackTagHash = HashOrZero(attackStateTag);
         _hitTriggerHash = HashOrZero(hitTriggerName);
+    }
+
+    private void ResolveUpperBodyLayer()
+    {
+        _upperBodyLayerIndex = -1;
+        if (!animator || string.IsNullOrEmpty(upperBodyLayerName))
+        {
+            return;
+        }
+
+        _upperBodyLayerIndex = animator.GetLayerIndex(upperBodyLayerName);
+    }
+
+    private void UpdateUpperBodyLayerWeight()
+    {
+        if (!controlUpperBodyLayerWeight || !animator)
+        {
+            return;
+        }
+
+        if (_upperBodyLayerIndex < 0)
+        {
+            ResolveUpperBodyLayer();
+            if (_upperBodyLayerIndex < 0)
+            {
+                return;
+            }
+        }
+
+        if (string.IsNullOrEmpty(attackStateTag))
+        {
+            animator.SetLayerWeight(_upperBodyLayerIndex, upperBodyIdleWeight);
+            return;
+        }
+
+        bool isAttacking = IsAnimatorInAttackState(animator, attackStateTag, _attackTagHash);
+        float targetWeight = isAttacking ? upperBodyAttackWeight : upperBodyIdleWeight;
+        animator.SetLayerWeight(_upperBodyLayerIndex, targetWeight);
     }
 
     private void ResolveAnimators()
@@ -333,13 +398,22 @@ public class CharacterAnimations : MonoBehaviour
             return false;
         }
 
-        AnimatorStateInfo state = targetAnimator.GetCurrentAnimatorStateInfo(0);
-        if (hash != 0 && state.tagHash == hash)
+        int layers = targetAnimator.layerCount;
+        for (int layerIndex = 0; layerIndex < layers; layerIndex++)
         {
-            return true;
+            AnimatorStateInfo state = targetAnimator.GetCurrentAnimatorStateInfo(layerIndex);
+            if (hash != 0 && state.tagHash == hash)
+            {
+                return true;
+            }
+
+            if (state.IsTag(tag))
+            {
+                return true;
+            }
         }
 
-        return state.IsTag(tag);
+        return false;
     }
 
     private void LogDebug(string message)
@@ -366,12 +440,32 @@ public class CharacterAnimations : MonoBehaviour
             targetAnimator.SetBool(parameterName, value);
         }
     }
+
+    private static void SetFloat(Animator targetAnimator, int hash, string parameterName, float value)
+    {
+        if (!targetAnimator)
+        {
+            return;
+        }
+
+        if (hash != 0)
+        {
+            targetAnimator.SetFloat(hash, value);
+        }
+        else if (!string.IsNullOrEmpty(parameterName))
+        {
+            targetAnimator.SetFloat(parameterName, value);
+        }
+    }
 }
 
 public struct CharacterLocomotionAnimationData
 {
     public bool IsWalking;
     public bool IsRunning;
+    public bool IsRunningBackward;
+    public bool IsStrafing;
+    public float StrafeDirection;
     public bool IsJumping;
     public bool IsFalling;
     public float PlanarSpeed;
