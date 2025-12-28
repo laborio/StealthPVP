@@ -9,6 +9,8 @@ using UnityEngine.AI;
 [DisallowMultipleComponent]
 public class LocalVersusGameManager : MonoBehaviour
 {
+    public static LocalVersusGameManager Instance { get; private set; }
+
     private enum PlayerSlot
     {
         Player1,
@@ -116,6 +118,11 @@ public class LocalVersusGameManager : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance && Instance != this)
+        {
+            Debug.LogWarning("[LocalVersusGameManager] Multiple instances detected; using the latest.", this);
+        }
+        Instance = this;
         ActivateDisplays();
         if (npcDirector)
         {
@@ -130,6 +137,7 @@ public class LocalVersusGameManager : MonoBehaviour
         SpawnOrRespawnPlayers(initialSpawn: true);
         UpdateRoleIndicators();
         UpdateCompasses();
+        UpdateStunBindings();
         UpdateScoreboards();
     }
 
@@ -138,6 +146,10 @@ public class LocalVersusGameManager : MonoBehaviour
         UnsubscribeHealth(_player1Health);
         UnsubscribeHealth(_player2Health);
         UnsubscribeHealth(_player3Health);
+        if (Instance == this)
+        {
+            Instance = null;
+        }
     }
 
     private void ActivateDisplays()
@@ -626,6 +638,7 @@ public class LocalVersusGameManager : MonoBehaviour
         UpdateCompasses();
         UpdateFogBindings();
         UpdateRevealBindings();
+        UpdateStunBindings();
         _respawnInProgress = false;
     }
 
@@ -867,6 +880,66 @@ public class LocalVersusGameManager : MonoBehaviour
         target1 = id2;
         target2 = hasPlayer3 ? (id3 ? id3 : id1) : id1;
         target3 = hasPlayer3 ? id1 : null;
+    }
+
+    private void ResolveKillTargets(NpcIdentity id1, NpcIdentity id2, NpcIdentity id3,
+        out NpcIdentity target1, out NpcIdentity target2, out NpcIdentity target3)
+    {
+        bool hasPlayer3 = _player3Instance != null;
+        if (hasPlayer3)
+        {
+            target1 = id2;
+            target2 = id3 ? id3 : id1;
+            target3 = id1;
+            return;
+        }
+
+        if (_hunterIsPlayer1)
+        {
+            target1 = id2;
+            target2 = null;
+        }
+        else
+        {
+            target1 = null;
+            target2 = id1;
+        }
+        target3 = null;
+    }
+
+    public bool IsPlayerHealth(CharacterHealth health)
+    {
+        return health && (health == _player1Health || health == _player2Health || health == _player3Health);
+    }
+
+    public bool CanKillPlayer(CharacterHealth attacker, CharacterHealth victim)
+    {
+        if (!attacker || !victim)
+        {
+            return true;
+        }
+
+        PlayerSlot? attackerSlot = ResolvePlayerSlot(attacker);
+        PlayerSlot? victimSlot = ResolvePlayerSlot(victim);
+        if (!attackerSlot.HasValue || !victimSlot.HasValue)
+        {
+            return true;
+        }
+
+        NpcIdentity id1 = GetIdentity(_player1Instance);
+        NpcIdentity id2 = GetIdentity(_player2Instance);
+        NpcIdentity id3 = GetIdentity(_player3Instance);
+        ResolveKillTargets(id1, id2, id3, out NpcIdentity target1, out NpcIdentity target2, out NpcIdentity target3);
+        NpcIdentity victimId = GetIdentity(victim.gameObject);
+        NpcIdentity allowedTarget = attackerSlot.Value switch
+        {
+            PlayerSlot.Player1 => target1,
+            PlayerSlot.Player2 => target2,
+            PlayerSlot.Player3 => target3,
+            _ => null
+        };
+
+        return allowedTarget != null && allowedTarget == victimId;
     }
 
     private void ConfigureRevealIndicators(GameObject playerInstance, RevealIndicatorController primaryCompass, NpcIdentity target,
@@ -1142,6 +1215,43 @@ public class LocalVersusGameManager : MonoBehaviour
         if (player3Ui)
         {
             player3Ui.SetRevealAbility(ability3);
+        }
+    }
+
+    private void UpdateStunBindings()
+    {
+        float duration = 0f;
+        if (!gameplayTuning)
+        {
+            ResolveGameplayTuning();
+        }
+        if (gameplayTuning)
+        {
+            duration = gameplayTuning.playerStunDuration;
+        }
+
+        ApplyStunDuration(_player1Instance, duration);
+        ApplyStunDuration(_player2Instance, duration);
+        ApplyStunDuration(_player3Instance, duration);
+    }
+
+    private void ApplyStunDuration(GameObject instance, float duration)
+    {
+        if (!instance)
+        {
+            return;
+        }
+
+        PlayerStunController stun = instance.GetComponent<PlayerStunController>()
+            ?? instance.GetComponentInChildren<PlayerStunController>(true);
+        if (!stun)
+        {
+            stun = instance.AddComponent<PlayerStunController>();
+        }
+
+        if (duration >= 0f)
+        {
+            stun.SetStunDuration(duration);
         }
     }
 

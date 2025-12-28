@@ -22,7 +22,9 @@ public class CharacterAnimations : MonoBehaviour
     [SerializeField] private string teleportedBoolName = "isPorted";
     [SerializeField, Tooltip("Trigger parameter for basic attacks.")] private string attackTriggerName = "Attack";
     [SerializeField, Tooltip("Animator state tag used to detect active attack animations.")] private string attackStateTag = "Attack";
+    [SerializeField, Tooltip("Animator state tag used to detect active stun animations.")] private string stunStateTag = "Stun";
     [SerializeField, Tooltip("Trigger parameter for taking a hit.")] private string hitTriggerName = "isHit";
+    [SerializeField, Tooltip("Trigger parameter for stun reactions.")] private string stunnedTriggerName = "isStunned";
 
     [Header("Animation Speeds")]
     [SerializeField] private float walkAnimationBaseSpeed = 1f;
@@ -52,6 +54,7 @@ public class CharacterAnimations : MonoBehaviour
     private int _teleportedBoolHash;
     private int _attackTriggerHash;
     private int _attackTagHash;
+    private int _stunTagHash;
     private int _hitTriggerHash;
     private int _upperBodyLayerIndex = -1;
 
@@ -115,8 +118,7 @@ public class CharacterAnimations : MonoBehaviour
             UpdateRunParticles(false);
         }
 
-        bool isAttacking = !string.IsNullOrEmpty(attackStateTag)
-            && IsAnimatorInAttackState(animator, attackStateTag, _attackTagHash);
+        bool isAttacking = IsInAnyAttackState(animator);
         animator.speed = isAttacking ? 1f : animatorSpeed;
         UpdateUpperBodyLayerWeight();
     }
@@ -181,21 +183,52 @@ public class CharacterAnimations : MonoBehaviour
         TriggerOnAnimators(triggerName, hash);
     }
 
+    public void TriggerStunned(string overrideTrigger = null)
+    {
+        string triggerName = string.IsNullOrEmpty(overrideTrigger) ? stunnedTriggerName : overrideTrigger;
+        int hash = HashOrZero(triggerName);
+        SetBool(animator, hash, triggerName, true);
+        if (vfxAnimator && vfxAnimator != animator)
+        {
+            TriggerAnimator(vfxAnimator, triggerName, hash, allowMissing: false);
+        }
+    }
+
+    public void ResetStunned(string overrideTrigger = null)
+    {
+        string triggerName = string.IsNullOrEmpty(overrideTrigger) ? stunnedTriggerName : overrideTrigger;
+        int hash = HashOrZero(triggerName);
+        SetBool(animator, hash, triggerName, false);
+        if (vfxAnimator && vfxAnimator != animator)
+        {
+            ResetTriggerAnimator(vfxAnimator, triggerName, hash, allowMissing: false);
+        }
+    }
+
     public bool IsInAttackState(string overrideTag = null)
     {
-        string tag = string.IsNullOrEmpty(overrideTag) ? attackStateTag : overrideTag;
-        if (string.IsNullOrEmpty(tag))
+        if (!string.IsNullOrEmpty(overrideTag))
         {
+            int hash = Animator.StringToHash(overrideTag);
+            if (IsAnimatorInAttackState(animator, overrideTag, hash))
+            {
+                return true;
+            }
+
+            if (vfxAnimator && vfxAnimator != animator && IsAnimatorInAttackState(vfxAnimator, overrideTag, hash))
+            {
+                return true;
+            }
+
             return false;
         }
 
-        int hash = string.IsNullOrEmpty(overrideTag) ? _attackTagHash : Animator.StringToHash(tag);
-        if (IsAnimatorInAttackState(animator, tag, hash))
+        if (IsInAnyAttackState(animator))
         {
             return true;
         }
 
-        if (vfxAnimator && vfxAnimator != animator && IsAnimatorInAttackState(vfxAnimator, tag, hash))
+        if (vfxAnimator && vfxAnimator != animator && IsInAnyAttackState(vfxAnimator))
         {
             return true;
         }
@@ -241,6 +274,7 @@ public class CharacterAnimations : MonoBehaviour
         _teleportedBoolHash = HashOrZero(teleportedBoolName);
         _attackTriggerHash = HashOrZero(attackTriggerName);
         _attackTagHash = HashOrZero(attackStateTag);
+        _stunTagHash = HashOrZero(stunStateTag);
         _hitTriggerHash = HashOrZero(hitTriggerName);
     }
 
@@ -271,13 +305,13 @@ public class CharacterAnimations : MonoBehaviour
             }
         }
 
-        if (string.IsNullOrEmpty(attackStateTag))
+        if (string.IsNullOrEmpty(attackStateTag) && string.IsNullOrEmpty(stunStateTag))
         {
             animator.SetLayerWeight(_upperBodyLayerIndex, upperBodyIdleWeight);
             return;
         }
 
-        bool isAttacking = IsAnimatorInAttackState(animator, attackStateTag, _attackTagHash);
+        bool isAttacking = IsInAnyAttackState(animator);
         float targetWeight = isAttacking ? upperBodyAttackWeight : upperBodyIdleWeight;
         animator.SetLayerWeight(_upperBodyLayerIndex, targetWeight);
     }
@@ -326,6 +360,26 @@ public class CharacterAnimations : MonoBehaviour
         return string.IsNullOrEmpty(parameterName) ? 0 : Animator.StringToHash(parameterName);
     }
 
+    private bool IsInAnyAttackState(Animator targetAnimator)
+    {
+        if (!targetAnimator)
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrEmpty(attackStateTag) && IsAnimatorInAttackState(targetAnimator, attackStateTag, _attackTagHash))
+        {
+            return true;
+        }
+
+        if (!string.IsNullOrEmpty(stunStateTag) && IsAnimatorInAttackState(targetAnimator, stunStateTag, _stunTagHash))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     private void TriggerOnAnimators(string parameterName, int hash)
     {
         TriggerAnimator(animator, parameterName, hash, allowMissing: true);
@@ -363,6 +417,35 @@ public class CharacterAnimations : MonoBehaviour
         {
             targetAnimator.ResetTrigger(parameterName);
             targetAnimator.SetTrigger(parameterName);
+        }
+    }
+
+    private void ResetTriggerAnimator(Animator targetAnimator, string parameterName, int hash, bool allowMissing)
+    {
+        if (!targetAnimator || string.IsNullOrEmpty(parameterName))
+        {
+            return;
+        }
+
+        bool exists = ParameterExists(targetAnimator, hash, parameterName, AnimatorControllerParameterType.Trigger);
+        if (!exists && !allowMissing)
+        {
+            LogDebug($"Skipped reset trigger '{parameterName}' on {targetAnimator.name} (parameter missing)");
+            return;
+        }
+
+        if (!exists && allowMissing)
+        {
+            LogDebug($"Resetting '{parameterName}' on {targetAnimator.name} without parameter lookup (allowMissing)");
+        }
+
+        if (hash != 0)
+        {
+            targetAnimator.ResetTrigger(hash);
+        }
+        else
+        {
+            targetAnimator.ResetTrigger(parameterName);
         }
     }
 

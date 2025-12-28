@@ -17,6 +17,7 @@ public class PlayerInputRouter : MonoBehaviour
     [SerializeField] private string verticalAxis = "Vertical";
     [Header("Input State")]
     [SerializeField, Tooltip("If false, this router ignores all input.")] private bool inputEnabled = true;
+    [SerializeField, Tooltip("If true, input is temporarily suppressed (e.g., stun).")] private bool inputSuppressed = false;
     [Header("Keyboard Only Movement (optional)")]
     [SerializeField, Tooltip("If true, movement axis is built from keyboard keys only (ignores joystick axes).")] private bool keyboardOnlyMovement = false;
     [SerializeField] private KeyCode moveLeftKey = KeyCode.A;
@@ -36,7 +37,7 @@ public class PlayerInputRouter : MonoBehaviour
     /// </summary>
     public virtual PlayerInputSnapshot PollInput()
     {
-        if (!inputEnabled)
+        if (!inputEnabled || inputSuppressed)
         {
             return default;
         }
@@ -51,6 +52,9 @@ public class PlayerInputRouter : MonoBehaviour
             PrimaryPressed = Input.GetMouseButtonDown(0),
             PrimaryHeld = Input.GetMouseButton(0),
             PrimaryReleased = Input.GetMouseButtonUp(0),
+            SecondaryPressed = Input.GetMouseButtonDown(2),
+            SecondaryHeld = Input.GetMouseButton(2),
+            SecondaryReleased = Input.GetMouseButtonUp(2),
             MoveAxis = keyboardOnlyMovement ? BuildKeyboardMoveAxis() : new Vector2(
                 string.IsNullOrEmpty(horizontalAxis) ? 0f : Input.GetAxisRaw(horizontalAxis),
                 string.IsNullOrEmpty(verticalAxis) ? 0f : Input.GetAxisRaw(verticalAxis))
@@ -62,7 +66,8 @@ public class PlayerInputRouter : MonoBehaviour
             snapshot.MoveTarget = targetPosition;
         }
 
-        if (snapshot.PrimaryHeld || snapshot.PrimaryPressed || snapshot.PrimaryReleased)
+        if (snapshot.PrimaryHeld || snapshot.PrimaryPressed || snapshot.PrimaryReleased
+            || snapshot.SecondaryHeld || snapshot.SecondaryPressed || snapshot.SecondaryReleased)
         {
             if (TryResolveAimPoint(attackRayDistance, attackGroundMask, out Vector3 aimPoint))
             {
@@ -141,7 +146,12 @@ public class PlayerInputRouter : MonoBehaviour
         inputEnabled = enabled;
     }
 
-    protected bool IsInputEnabled => inputEnabled;
+    public void SetInputSuppressed(bool suppressed)
+    {
+        inputSuppressed = suppressed;
+    }
+
+    protected bool IsInputAllowed => inputEnabled && !inputSuppressed;
 
     public void SetAxes(string horizontal, string vertical)
     {
@@ -191,6 +201,9 @@ public struct PlayerInputSnapshot
     public bool PrimaryPressed;
     public bool PrimaryHeld;
     public bool PrimaryReleased;
+    public bool SecondaryPressed;
+    public bool SecondaryHeld;
+    public bool SecondaryReleased;
     public bool MoveIssued;
     public Vector2 MoveAxis;
     public Vector3 MoveTarget;

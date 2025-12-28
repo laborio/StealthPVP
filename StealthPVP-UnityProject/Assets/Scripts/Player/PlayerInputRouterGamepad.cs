@@ -20,6 +20,7 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
     [SerializeField, Tooltip("If true, the trigger will drive primary pressed/held/released.")] private bool useTriggerForPrimary = false;
     [Header("Buttons (set via LocalVersusGameManager)")]
     [SerializeField, Tooltip("Optional button name for primary/attack. Leave empty to use keycodes only.")] private string primaryButton = "";
+    [SerializeField, Tooltip("Optional button name for secondary attack. Leave empty to use keycodes only.")] private string secondaryButton = "";
     [SerializeField, Tooltip("Optional button name for jump. Leave empty to use keycodes only.")] private string jumpButton = "";
     [SerializeField, Tooltip("Optional button name for dash. Leave empty to use keycodes only.")] private string dashButton = "";
     [SerializeField, Tooltip("Optional button name for run. Leave empty to use keycodes only.")] private string runButton = "";
@@ -29,20 +30,23 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
     [SerializeField, Tooltip("Prints when buttons/axes are detected; useful for finding the right joystick button ids.")] private bool debugInputs = false;
 
     private KeyCode primaryKeyCode = KeyCode.JoystickButton2;
+    private KeyCode secondaryKeyCode = KeyCode.None;
     private KeyCode jumpKeyCode = KeyCode.JoystickButton0;
     private KeyCode dashKeyCode = KeyCode.JoystickButton1;
     private KeyCode runKeyCode = KeyCode.JoystickButton5;
     private KeyCode interactKeyCode = KeyCode.JoystickButton3;
     private bool _previousPrimaryHeld;
+    private bool _previousSecondaryHeld;
     [Header("Aim")]
     [SerializeField, Tooltip("Meters ahead of the player to place the aim point when using the right stick.")] private float aimDistance = 8f;
     [SerializeField, Tooltip("Deadzone for aim stick.")] private float aimDeadZone = 0.15f;
 
     public override PlayerInputSnapshot PollInput()
     {
-        if (!IsInputEnabled)
+        if (!IsInputAllowed)
         {
             _previousPrimaryHeld = false;
+            _previousSecondaryHeld = false;
             return default;
         }
 
@@ -58,6 +62,10 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
         bool primaryPressed = primaryHeld && !_previousPrimaryHeld;
         bool primaryReleased = !primaryHeld && _previousPrimaryHeld;
 
+        bool secondaryHeld = GetButton(secondaryButton, secondaryKeyCode, false);
+        bool secondaryPressed = secondaryHeld && !_previousSecondaryHeld;
+        bool secondaryReleased = !secondaryHeld && _previousSecondaryHeld;
+
         PlayerInputSnapshot snapshot = new PlayerInputSnapshot
         {
             RunHeld = GetButton(runButton, runKeyCode, false),
@@ -68,6 +76,9 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
             PrimaryPressed = primaryPressed,
             PrimaryHeld = primaryHeld,
             PrimaryReleased = primaryReleased,
+            SecondaryPressed = secondaryPressed,
+            SecondaryHeld = secondaryHeld,
+            SecondaryReleased = secondaryReleased,
             MoveAxis = new Vector2(
                 SafeGetAxisRaw(moveHorizontalAxis),
                 SafeGetAxisRaw(moveVerticalAxis))
@@ -77,7 +88,8 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
             SafeGetAxisWithFallback(aimHorizontalAxis, aimHorizontalFallbackAxes),
             SafeGetAxisWithFallback(aimVerticalAxis, aimVerticalFallbackAxes));
 
-        if (aimAxis.sqrMagnitude >= aimDeadZone * aimDeadZone || snapshot.PrimaryHeld || snapshot.PrimaryPressed || snapshot.PrimaryReleased)
+        if (aimAxis.sqrMagnitude >= aimDeadZone * aimDeadZone || snapshot.PrimaryHeld || snapshot.PrimaryPressed || snapshot.PrimaryReleased
+            || snapshot.SecondaryHeld || snapshot.SecondaryPressed || snapshot.SecondaryReleased)
         {
             if (TryBuildAimPoint(aimAxis, out Vector3 aimPoint))
             {
@@ -87,6 +99,7 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
         }
 
         _previousPrimaryHeld = primaryHeld;
+        _previousSecondaryHeld = secondaryHeld;
 
         if (debugInputs)
         {
@@ -198,6 +211,16 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
         dashKeyCode = dash;
         runKeyCode = run;
         interactKeyCode = interact;
+    }
+
+    public void SetSecondaryKeyCode(KeyCode secondary)
+    {
+        secondaryKeyCode = secondary;
+    }
+
+    public void SetSecondaryButtonName(string name)
+    {
+        secondaryButton = name ?? string.Empty;
     }
 
     private float SafeGetAxisRaw(string axisName)

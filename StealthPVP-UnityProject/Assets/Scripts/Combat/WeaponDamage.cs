@@ -13,6 +13,8 @@ public class WeaponDamage : MonoBehaviour
     [SerializeField, Tooltip("Damage dealt per successful hit.")] private float damageAmount = 25f;
     [SerializeField, Tooltip("Optional layer filter; empty = everything.")] private LayerMask targetLayers = ~0;
     [SerializeField, Tooltip("Optional extra reach added when picking hit point.")] private float hitPointBias = 0f;
+    [SerializeField, Tooltip("Tag used for weapons that can kill assigned targets.")] private string weaponKillTag = "WeaponKill";
+    [SerializeField, Tooltip("Tag used for weapons that apply stun to players.")] private string weaponStunTag = "WeaponStun";
 
     private readonly HashSet<CharacterHealth> _hitThisWindow = new HashSet<CharacterHealth>();
     private bool _windowActive;
@@ -72,6 +74,17 @@ public class WeaponDamage : MonoBehaviour
             return;
         }
 
+        if (ShouldApplyStun(targetHealth))
+        {
+            _hitThisWindow.Add(targetHealth);
+            return;
+        }
+
+        if (ShouldIgnoreKillHit(targetHealth))
+        {
+            return;
+        }
+
         _hitThisWindow.Add(targetHealth);
         Vector3 hitPoint = other.ClosestPoint(transform.position);
         if (hitPointBias > 0f)
@@ -91,6 +104,45 @@ public class WeaponDamage : MonoBehaviour
         };
 
         targetHealth.ApplyDamage(payload);
+    }
+
+    private bool ShouldApplyStun(CharacterHealth targetHealth)
+    {
+        if (string.IsNullOrEmpty(weaponStunTag) || !CompareTag(weaponStunTag))
+        {
+            return false;
+        }
+
+        PlayerStunController stun = targetHealth.GetComponentInParent<PlayerStunController>()
+            ?? targetHealth.GetComponentInChildren<PlayerStunController>(true);
+        if (!stun)
+        {
+            return false;
+        }
+
+        stun.ApplyStun();
+        return true;
+    }
+
+    private bool ShouldIgnoreKillHit(CharacterHealth targetHealth)
+    {
+        if (string.IsNullOrEmpty(weaponKillTag) || !CompareTag(weaponKillTag))
+        {
+            return false;
+        }
+
+        LocalVersusGameManager manager = LocalVersusGameManager.Instance;
+        if (!manager)
+        {
+            return false;
+        }
+
+        if (!manager.IsPlayerHealth(owner) || !manager.IsPlayerHealth(targetHealth))
+        {
+            return false;
+        }
+
+        return !manager.CanKillPlayer(owner, targetHealth);
     }
 
     private void OnValidate()

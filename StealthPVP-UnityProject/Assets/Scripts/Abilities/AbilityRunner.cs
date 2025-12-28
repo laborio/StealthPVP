@@ -21,6 +21,7 @@ public class AbilityRunner : MonoBehaviour
     private float _holdTimer;
     private float _fadeTimer;
     private bool _inputEnabled = true;
+    private bool _inputSuppressed;
 
     public float CooldownRemaining => _cooldownTimer;
     public bool IsCoolingDown => _cooldownTimer > 0f;
@@ -53,7 +54,7 @@ public class AbilityRunner : MonoBehaviour
         float dt = Time.deltaTime;
         TickTimers(dt);
 
-        if (useInput && _inputEnabled && Input.GetKeyDown(_resolvedKey) && !IsCoolingDown)
+        if (useInput && _inputEnabled && !_inputSuppressed && Input.GetKeyDown(_resolvedKey) && !IsCoolingDown)
         {
             Trigger();
         }
@@ -100,6 +101,11 @@ public class AbilityRunner : MonoBehaviour
     public void SetInputEnabled(bool enabled)
     {
         _inputEnabled = enabled;
+    }
+
+    public void SetInputSuppressed(bool suppressed)
+    {
+        _inputSuppressed = suppressed;
     }
 
     /// <summary>
