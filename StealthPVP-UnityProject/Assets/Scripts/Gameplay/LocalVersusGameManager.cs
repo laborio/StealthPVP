@@ -150,6 +150,8 @@ public class LocalVersusGameManager : MonoBehaviour
             instance.transform.SetPositionAndRotation(position, rotation);
         }
 
+        ConfigureRespawnHandler(instance);
+
         SimpleCharacterController controller = instance.GetComponent<SimpleCharacterController>() ?? instance.GetComponentInChildren<SimpleCharacterController>(true);
         if (controller)
         {
@@ -305,7 +307,7 @@ public class LocalVersusGameManager : MonoBehaviour
         }
 
         ResetRevealCooldown(dead);
-        StartCoroutine(HandleRespawnAndSwap());
+        StartCoroutine(HandleRespawnAndSwap(dead));
     }
 
     private void ResetRevealCooldown(CharacterHealth dead)
@@ -330,7 +332,7 @@ public class LocalVersusGameManager : MonoBehaviour
         }
     }
 
-    private IEnumerator HandleRespawnAndSwap()
+    private IEnumerator HandleRespawnAndSwap(CharacterHealth dead)
     {
         _respawnInProgress = true;
         if (respawnDelay > 0f)
@@ -339,12 +341,127 @@ public class LocalVersusGameManager : MonoBehaviour
         }
 
         _hunterIsPlayer1 = !_hunterIsPlayer1;
-        SpawnOrRespawnPlayers(initialSpawn: false);
+        RespawnDeadPlayer(dead);
         UpdateRoleIndicators();
         UpdateCompasses();
         UpdateFogBindings();
         UpdateRevealBindings();
         _respawnInProgress = false;
+    }
+
+    private void ConfigureRespawnHandler(GameObject instance)
+    {
+        if (!instance)
+        {
+            return;
+        }
+
+        RespawnHandler respawn = instance.GetComponent<RespawnHandler>() ?? instance.GetComponentInChildren<RespawnHandler>(true);
+        if (respawn)
+        {
+            respawn.SetAutoRespawn(false);
+        }
+    }
+
+    private void RespawnDeadPlayer(CharacterHealth dead)
+    {
+        if (!dead)
+        {
+            return;
+        }
+
+        bool isPlayer1 = dead == _player1Health;
+        bool isPlayer2 = dead == _player2Health;
+        if (!isPlayer1 && !isPlayer2)
+        {
+            return;
+        }
+
+        Transform avoidTransform = isPlayer1
+            ? (_player2Instance ? _player2Instance.transform : null)
+            : (_player1Instance ? _player1Instance.transform : null);
+
+        if (!TryPickRespawnPoint(avoidTransform, out Vector3 position, out Quaternion rotation))
+        {
+            Vector3 fallback = avoidTransform ? avoidTransform.position : Vector3.zero;
+            position = fallback + new Vector3(minSpawnSeparation, 0f, 0f);
+            rotation = Quaternion.identity;
+        }
+
+        if (isPlayer1)
+        {
+            _player1Instance = SpawnPlayer(player1Prefab, _player1Instance, position, rotation, player1Camera, ref _player1Health);
+            ForcePlayerRespawn(_player1Instance, position, rotation);
+        }
+        else
+        {
+            _player2Instance = SpawnPlayer(player2Prefab, _player2Instance, position, rotation, player2Camera, ref _player2Health);
+            ForcePlayerRespawn(_player2Instance, position, rotation);
+        }
+
+        UpdatePlayerOnlyVisuals();
+    }
+
+    private bool TryPickRespawnPoint(Transform avoidTransform, out Vector3 position, out Quaternion rotation)
+    {
+        position = Vector3.zero;
+        rotation = Quaternion.identity;
+
+        List<Transform> valid = new List<Transform>();
+        for (int i = 0; i < spawnPoints.Count; i++)
+        {
+            if (spawnPoints[i])
+            {
+                valid.Add(spawnPoints[i]);
+            }
+        }
+
+        if (valid.Count == 0)
+        {
+            return false;
+        }
+
+        Vector3 avoidPosition = avoidTransform ? SampleNav(avoidTransform.position) : Vector3.zero;
+        float bestDist = float.MinValue;
+        Transform best = null;
+        Vector3 bestPos = Vector3.zero;
+        Quaternion bestRot = Quaternion.identity;
+        for (int i = 0; i < valid.Count; i++)
+        {
+            Transform candidate = valid[i];
+            Vector3 sampled = SampleNav(candidate.position);
+            float dist = avoidTransform ? (sampled - avoidPosition).sqrMagnitude : 0f;
+            if (best == null || dist > bestDist)
+            {
+                best = candidate;
+                bestDist = dist;
+                bestPos = sampled;
+                bestRot = candidate.rotation;
+            }
+        }
+
+        if (!best)
+        {
+            return false;
+        }
+
+        position = bestPos;
+        rotation = bestRot;
+        return true;
+    }
+
+    private void ForcePlayerRespawn(GameObject instance, Vector3 position, Quaternion rotation)
+    {
+        if (!instance)
+        {
+            return;
+        }
+
+        RespawnHandler respawn = instance.GetComponent<RespawnHandler>() ?? instance.GetComponentInChildren<RespawnHandler>(true);
+        if (respawn)
+        {
+            respawn.ForceRespawnAt(position, rotation);
+        }
     }
 
     private void UpdateRoleIndicators()

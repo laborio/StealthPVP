@@ -82,6 +82,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     private bool _attackChargeActive;
     private bool _attackLockActive;
     private bool _attackAimInProgress;
+    private bool _attackAimHasInput;
     private Quaternion _attackTargetRotation;
     private Vector3 _lastAimDirection = Vector3.forward;
     private Vector3 _lastAttackAimDirection = Vector3.forward;
@@ -498,6 +499,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     private void StartAttackCharge()
     {
         _attackChargeActive = true;
+        _attackAimHasInput = false;
         _lastAimDirection = transform.forward;
         SetRangeIndicatorActive(true);
         ApplyRangeIndicatorRotation(_lastAimDirection);
@@ -507,6 +509,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     {
         _attackChargeActive = false;
         _attackAimInProgress = false;
+        _attackAimHasInput = false;
         SetRangeIndicatorActive(false);
     }
 
@@ -514,6 +517,10 @@ public partial class SimpleCharacterController : MonoBehaviour
     {
         if (!TryGetAimPoint(input, out Vector3 aimPoint))
         {
+            if (!_attackAimHasInput)
+            {
+                _lastAimDirection = transform.forward;
+            }
             return;
         }
 
@@ -525,6 +532,7 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
 
         _lastAimDirection = aimDirection.normalized;
+        _attackAimHasInput = true;
         ApplyRangeIndicatorRotation(_lastAimDirection);
     }
 
@@ -957,6 +965,21 @@ public partial class SimpleCharacterController : MonoBehaviour
         {
             inputRouter.SetInputCamera(_camera);
         }
+    }
+
+    public Camera GetActiveCamera()
+    {
+        if (_camera)
+        {
+            return _camera;
+        }
+
+        if (overrideCamera)
+        {
+            return overrideCamera;
+        }
+
+        return Camera.main;
     }
 
     public void SetInputRouter(PlayerInputRouter router)
