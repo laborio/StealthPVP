@@ -30,7 +30,8 @@ public partial class SimpleCharacterController : MonoBehaviour
     [SerializeField, Tooltip("Optional range indicator shown while holding the attack button.")] private GameObject rangeIndicator;
     [SerializeField, Tooltip("Rotation speed (deg/sec) when aligning to the attack aim.")] private float attackAimRotationSpeed = 1080f;
     [SerializeField, Tooltip("Layers considered for attack aiming.")] private LayerMask attackGroundMask = Physics.DefaultRaycastLayers;
-    [SerializeField, Tooltip("Minimum time movement stays locked after triggering an attack.")] private float attackLockMinDuration = 0.05f;
+    [SerializeField, Tooltip("Minimum time attack input stays locked after triggering an attack.")] private float attackLockMinDuration = 0.05f;
+    [SerializeField, Tooltip("If true, movement input is locked while an attack is active.")] private bool lockMovementDuringAttack = false;
     [SerializeField, Tooltip("Impulse applied to rigidbodies when bumped by the CharacterController.")] private float rigidbodyPushForce = 3f;
     [SerializeField] private float dashSpeedMultiplier = 3f;
     [SerializeField] private float dashDuration = 0.25f;
@@ -128,7 +129,7 @@ public partial class SimpleCharacterController : MonoBehaviour
         HandleActionInput(interactPressed && actionKeyAllowed, isGrounded);
 
         bool seatingLocked = _seatingState != SeatingState.Standing;
-        bool attackMovementLocked = _attackLockActive;
+        bool attackMovementLocked = lockMovementDuringAttack && _attackLockActive;
         bool movingToSeat = _seatingState == SeatingState.MovingToSeat;
         bool walkOverrideActive = movingToSeat;
         Vector2 movementInput = (seatingLocked || attackMovementLocked) ? Vector2.zero : movementInputRaw;
@@ -513,10 +514,6 @@ public partial class SimpleCharacterController : MonoBehaviour
         BeginAttackRotation(aimDirection);
         _attackLockActive = true;
         _attackLockTimer = Mathf.Max(attackLockMinDuration, 0f);
-        _isDashing = false;
-        _dashTimer = 0f;
-        _currentPlanarVelocity = Vector3.zero;
-        _hasMoveTarget = false;
         characterAnimations?.TriggerAttack(attackTriggerName);
     }
 

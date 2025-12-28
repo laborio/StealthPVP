@@ -28,6 +28,11 @@ public class CharacterAnimations : MonoBehaviour
 
     [Header("Effects")]
     [SerializeField] private ParticleSystem runParticleSystem;
+    [Header("Upper Body Layer")]
+    [SerializeField, Tooltip("If true, the upper-body layer weight is driven by attack state.")] private bool controlUpperBodyLayerWeight = true;
+    [SerializeField, Tooltip("Animator layer name for upper-body attack animations.")] private string upperBodyLayerName = "Upper Body";
+    [SerializeField, Range(0f, 1f), Tooltip("Layer weight when not attacking.")] private float upperBodyIdleWeight = 0f;
+    [SerializeField, Range(0f, 1f), Tooltip("Layer weight while attacking.")] private float upperBodyAttackWeight = 1f;
     [Header("Debug")]
     [SerializeField] private bool debugLogs = false;
 
@@ -42,11 +47,13 @@ public class CharacterAnimations : MonoBehaviour
     private int _attackTriggerHash;
     private int _attackTagHash;
     private int _hitTriggerHash;
+    private int _upperBodyLayerIndex = -1;
 
     private void Awake()
     {
         ResolveAnimators();
         CacheHashes();
+        ResolveUpperBodyLayer();
     }
 
     private void OnValidate()
@@ -56,6 +63,7 @@ public class CharacterAnimations : MonoBehaviour
         jumpAnimationBaseSpeed = Mathf.Max(0.01f, jumpAnimationBaseSpeed);
         ResolveAnimators();
         CacheHashes();
+        ResolveUpperBodyLayer();
     }
 
     public void ApplyLocomotion(CharacterLocomotionAnimationData data)
@@ -99,6 +107,7 @@ public class CharacterAnimations : MonoBehaviour
         }
 
         animator.speed = animatorSpeed;
+        UpdateUpperBodyLayerWeight();
     }
 
     public void SetSittingState(bool isSitting, float animationSpeed)
@@ -148,6 +157,7 @@ public class CharacterAnimations : MonoBehaviour
         string triggerName = string.IsNullOrEmpty(overrideTrigger) ? attackTriggerName : overrideTrigger;
         int hash = HashOrZero(triggerName);
         TriggerOnAnimators(triggerName, hash);
+        UpdateUpperBodyLayerWeight();
     }
 
     public void TriggerHit(string overrideTrigger = null)
@@ -215,6 +225,44 @@ public class CharacterAnimations : MonoBehaviour
         _attackTriggerHash = HashOrZero(attackTriggerName);
         _attackTagHash = HashOrZero(attackStateTag);
         _hitTriggerHash = HashOrZero(hitTriggerName);
+    }
+
+    private void ResolveUpperBodyLayer()
+    {
+        _upperBodyLayerIndex = -1;
+        if (!animator || string.IsNullOrEmpty(upperBodyLayerName))
+        {
+            return;
+        }
+
+        _upperBodyLayerIndex = animator.GetLayerIndex(upperBodyLayerName);
+    }
+
+    private void UpdateUpperBodyLayerWeight()
+    {
+        if (!controlUpperBodyLayerWeight || !animator)
+        {
+            return;
+        }
+
+        if (_upperBodyLayerIndex < 0)
+        {
+            ResolveUpperBodyLayer();
+            if (_upperBodyLayerIndex < 0)
+            {
+                return;
+            }
+        }
+
+        if (string.IsNullOrEmpty(attackStateTag))
+        {
+            animator.SetLayerWeight(_upperBodyLayerIndex, upperBodyIdleWeight);
+            return;
+        }
+
+        bool isAttacking = IsAnimatorInAttackState(animator, attackStateTag, _attackTagHash);
+        float targetWeight = isAttacking ? upperBodyAttackWeight : upperBodyIdleWeight;
+        animator.SetLayerWeight(_upperBodyLayerIndex, targetWeight);
     }
 
     private void ResolveAnimators()
@@ -333,13 +381,22 @@ public class CharacterAnimations : MonoBehaviour
             return false;
         }
 
-        AnimatorStateInfo state = targetAnimator.GetCurrentAnimatorStateInfo(0);
-        if (hash != 0 && state.tagHash == hash)
+        int layers = targetAnimator.layerCount;
+        for (int layerIndex = 0; layerIndex < layers; layerIndex++)
         {
-            return true;
+            AnimatorStateInfo state = targetAnimator.GetCurrentAnimatorStateInfo(layerIndex);
+            if (hash != 0 && state.tagHash == hash)
+            {
+                return true;
+            }
+
+            if (state.IsTag(tag))
+            {
+                return true;
+            }
         }
 
-        return state.IsTag(tag);
+        return false;
     }
 
     private void LogDebug(string message)

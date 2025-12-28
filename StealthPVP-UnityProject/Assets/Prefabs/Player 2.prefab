@@ -7220,7 +7220,11 @@ MonoBehaviour:
   runAnimationBaseSpeed: 1
   jumpAnimationBaseSpeed: 1
   runParticleSystem: {fileID: 1635984175154757836}
-  debugLogs: 1
+  controlUpperBodyLayerWeight: 0
+  upperBodyLayerName: Upper Body
+  upperBodyIdleWeight: 0
+  upperBodyAttackWeight: 1
+  debugLogs: 0
 --- !u!114 &5776939949241814741
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7265,6 +7269,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 264
   attackLockMinDuration: 0
+  lockMovementDuringAttack: 0
   rigidbodyPushForce: 4
   dashSpeedMultiplier: 3
   dashDuration: 0.2
