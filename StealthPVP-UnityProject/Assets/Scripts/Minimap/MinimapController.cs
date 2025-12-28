@@ -18,6 +18,7 @@ public class MinimapController : MonoBehaviour
 
     private readonly Dictionary<string, Image> _sections = new Dictionary<string, Image>();
     private readonly HashSet<string> _highlightedSections = new HashSet<string>();
+    private readonly Dictionary<string, int> _sectionPresenceCounts = new Dictionary<string, int>();
 
     private void Awake()
     {
@@ -104,16 +105,7 @@ public class MinimapController : MonoBehaviour
             return;
         }
 
-        if (entered)
-        {
-            image.color = highlightSectionColor;
-            _highlightedSections.Add(sectionId);
-        }
-        else
-        {
-            image.color = defaultSectionColor;
-            _highlightedSections.Remove(sectionId);
-        }
+        UpdateSectionPresence(sectionId, entered);
     }
 
     private void RefreshTargetState()
@@ -139,12 +131,12 @@ public class MinimapController : MonoBehaviour
 
             if (area.IsInside(targetIdentity))
             {
-                ApplySectionState(area.SectionId, true);
+                UpdateSectionPresence(area.SectionId, true);
             }
         }
     }
 
-    private void ApplySectionState(string sectionId, bool highlighted)
+    private void UpdateSectionPresence(string sectionId, bool entered)
     {
         if (string.IsNullOrEmpty(sectionId))
         {
@@ -156,13 +148,20 @@ public class MinimapController : MonoBehaviour
             return;
         }
 
-        image.color = highlighted ? highlightSectionColor : defaultSectionColor;
-        if (highlighted)
+        int count = 0;
+        _sectionPresenceCounts.TryGetValue(sectionId, out count);
+        count = entered ? count + 1 : Mathf.Max(0, count - 1);
+
+        if (count > 0)
         {
+            _sectionPresenceCounts[sectionId] = count;
+            image.color = highlightSectionColor;
             _highlightedSections.Add(sectionId);
         }
         else
         {
+            _sectionPresenceCounts.Remove(sectionId);
+            image.color = defaultSectionColor;
             _highlightedSections.Remove(sectionId);
         }
     }
@@ -177,5 +176,6 @@ public class MinimapController : MonoBehaviour
             }
         }
         _highlightedSections.Clear();
+        _sectionPresenceCounts.Clear();
     }
 }

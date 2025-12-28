@@ -19,6 +19,7 @@ public class RespawnHandler : MonoBehaviour
     [SerializeField, Tooltip("If true, automatically pick the furthest spawn point from live players when respawning.")] private bool autoPickRespawnPoint = true;
 
     [Header("Settings")]
+    [SerializeField, Tooltip("If true, this handler automatically respawns on death.")] private bool autoRespawn = true;
     [SerializeField, Tooltip("Seconds to wait before respawning after death.")] private float respawnDelay = 3f;
     [SerializeField, Tooltip("If true, warp NavMeshAgent to respawn point instead of setting transform position.")] private bool warpNavAgent = true;
 
@@ -52,6 +53,11 @@ public class RespawnHandler : MonoBehaviour
 
     private void OnDied(CharacterHealth _)
     {
+        if (!autoRespawn)
+        {
+            return;
+        }
+
         if (_respawnRoutine != null)
         {
             StopCoroutine(_respawnRoutine);
@@ -76,7 +82,32 @@ public class RespawnHandler : MonoBehaviour
         Transform chosenRespawn = ResolveRespawnPoint();
         Vector3 targetPos = chosenRespawn ? chosenRespawn.position : _initialPosition;
         Quaternion targetRot = chosenRespawn ? chosenRespawn.rotation : _initialRotation;
+        DoRespawnAt(targetPos, targetRot);
+    }
 
+    public void SetAutoRespawn(bool enabled)
+    {
+        autoRespawn = enabled;
+        if (!autoRespawn && _respawnRoutine != null)
+        {
+            StopCoroutine(_respawnRoutine);
+            _respawnRoutine = null;
+        }
+    }
+
+    public void ForceRespawnAt(Vector3 position, Quaternion rotation)
+    {
+        if (_respawnRoutine != null)
+        {
+            StopCoroutine(_respawnRoutine);
+            _respawnRoutine = null;
+        }
+
+        DoRespawnAt(position, rotation);
+    }
+
+    private void DoRespawnAt(Vector3 targetPos, Quaternion targetRot)
+    {
         if (navMeshAgent)
         {
             navMeshAgent.enabled = true;
@@ -117,7 +148,6 @@ public class RespawnHandler : MonoBehaviour
         {
             health.Revive();
         }
-
     }
 
     private Transform ResolveRespawnPoint()

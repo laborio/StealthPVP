@@ -36,7 +36,24 @@ public class WorldSpaceBillboard : MonoBehaviour
             return true;
         }
 
+        targetCamera = ResolveOwnerCamera();
+        if (targetCamera)
+        {
+            return true;
+        }
+
         targetCamera = Camera.main;
         return targetCamera;
+    }
+
+    private Camera ResolveOwnerCamera()
+    {
+        PlayerInputRouter inputRouter = GetComponentInParent<PlayerInputRouter>();
+        if (inputRouter)
+        {
+            return inputRouter.ResolveCamera();
+        }
+
+        return null;
     }
 }
