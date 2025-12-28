@@ -27,6 +27,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     [SerializeField, Range(0f, 5f)] private float airControl = 0.3f;
     [Header("Attack")]
     [SerializeField, Tooltip("Name of the animator trigger used for the attack animation.")] private string attackTriggerName = "Attack";
+    [SerializeField, Tooltip("Name of the animator trigger used for the stun animation.")] private string stunTriggerName = "Stun";
     [SerializeField, Tooltip("Optional range indicator shown while holding the attack button.")] private GameObject rangeIndicator;
     [SerializeField, Tooltip("If true, keeps the range indicator visible during the attack animation.")] private bool showRangeIndicatorDuringAttack = true;
     [SerializeField, Tooltip("Rotation speed (deg/sec) when aligning to the attack aim.")] private float attackAimRotationSpeed = 1080f;
@@ -80,6 +81,8 @@ public partial class SimpleCharacterController : MonoBehaviour
     private bool _isInWater;
     [SerializeField] private CharacterAnimations characterAnimations;
     private bool _attackChargeActive;
+    private bool _attackChargeFromSecondary;
+    private string _pendingAttackTriggerName;
     private bool _attackLockActive;
     private bool _attackAimInProgress;
     private bool _attackAimHasInput;
@@ -88,6 +91,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     private Vector3 _lastAttackAimDirection = Vector3.forward;
     private Transform _rangeIndicatorTransform;
     private float _attackLockTimer;
+    private bool _inputSuppressed;
 
     private void Awake()
     {
@@ -115,6 +119,10 @@ public partial class SimpleCharacterController : MonoBehaviour
     private void Update()
     {
         PlayerInputSnapshot inputSnapshot = inputRouter ? inputRouter.PollInput() : PollLegacyInput();
+        if (_inputSuppressed)
+        {
+            inputSnapshot = default;
+        }
         bool isGrounded = IsGrounded();
         if (_teleportLocked)
         {
@@ -472,22 +480,30 @@ public partial class SimpleCharacterController : MonoBehaviour
             return;
         }
 
-        if (input.PrimaryPressed)
+        if (!_attackChargeActive)
         {
-            StartAttackCharge();
+            if (input.PrimaryPressed)
+            {
+                StartAttackCharge(attackTriggerName, false);
+            }
+            else if (input.SecondaryPressed && !string.IsNullOrEmpty(stunTriggerName))
+            {
+                StartAttackCharge(stunTriggerName, true);
+            }
         }
 
-        if (_attackChargeActive && (input.PrimaryHeld || input.PrimaryPressed))
+        if (_attackChargeActive && (input.PrimaryHeld || input.PrimaryPressed || input.SecondaryHeld || input.SecondaryPressed))
         {
             UpdateAttackAim(input);
         }
 
-        if (_attackChargeActive && input.PrimaryReleased)
+        bool released = _attackChargeFromSecondary ? input.SecondaryReleased : input.PrimaryReleased;
+        if (_attackChargeActive && released)
         {
             if (isGrounded)
             {
                 Debug.Log("ATCK");
-                TriggerAttack(input);
+                TriggerAttack(input, _pendingAttackTriggerName);
             }
             else
             {
@@ -496,9 +512,11 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
     }
 
-    private void StartAttackCharge()
+    private void StartAttackCharge(string triggerName, bool fromSecondary)
     {
         _attackChargeActive = true;
+        _attackChargeFromSecondary = fromSecondary;
+        _pendingAttackTriggerName = triggerName;
         _attackAimHasInput = false;
         _lastAimDirection = transform.forward;
         SetRangeIndicatorActive(true);
@@ -510,6 +528,8 @@ public partial class SimpleCharacterController : MonoBehaviour
         _attackChargeActive = false;
         _attackAimInProgress = false;
         _attackAimHasInput = false;
+        _attackChargeFromSecondary = false;
+        _pendingAttackTriggerName = null;
         SetRangeIndicatorActive(false);
     }
 
@@ -536,7 +556,7 @@ public partial class SimpleCharacterController : MonoBehaviour
         ApplyRangeIndicatorRotation(_lastAimDirection);
     }
 
-    private void TriggerAttack(PlayerInputSnapshot input)
+    private void TriggerAttack(PlayerInputSnapshot input, string triggerName)
     {
         SetRangeIndicatorActive(false);
         _attackChargeActive = false;
@@ -556,7 +576,8 @@ public partial class SimpleCharacterController : MonoBehaviour
         _lastAttackAimDirection = aimDirection.sqrMagnitude > 0.0001f ? aimDirection.normalized : transform.forward;
         _attackLockActive = true;
         _attackLockTimer = Mathf.Max(attackLockMinDuration, 0f);
-        characterAnimations?.TriggerAttack(attackTriggerName);
+        string trigger = string.IsNullOrEmpty(triggerName) ? attackTriggerName : triggerName;
+        characterAnimations?.TriggerAttack(trigger);
     }
 
     private void BeginAttackRotation(Vector3 aimDirection)
@@ -881,6 +902,9 @@ public partial class SimpleCharacterController : MonoBehaviour
             PrimaryPressed = Input.GetMouseButtonDown(0),
             PrimaryHeld = Input.GetMouseButton(0),
             PrimaryReleased = Input.GetMouseButtonUp(0),
+            SecondaryPressed = Input.GetMouseButtonDown(2),
+            SecondaryHeld = Input.GetMouseButton(2),
+            SecondaryReleased = Input.GetMouseButtonUp(2),
             MoveAxis = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"))
         };
 
@@ -890,7 +914,9 @@ public partial class SimpleCharacterController : MonoBehaviour
             snapshot.MoveTarget = targetPosition;
         }
 
-        if ((snapshot.PrimaryHeld || snapshot.PrimaryPressed || snapshot.PrimaryReleased) && TryResolveAimPoint(out Vector3 aimPoint))
+        if ((snapshot.PrimaryHeld || snapshot.PrimaryPressed || snapshot.PrimaryReleased
+            || snapshot.SecondaryHeld || snapshot.SecondaryPressed || snapshot.SecondaryReleased)
+            && TryResolveAimPoint(out Vector3 aimPoint))
         {
             snapshot.HasAimPoint = true;
             snapshot.AimPoint = aimPoint;
@@ -988,6 +1014,20 @@ public partial class SimpleCharacterController : MonoBehaviour
         if (inputRouter)
         {
             inputRouter.SetInputCamera(_camera);
+        }
+    }
+
+    public PlayerInputRouter InputRouter => inputRouter;
+
+    public void SetInputSuppressed(bool suppressed)
+    {
+        _inputSuppressed = suppressed;
+        if (suppressed)
+        {
+            CancelAttackCharge();
+            _hasMoveTarget = false;
+            _isDashing = false;
+            _dashTimer = 0f;
         }
     }
 }

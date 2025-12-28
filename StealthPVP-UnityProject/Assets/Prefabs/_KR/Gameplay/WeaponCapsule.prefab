@@ -17,11 +17,11 @@ GameObject:
   - component: {fileID: 8955123330646519092}
   m_Layer: 0
   m_Name: WeaponCapsule
-  m_TagString: Untagged
+  m_TagString: WeaponKill
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2307743750358303005
 Transform:
   m_ObjectHideFlags: 0
