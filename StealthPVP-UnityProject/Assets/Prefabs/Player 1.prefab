@@ -74,7 +74,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4508892906458502354}
   - component: {fileID: 2512046919844109074}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: RangeIndicator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -427,7 +427,7 @@ GameObject:
   - component: {fileID: 2651368305140701711}
   - component: {fileID: 5212245618886610311}
   - component: {fileID: 3137533900462670185}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: PlayerCompass
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6439,7 +6439,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3297177411023075170}
   - component: {fileID: 5269127056957980106}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: T_ClickArea
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6755,7 +6755,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6619222824491886017}
   - component: {fileID: 2801305594274193365}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: FullCircle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7187,6 +7187,7 @@ MonoBehaviour:
   interactKey: 101
   horizontalAxis: Horizontal
   verticalAxis: Vertical
+  inputEnabled: 1
   keyboardOnlyMovement: 0
   moveLeftKey: 97
   moveRightKey: 100
@@ -7222,9 +7223,11 @@ MonoBehaviour:
   fogManagerNameHint: Fog_P1
   currentTarget: {fileID: 0}
   minFillAmount: 0.15
+  maxFillAmount: 0.75
   farDistanceForMinFill: 60
   nearDistanceForMaxFill: 10
-  compassRotationOffset: 90
+  compassRotationOffset: 180
+  centerArcOnTarget: 1
   farFillColor: {r: 1, g: 0.85490197, b: 0, a: 1}
   nearFillColor: {r: 1, g: 0.83026266, b: 0, a: 1}
   nearColorDistanceOffset: 2
@@ -12512,7 +12515,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2339713546275450874}
   - component: {fileID: 5907677027277435330}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Arrow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -12635,7 +12638,7 @@ GameObject:
   - component: {fileID: 6417672602434170104}
   - component: {fileID: 5001036403561476499}
   - component: {fileID: 2262486777146242820}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: CompassCircle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -18176,7 +18179,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6184665439405244372}
   - component: {fileID: 7917740166099189130}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Compass
   m_TagString: Untagged
   m_Icon: {fileID: 0}

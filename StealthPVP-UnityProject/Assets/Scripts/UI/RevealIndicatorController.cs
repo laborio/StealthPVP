@@ -23,9 +23,11 @@ public class RevealIndicatorController : MonoBehaviour
 
     [Header("Fill Amount")]
     [SerializeField, Range(0.15f, 0.3f)] private float minFillAmount = 0.15f;
+    [SerializeField, Range(0.15f, 1f), Tooltip("Maximum fill amount before the target becomes visible.")] private float maxFillAmount = 0.3f;
     [SerializeField, Tooltip("Distance where the fill is clamped to minFillAmount.")] private float farDistanceForMinFill = 60f;
-    [SerializeField, Tooltip("Distance where the fill reaches 0.3 (max hidden fill) right before popping to 1.0 when visible.")] private float nearDistanceForMaxFill = 10f;
+    [SerializeField, Tooltip("Distance where the fill reaches maxFillAmount right before popping to 1.0 when visible.")] private float nearDistanceForMaxFill = 10f;
     [SerializeField, Tooltip("Extra Z rotation applied to the circle so the fill origin aligns with player forward.")] private float compassRotationOffset = 90f;
+    [SerializeField, Tooltip("If true, the target direction aligns with the middle of the visible arc instead of its edge.")] private bool centerArcOnTarget = true;
     [Header("Color")]
     [SerializeField, Tooltip("Color when target is far (min fill).")] private Color farFillColor = new Color32(255, 218, 0, 255); // #FFDA00
     [SerializeField, Tooltip("Color when target is near (max fill before visible).")] private Color nearFillColor = new Color32(255, 64, 0, 255); // #FF4000
@@ -42,7 +44,6 @@ public class RevealIndicatorController : MonoBehaviour
     private float _nextAutoFindTime;
     private float _nextFogFindTime;
 
-    private const float MaxFillBeforeVisible = 0.3f;
     private const float AutoFindInterval = 0.5f;
     private const float FogFindInterval = 0.5f;
 
@@ -153,12 +154,11 @@ public class RevealIndicatorController : MonoBehaviour
         float yawWorld = Mathf.Atan2(planarToTarget.x, planarToTarget.z) * Mathf.Rad2Deg;
         float parentYaw = playerTransform ? playerTransform.eulerAngles.y : 0f;
         float localYaw = Mathf.DeltaAngle(parentYaw, yawWorld);
+        bool targetVisible = IsTargetVisible(targetTransform);
+        UpdateVisibility(targetVisible, hasTarget: true, distanceToTarget: toTarget.magnitude);
         ApplyCompassRotation(planarToTarget, yawWorld, parentYaw, localYaw);
         // Uncomment for debugging
         // Debug.Log($"[RevealIndicatorController] Rotating to target {currentTarget.name} yawWorld={yawWorld} localYaw={localYaw}", this);
-
-        bool targetVisible = IsTargetVisible(targetTransform);
-        UpdateVisibility(targetVisible, hasTarget: true, distanceToTarget: toTarget.magnitude);
     }
 
     private void TryAutoAssignFogManager(bool force = false)
@@ -436,8 +436,42 @@ public class RevealIndicatorController : MonoBehaviour
             {
                 localDir.Normalize();
                 float angle = Mathf.Atan2(localDir.x, localDir.y) * Mathf.Rad2Deg + compassRotationOffset;
+                angle += GetArcCenterOffset();
                 circleRect.localEulerAngles = new Vector3(0f, 0f, -angle);
             }
+        }
+    }
+
+    private float GetArcCenterOffset()
+    {
+        if (!centerArcOnTarget || !compassCircle || compassCircle.type != Image.Type.Filled)
+        {
+            return 0f;
+        }
+
+        float maxArcAngle = GetMaxArcAngle(compassCircle.fillMethod);
+        if (maxArcAngle <= 0f)
+        {
+            return 0f;
+        }
+
+        float halfArc = maxArcAngle * compassCircle.fillAmount * 0.5f;
+        float sign = compassCircle.fillClockwise ? 1f : -1f;
+        return -sign * halfArc;
+    }
+
+    private float GetMaxArcAngle(Image.FillMethod method)
+    {
+        switch (method)
+        {
+            case Image.FillMethod.Radial90:
+                return 90f;
+            case Image.FillMethod.Radial180:
+                return 180f;
+            case Image.FillMethod.Radial360:
+                return 360f;
+            default:
+                return 0f;
         }
     }
 
@@ -457,8 +491,8 @@ public class RevealIndicatorController : MonoBehaviour
         float far = Mathf.Max(farDistanceForMinFill, nearDistanceForMaxFill);
         float near = Mathf.Min(nearDistanceForMaxFill, farDistanceForMinFill);
         float t = Mathf.InverseLerp(far, near, distanceToTarget);
-        float clampedMin = Mathf.Clamp(minFillAmount, 0.15f, MaxFillBeforeVisible);
-        float clampedMax = MaxFillBeforeVisible;
+        float clampedMin = Mathf.Clamp(minFillAmount, 0.01f, 1f);
+        float clampedMax = Mathf.Clamp(maxFillAmount, clampedMin, 1f);
         float fill = Mathf.Lerp(clampedMin, clampedMax, t);
         return Mathf.Clamp(fill, clampedMin, clampedMax);
     }
