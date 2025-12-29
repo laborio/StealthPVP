@@ -7,26 +7,38 @@ public class WorldSpaceBillboard : MonoBehaviour
 {
     [SerializeField] private Camera targetCamera;
     [SerializeField] private bool lockYAxis = true;
+    [SerializeField, Tooltip("Face the camera currently rendering this object for multi-camera setups.")]
+    private bool useRenderingCamera;
 
     private void LateUpdate()
     {
+        if (useRenderingCamera)
+        {
+            return;
+        }
+
         if (!ValidateCamera())
         {
             return;
         }
 
-        Vector3 lookDirection = targetCamera.transform.position - transform.position;
-        if (lockYAxis)
-        {
-            lookDirection.y = 0f;
-        }
+        FaceCamera(targetCamera);
+    }
 
-        if (lookDirection.sqrMagnitude < 0.0001f)
+    private void OnWillRenderObject()
+    {
+        if (!useRenderingCamera)
         {
             return;
         }
 
-        transform.rotation = Quaternion.LookRotation(-lookDirection.normalized, Vector3.up);
+        Camera renderingCamera = Camera.current;
+        if (!renderingCamera)
+        {
+            return;
+        }
+
+        FaceCamera(renderingCamera);
     }
 
     private bool ValidateCamera()
@@ -55,5 +67,21 @@ public class WorldSpaceBillboard : MonoBehaviour
         }
 
         return null;
+    }
+
+    private void FaceCamera(Camera cameraToFace)
+    {
+        Vector3 lookDirection = cameraToFace.transform.position - transform.position;
+        if (lockYAxis)
+        {
+            lookDirection.y = 0f;
+        }
+
+        if (lookDirection.sqrMagnitude < 0.0001f)
+        {
+            return;
+        }
+
+        transform.rotation = Quaternion.LookRotation(-lookDirection.normalized, Vector3.up);
     }
 }

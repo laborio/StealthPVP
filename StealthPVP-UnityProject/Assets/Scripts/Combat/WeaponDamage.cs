@@ -121,6 +121,11 @@ public class WeaponDamage : MonoBehaviour
         }
 
         stun.ApplyStun();
+        LocalVersusGameManager manager = LocalVersusGameManager.Instance;
+        if (manager && owner)
+        {
+            manager.TryHandleHumiliation(owner, targetHealth);
+        }
         return true;
     }
 

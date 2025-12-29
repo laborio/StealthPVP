@@ -148,6 +148,24 @@ public class RespawnHandler : MonoBehaviour
         {
             health.Revive();
         }
+
+        PlayerStunController stun = GetComponent<PlayerStunController>() ?? GetComponentInChildren<PlayerStunController>(true);
+        if (stun)
+        {
+            stun.ClearStun();
+        }
+
+        SimpleCharacterController controller = GetComponent<SimpleCharacterController>() ?? GetComponentInChildren<SimpleCharacterController>(true);
+        if (controller)
+        {
+            controller.SetInputSuppressed(false);
+        }
+
+        PlayerInputRouter router = controller ? controller.InputRouter : GetComponentInChildren<PlayerInputRouter>(true);
+        if (router)
+        {
+            router.SetInputSuppressed(false);
+        }
     }
 
     private Transform ResolveRespawnPoint()

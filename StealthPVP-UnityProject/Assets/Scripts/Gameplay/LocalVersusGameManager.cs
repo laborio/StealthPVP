@@ -542,7 +542,78 @@ public class LocalVersusGameManager : MonoBehaviour
         {
             AddScore(killerSlot.Value, scorePerTargetKill);
             UpdateScoreboards();
+            ShowKillPopup(killerHealth, scorePerTargetKill);
         }
+    }
+
+    public void TryHandleHumiliation(CharacterHealth attacker, CharacterHealth victim)
+    {
+        if (!attacker || !victim || scorePerTargetKill <= 0)
+        {
+            return;
+        }
+
+        PlayerSlot? attackerSlot = ResolvePlayerSlot(attacker);
+        PlayerSlot? victimSlot = ResolvePlayerSlot(victim);
+        if (!attackerSlot.HasValue || !victimSlot.HasValue)
+        {
+            return;
+        }
+
+        NpcIdentity attackerId = GetIdentity(attacker.gameObject);
+        if (!attackerId)
+        {
+            return;
+        }
+
+        NpcIdentity id1 = GetIdentity(_player1Instance);
+        NpcIdentity id2 = GetIdentity(_player2Instance);
+        NpcIdentity id3 = GetIdentity(_player3Instance);
+        ResolveAssignedTargets(id1, id2, id3, out NpcIdentity target1, out NpcIdentity target2, out NpcIdentity target3);
+
+        NpcIdentity victimTarget = victimSlot.Value switch
+        {
+            PlayerSlot.Player1 => target1,
+            PlayerSlot.Player2 => target2,
+            PlayerSlot.Player3 => target3,
+            _ => null
+        };
+
+        if (victimTarget != attackerId)
+        {
+            return;
+        }
+
+        AddScore(attackerSlot.Value, scorePerTargetKill);
+        UpdateScoreboards();
+        ShowHumiliationPopup(attacker, scorePerTargetKill);
+    }
+
+    private void ShowKillPopup(CharacterHealth scorer, int points)
+    {
+        if (!scorer)
+        {
+            return;
+        }
+
+        PlayerFloatingTextController floatingText = GetFloatingTextController(scorer.gameObject);
+        floatingText?.ShowKill(points);
+    }
+
+    private void ShowHumiliationPopup(CharacterHealth scorer, int points)
+    {
+        if (!scorer)
+        {
+            return;
+        }
+
+        PlayerFloatingTextController floatingText = GetFloatingTextController(scorer.gameObject);
+        floatingText?.ShowHumiliation(points);
+    }
+
+    private PlayerFloatingTextController GetFloatingTextController(GameObject root)
+    {
+        return root ? root.GetComponent<PlayerFloatingTextController>() ?? root.GetComponentInChildren<PlayerFloatingTextController>(true) : null;
     }
 
     private CharacterHealth ResolveInstigatorHealth(DamagePayload payload)
@@ -1517,7 +1588,23 @@ public class LocalVersusGameManager : MonoBehaviour
             return;
         }
 
-        PlayerInputRouter primary = FindPreferredRouter(routers, slot);
+        SimpleCharacterController controller = instance.GetComponent<SimpleCharacterController>()
+            ?? instance.GetComponentInChildren<SimpleCharacterController>(true);
+        PlayerInputRouter primary = controller ? controller.InputRouter : null;
+        if (primary && !IsRouterTypeValid(primary, slot))
+        {
+            primary = null;
+        }
+
+        if (!primary)
+        {
+            primary = FindPreferredRouter(routers, slot);
+            if (controller && primary && controller.InputRouter != primary)
+            {
+                controller.SetInputRouter(primary);
+            }
+        }
+
         for (int i = 0; i < routers.Length; i++)
         {
             PlayerInputRouter router = routers[i];
@@ -1529,6 +1616,21 @@ public class LocalVersusGameManager : MonoBehaviour
             bool shouldEnable = enabled && router == primary;
             router.SetInputEnabled(shouldEnable);
         }
+    }
+
+    private static bool IsRouterTypeValid(PlayerInputRouter router, PlayerSlot slot)
+    {
+        if (!router)
+        {
+            return false;
+        }
+
+        if (slot == PlayerSlot.Player1)
+        {
+            return router is not PlayerInputRouterGamepad;
+        }
+
+        return router is PlayerInputRouterGamepad;
     }
 
     private static void SetAbilityInputEnabled(AbilityRunner ability, bool enabled)
@@ -1593,23 +1695,34 @@ public class LocalVersusGameManager : MonoBehaviour
             return null;
         }
 
-        PlayerInputRouter router = instance.GetComponent<PlayerInputRouter>() ?? instance.GetComponentInChildren<PlayerInputRouter>(true);
-        if (!router)
+        if (slot == PlayerSlot.Player1)
         {
-            router = slot == PlayerSlot.Player1
-                ? instance.AddComponent<PlayerInputRouter>()
-                : (PlayerInputRouter)instance.AddComponent<PlayerInputRouterGamepad>();
-        }
-        else if (slot == PlayerSlot.Player1 && router is PlayerInputRouterGamepad)
-        {
-            router = instance.AddComponent<PlayerInputRouter>();
-        }
-        else if (slot != PlayerSlot.Player1 && router is not PlayerInputRouterGamepad)
-        {
-            router = instance.AddComponent<PlayerInputRouterGamepad>();
+            PlayerInputRouter nonGamepad = instance.GetComponent<PlayerInputRouter>();
+            if (nonGamepad && nonGamepad is not PlayerInputRouterGamepad)
+            {
+                return nonGamepad;
+            }
+
+            PlayerInputRouter[] routers = instance.GetComponentsInChildren<PlayerInputRouter>(true);
+            for (int i = 0; i < routers.Length; i++)
+            {
+                if (routers[i] && routers[i] is not PlayerInputRouterGamepad)
+                {
+                    return routers[i];
+                }
+            }
+
+            return instance.AddComponent<PlayerInputRouter>();
         }
 
-        return router;
+        PlayerInputRouterGamepad gamepad = instance.GetComponent<PlayerInputRouterGamepad>()
+            ?? instance.GetComponentInChildren<PlayerInputRouterGamepad>(true);
+        if (gamepad)
+        {
+            return gamepad;
+        }
+
+        return instance.AddComponent<PlayerInputRouterGamepad>();
     }
 
     private void AutoAssignCompasses()
