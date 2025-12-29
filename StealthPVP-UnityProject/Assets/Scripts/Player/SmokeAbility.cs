@@ -6,7 +6,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class SmokeAbility : MonoBehaviour
 {
-    [SerializeField, Tooltip("Smoke VFX root to enable/disable.")] private GameObject smokeObject;
+    [SerializeField, Tooltip("Smoke VFX prefab to spawn in world space.")] private GameObject smokeObject;
     [SerializeField, Tooltip("Seconds the smoke stays active.")] private float smokeDuration = 3f;
     [SerializeField, Tooltip("Seconds before the smoke can be used again.")] private float cooldownSeconds = 90f;
     [SerializeField, Tooltip("If true, listens for input to trigger smoke.")] private bool useInput = true;
@@ -17,6 +17,7 @@ public class SmokeAbility : MonoBehaviour
     private bool _inputEnabled = true;
     private bool _inputSuppressed;
     private KeyCode _resolvedKey;
+    private GameObject _activeInstance;
     private SmokeZone _smokeZone;
 
     public float CooldownRemaining => _cooldownTimer;
@@ -27,11 +28,7 @@ public class SmokeAbility : MonoBehaviour
     {
         ResolveSmokeObject();
         ResolveKey();
-        EnsureSmokeZoneOwner();
-        if (smokeObject)
-        {
-            smokeObject.SetActive(false);
-        }
+        DisableChildSmokeIfNeeded();
     }
 
     private void Update()
@@ -54,11 +51,7 @@ public class SmokeAbility : MonoBehaviour
 
         _activeTimer = Mathf.Max(0f, smokeDuration);
         _cooldownTimer = Mathf.Max(0f, cooldownSeconds);
-        if (smokeObject)
-        {
-            smokeObject.SetActive(true);
-            EnsureSmokeZoneOwner();
-        }
+        SpawnSmokeInstance();
     }
 
     public void SetCooldown(float seconds)
@@ -97,9 +90,11 @@ public class SmokeAbility : MonoBehaviour
         if (_activeTimer > 0f)
         {
             _activeTimer = Mathf.Max(0f, _activeTimer - dt);
-            if (_activeTimer <= 0f && smokeObject)
+            if (_activeTimer <= 0f && _activeInstance)
             {
-                smokeObject.SetActive(false);
+                Destroy(_activeInstance);
+                _activeInstance = null;
+                _smokeZone = null;
             }
         }
     }
@@ -123,16 +118,24 @@ public class SmokeAbility : MonoBehaviour
         _resolvedKey = overrideKey != KeyCode.None ? overrideKey : KeyCode.C;
     }
 
-    private void EnsureSmokeZoneOwner()
+    private void SpawnSmokeInstance()
     {
         if (!smokeObject)
         {
             return;
         }
 
+        if (_activeInstance)
+        {
+            Destroy(_activeInstance);
+            _activeInstance = null;
+            _smokeZone = null;
+        }
+
+        _activeInstance = Instantiate(smokeObject, transform.position, transform.rotation);
         if (!_smokeZone)
         {
-            _smokeZone = smokeObject.GetComponent<SmokeZone>() ?? smokeObject.GetComponentInChildren<SmokeZone>(true);
+            _smokeZone = _activeInstance.GetComponent<SmokeZone>() ?? _activeInstance.GetComponentInChildren<SmokeZone>(true);
         }
 
         if (_smokeZone)
@@ -142,8 +145,21 @@ public class SmokeAbility : MonoBehaviour
             return;
         }
 
-        _smokeZone = smokeObject.AddComponent<SmokeZone>();
+        _smokeZone = _activeInstance.AddComponent<SmokeZone>();
         CharacterHealth fallbackOwner = GetComponent<CharacterHealth>() ?? GetComponentInChildren<CharacterHealth>(true);
         _smokeZone.SetOwner(fallbackOwner);
+    }
+
+    private void DisableChildSmokeIfNeeded()
+    {
+        if (!smokeObject)
+        {
+            return;
+        }
+
+        if (smokeObject.transform.IsChildOf(transform) && smokeObject.activeSelf)
+        {
+            smokeObject.SetActive(false);
+        }
     }
 }

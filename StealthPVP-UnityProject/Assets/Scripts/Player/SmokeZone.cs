@@ -79,11 +79,18 @@ public class SmokeZone : MonoBehaviour
             return;
         }
 
+        PlayerFloatingTextController floatingText = controller.GetComponent<PlayerFloatingTextController>()
+            ?? controller.GetComponentInChildren<PlayerFloatingTextController>(true);
+
         if (suppress)
         {
             if (_suppressed.Add(controller))
             {
                 controller.SetAttackSuppressed(true);
+                if (floatingText)
+                {
+                    floatingText.SetStatusActive("Pacified", true);
+                }
             }
         }
         else
@@ -91,6 +98,10 @@ public class SmokeZone : MonoBehaviour
             if (_suppressed.Remove(controller))
             {
                 controller.SetAttackSuppressed(false);
+                if (floatingText)
+                {
+                    floatingText.SetStatusActive("Pacified", false);
+                }
             }
         }
     }
@@ -102,6 +113,12 @@ public class SmokeZone : MonoBehaviour
             if (controller)
             {
                 controller.SetAttackSuppressed(false);
+                PlayerFloatingTextController floatingText = controller.GetComponent<PlayerFloatingTextController>()
+                    ?? controller.GetComponentInChildren<PlayerFloatingTextController>(true);
+                if (floatingText)
+                {
+                    floatingText.SetStatusActive("Pacified", false);
+                }
             }
         }
         _suppressed.Clear();

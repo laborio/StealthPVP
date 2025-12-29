@@ -12,6 +12,7 @@ public class PlayerStunController : MonoBehaviour
     [SerializeField] private CharacterAnimations characterAnimations;
     [SerializeField] private SimpleCharacterController characterController;
     [SerializeField] private SmokeAbility smokeAbility;
+    [SerializeField] private PlayerFloatingTextController floatingTextController;
 
     private float _stunTimer;
     private bool _isStunned;
@@ -57,6 +58,12 @@ public class PlayerStunController : MonoBehaviour
             smokeAbility = GetComponent<SmokeAbility>() ?? GetComponentInChildren<SmokeAbility>(true);
         }
 
+        if (!floatingTextController)
+        {
+            floatingTextController = GetComponent<PlayerFloatingTextController>()
+                ?? GetComponentInChildren<PlayerFloatingTextController>(true);
+        }
+
         if (!characterAnimations)
         {
             characterAnimations = GetComponentInChildren<CharacterAnimations>(true);
@@ -97,6 +104,12 @@ public class PlayerStunController : MonoBehaviour
         }
     }
 
+    public void ClearStun()
+    {
+        _stunTimer = 0f;
+        SetStunned(false);
+    }
+
     private void SetStunned(bool value)
     {
         _isStunned = value;
@@ -128,6 +141,11 @@ public class PlayerStunController : MonoBehaviour
         if (smokeAbility)
         {
             smokeAbility.SetInputSuppressed(value);
+        }
+
+        if (floatingTextController)
+        {
+            floatingTextController.SetStatusActive("Stunned", value);
         }
 
         if (revealAbility)
