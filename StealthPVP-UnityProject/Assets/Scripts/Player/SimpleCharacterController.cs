@@ -92,6 +92,8 @@ public partial class SimpleCharacterController : MonoBehaviour
     private Transform _rangeIndicatorTransform;
     private float _attackLockTimer;
     private bool _inputSuppressed;
+    private int _attackSuppressionCount;
+    private bool _attackSuppressed;
 
     private void Awake()
     {
@@ -470,6 +472,12 @@ public partial class SimpleCharacterController : MonoBehaviour
     private void HandleAttackInput(PlayerInputSnapshot input, bool isGrounded)
     {
         if (_seatingState != SeatingState.Standing)
+        {
+            CancelAttackCharge();
+            return;
+        }
+
+        if (_attackSuppressed)
         {
             CancelAttackCharge();
             return;
@@ -1028,6 +1036,30 @@ public partial class SimpleCharacterController : MonoBehaviour
             _hasMoveTarget = false;
             _isDashing = false;
             _dashTimer = 0f;
+        }
+    }
+
+    public void SetAttackSuppressed(bool suppressed)
+    {
+        if (suppressed)
+        {
+            _attackSuppressionCount++;
+        }
+        else
+        {
+            _attackSuppressionCount = Mathf.Max(0, _attackSuppressionCount - 1);
+        }
+
+        bool next = _attackSuppressionCount > 0;
+        if (next == _attackSuppressed)
+        {
+            return;
+        }
+
+        _attackSuppressed = next;
+        if (_attackSuppressed)
+        {
+            CancelAttackCharge();
         }
     }
 }

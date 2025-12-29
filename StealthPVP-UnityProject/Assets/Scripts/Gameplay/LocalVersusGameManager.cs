@@ -66,6 +66,9 @@ public class LocalVersusGameManager : MonoBehaviour
     [SerializeField, Tooltip("Reveal key for player 1 (keyboard/mouse).")] private KeyCode player1RevealKey = KeyCode.F;
     [SerializeField, Tooltip("Reveal key for player 2 (gamepad).")] private KeyCode player2RevealKey = KeyCode.JoystickButton4;
     [SerializeField, Tooltip("Reveal key for player 3 (gamepad).")] private KeyCode player3RevealKey = KeyCode.Joystick2Button4;
+    [SerializeField, Tooltip("Smoke key for player 1 (keyboard/mouse).")] private KeyCode player1SmokeKey = KeyCode.C;
+    [SerializeField, Tooltip("Smoke key for player 2 (gamepad).")] private KeyCode player2SmokeKey = KeyCode.Joystick1Button2;
+    [SerializeField, Tooltip("Smoke key for player 3 (gamepad).")] private KeyCode player3SmokeKey = KeyCode.Joystick2Button2;
     [Header("Input Axes")]
     [SerializeField, Tooltip("Keyboard-only horizontal axis name for player 1.")] private string player1HorizontalAxis = "Horizontal";
     [SerializeField, Tooltip("Keyboard-only vertical axis name for player 1.")] private string player1VerticalAxis = "Vertical";
@@ -138,6 +141,7 @@ public class LocalVersusGameManager : MonoBehaviour
         UpdateRoleIndicators();
         UpdateCompasses();
         UpdateStunBindings();
+        UpdateSmokeBindings();
         UpdateScoreboards();
     }
 
@@ -639,6 +643,7 @@ public class LocalVersusGameManager : MonoBehaviour
         UpdateFogBindings();
         UpdateRevealBindings();
         UpdateStunBindings();
+        UpdateSmokeBindings();
         _respawnInProgress = false;
     }
 
@@ -1218,6 +1223,84 @@ public class LocalVersusGameManager : MonoBehaviour
         }
     }
 
+    private void UpdateSmokeBindings()
+    {
+        float cooldown = 0f;
+        if (!gameplayTuning)
+        {
+            ResolveGameplayTuning();
+        }
+        if (gameplayTuning)
+        {
+            cooldown = gameplayTuning.smokeCooldown;
+        }
+
+        SmokeAbility smoke1 = GetSmokeAbility(_player1Instance, addIfMissing: true);
+        SmokeAbility smoke2 = GetSmokeAbility(_player2Instance, addIfMissing: true);
+        SmokeAbility smoke3 = GetSmokeAbility(_player3Instance, addIfMissing: true);
+        bool useSharedBindings = shareSingleGamepadBetweenPlayer2And3 && player3UsePlayer2Bindings;
+        KeyCode smoke3Key = useSharedBindings ? player2SmokeKey : player3SmokeKey;
+        bool enableSmoke2 = smoke2 != null;
+        bool enableSmoke3 = smoke3 != null;
+        if (shareSingleGamepadBetweenPlayer2And3 && _player3Instance)
+        {
+            enableSmoke2 = sharedGamepadTarget == SharedGamepadTarget.Player2;
+            enableSmoke3 = sharedGamepadTarget == SharedGamepadTarget.Player3;
+        }
+
+        if (smoke1)
+        {
+            smoke1.SetCooldown(cooldown);
+            smoke1.SetOverrideKey(player1SmokeKey);
+            smoke1.SetInputEnabled(true);
+        }
+
+        if (smoke2)
+        {
+            smoke2.SetCooldown(cooldown);
+            smoke2.SetOverrideKey(player2SmokeKey);
+            smoke2.SetInputEnabled(enableSmoke2);
+        }
+
+        if (smoke3)
+        {
+            smoke3.SetCooldown(cooldown);
+            smoke3.SetOverrideKey(smoke3Key);
+            smoke3.SetInputEnabled(enableSmoke3);
+        }
+
+        if (player1Ui)
+        {
+            player1Ui.SetSmokeAbility(smoke1);
+        }
+
+        if (player2Ui)
+        {
+            player2Ui.SetSmokeAbility(smoke2);
+        }
+
+        if (player3Ui)
+        {
+            player3Ui.SetSmokeAbility(smoke3);
+        }
+    }
+
+    private SmokeAbility GetSmokeAbility(GameObject root, bool addIfMissing)
+    {
+        if (!root)
+        {
+            return null;
+        }
+
+        SmokeAbility ability = root.GetComponent<SmokeAbility>() ?? root.GetComponentInChildren<SmokeAbility>(true);
+        if (!ability && addIfMissing)
+        {
+            ability = root.AddComponent<SmokeAbility>();
+        }
+
+        return ability;
+    }
+
     private void UpdateStunBindings()
     {
         float duration = 0f;
@@ -1394,34 +1477,57 @@ public class LocalVersusGameManager : MonoBehaviour
 
     private void UpdateInputAssignments()
     {
-        PlayerInputRouter router2 = GetInputRouter(_player2Instance);
-        PlayerInputRouter router3 = GetInputRouter(_player3Instance);
         AbilityRunner ability2 = GetAbility(_player2Instance);
         AbilityRunner ability3 = GetAbility(_player3Instance);
+        SmokeAbility smoke2 = GetSmokeAbility(_player2Instance, addIfMissing: false);
+        SmokeAbility smoke3 = GetSmokeAbility(_player3Instance, addIfMissing: false);
 
         if (shareSingleGamepadBetweenPlayer2And3 && _player3Instance)
         {
             bool enablePlayer2 = sharedGamepadTarget == SharedGamepadTarget.Player2;
             bool enablePlayer3 = sharedGamepadTarget == SharedGamepadTarget.Player3;
-            SetInputEnabled(router2, enablePlayer2);
-            SetInputEnabled(router3, enablePlayer3);
+            SetInputEnabledForInstance(_player2Instance, PlayerSlot.Player2, enablePlayer2);
+            SetInputEnabledForInstance(_player3Instance, PlayerSlot.Player3, enablePlayer3);
             SetAbilityInputEnabled(ability2, enablePlayer2);
             SetAbilityInputEnabled(ability3, enablePlayer3);
+            SetSmokeInputEnabled(smoke2, enablePlayer2);
+            SetSmokeInputEnabled(smoke3, enablePlayer3);
         }
         else
         {
-            SetInputEnabled(router2, true);
-            SetInputEnabled(router3, true);
+            SetInputEnabledForInstance(_player2Instance, PlayerSlot.Player2, true);
+            SetInputEnabledForInstance(_player3Instance, PlayerSlot.Player3, true);
             SetAbilityInputEnabled(ability2, true);
             SetAbilityInputEnabled(ability3, true);
+            SetSmokeInputEnabled(smoke2, true);
+            SetSmokeInputEnabled(smoke3, true);
         }
     }
 
-    private static void SetInputEnabled(PlayerInputRouter router, bool enabled)
+    private void SetInputEnabledForInstance(GameObject instance, PlayerSlot slot, bool enabled)
     {
-        if (router)
+        if (!instance)
         {
-            router.SetInputEnabled(enabled);
+            return;
+        }
+
+        PlayerInputRouter[] routers = instance.GetComponentsInChildren<PlayerInputRouter>(true);
+        if (routers == null || routers.Length == 0)
+        {
+            return;
+        }
+
+        PlayerInputRouter primary = FindPreferredRouter(routers, slot);
+        for (int i = 0; i < routers.Length; i++)
+        {
+            PlayerInputRouter router = routers[i];
+            if (!router)
+            {
+                continue;
+            }
+
+            bool shouldEnable = enabled && router == primary;
+            router.SetInputEnabled(shouldEnable);
         }
     }
 
@@ -1433,9 +1539,51 @@ public class LocalVersusGameManager : MonoBehaviour
         }
     }
 
-    private PlayerInputRouter GetInputRouter(GameObject instance)
+    private static void SetSmokeInputEnabled(SmokeAbility ability, bool enabled)
     {
-        return instance ? instance.GetComponent<PlayerInputRouter>() ?? instance.GetComponentInChildren<PlayerInputRouter>(true) : null;
+        if (ability)
+        {
+            ability.SetInputEnabled(enabled);
+        }
+    }
+
+    private static PlayerInputRouter FindPreferredRouter(PlayerInputRouter[] routers, PlayerSlot slot)
+    {
+        if (routers == null || routers.Length == 0)
+        {
+            return null;
+        }
+
+        if (slot == PlayerSlot.Player1)
+        {
+            for (int i = 0; i < routers.Length; i++)
+            {
+                if (routers[i] && routers[i] is not PlayerInputRouterGamepad)
+                {
+                    return routers[i];
+                }
+            }
+        }
+        else
+        {
+            for (int i = 0; i < routers.Length; i++)
+            {
+                if (routers[i] && routers[i] is PlayerInputRouterGamepad)
+                {
+                    return routers[i];
+                }
+            }
+        }
+
+        for (int i = 0; i < routers.Length; i++)
+        {
+            if (routers[i])
+            {
+                return routers[i];
+            }
+        }
+
+        return null;
     }
 
     private PlayerInputRouter EnsureInputRouter(GameObject instance, PlayerSlot slot)
