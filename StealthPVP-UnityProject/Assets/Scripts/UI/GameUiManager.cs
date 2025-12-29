@@ -9,6 +9,8 @@ public class GameUiManager : MonoBehaviour
 {
     [SerializeField, Tooltip("Ability runner for the reveal ability (player)."),] private AbilityRunner revealAbility;
     [SerializeField, Tooltip("Cooldown text for the reveal ability.")] private TMP_Text revealCooldownText;
+    [SerializeField, Tooltip("Smoke ability for this player.")] private SmokeAbility smokeAbility;
+    [SerializeField, Tooltip("Cooldown text for the smoke ability.")] private TMP_Text smokeCooldownText;
     [Header("Target UI")]
     [SerializeField, Tooltip("Container that holds the target image prefab.")] private Transform targetContainer;
     [SerializeField, Tooltip("Fallback name used to find the target container if not assigned.")] private string targetContainerName = "TargetContainer";
@@ -19,6 +21,7 @@ public class GameUiManager : MonoBehaviour
     private void Update()
     {
         UpdateRevealCooldown();
+        UpdateSmokeCooldown();
     }
 
     public void SetRevealAbility(AbilityRunner ability)
@@ -61,6 +64,29 @@ public class GameUiManager : MonoBehaviour
         else
         {
             revealCooldownText.text = string.Empty;
+        }
+    }
+
+    public void SetSmokeAbility(SmokeAbility ability)
+    {
+        smokeAbility = ability;
+    }
+
+    private void UpdateSmokeCooldown()
+    {
+        if (!smokeCooldownText || !smokeAbility)
+        {
+            return;
+        }
+
+        float remaining = smokeAbility.CooldownRemaining;
+        if (remaining > 0f)
+        {
+            smokeCooldownText.text = Mathf.CeilToInt(remaining).ToString();
+        }
+        else
+        {
+            smokeCooldownText.text = string.Empty;
         }
     }
 

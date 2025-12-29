@@ -17,6 +17,9 @@ public float revealFade = 1f;
 [Header("Stun")]
 public float playerStunDuration = 3f;
 
+[Header("Smoke")]
+public float smokeCooldown = 90f;
+
 [Header("Reveal - Overlook Multipliers (uses VisionSource heights)")]
 public float overlookLevel1CooldownMultiplier = 2f;
 public float overlookLevel2CooldownMultiplier = 3f;

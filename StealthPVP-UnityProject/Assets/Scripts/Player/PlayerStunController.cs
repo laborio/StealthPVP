@@ -11,6 +11,7 @@ public class PlayerStunController : MonoBehaviour
     [SerializeField] private AbilityRunner revealAbility;
     [SerializeField] private CharacterAnimations characterAnimations;
     [SerializeField] private SimpleCharacterController characterController;
+    [SerializeField] private SmokeAbility smokeAbility;
 
     private float _stunTimer;
     private bool _isStunned;
@@ -49,6 +50,11 @@ public class PlayerStunController : MonoBehaviour
         if (!revealAbility)
         {
             revealAbility = GetComponent<AbilityRunner>() ?? GetComponentInChildren<AbilityRunner>(true);
+        }
+
+        if (!smokeAbility)
+        {
+            smokeAbility = GetComponent<SmokeAbility>() ?? GetComponentInChildren<SmokeAbility>(true);
         }
 
         if (!characterAnimations)
@@ -117,6 +123,11 @@ public class PlayerStunController : MonoBehaviour
         if (characterController)
         {
             characterController.SetInputSuppressed(value);
+        }
+
+        if (smokeAbility)
+        {
+            smokeAbility.SetInputSuppressed(value);
         }
 
         if (revealAbility)

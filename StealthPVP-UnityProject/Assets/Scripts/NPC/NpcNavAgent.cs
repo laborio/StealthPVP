@@ -40,11 +40,22 @@ public class NpcNavAgent : MonoBehaviour
     [SerializeField, Range(0f, 1f), Tooltip("Only consider congestion when moving slower than this fraction of agent.speed.")] private float crowdSlowSpeedFraction = 0.9f;
     [SerializeField, Tooltip("Seconds before another crowd-based repath can happen.")] private float crowdRepathCooldown = 1f;
     [SerializeField, Tooltip("Number of destination samples when trying to avoid crowds.")] private int crowdDestinationSamples = 4;
+    [Header("Crowd Grid (Performance)")]
+    [SerializeField, Tooltip("Use a shared spatial grid to speed up crowd checks.")] private bool useCrowdGrid = true;
+    [SerializeField, Tooltip("World-space grid cell size for crowd checks.")] private float crowdGridCellSize = 2.5f;
+    [SerializeField, Tooltip("Seconds between grid cell updates. 0 = every frame.")] private float crowdGridUpdateInterval = 0.2f;
     [Header("Unstuck")]
     [SerializeField, Tooltip("Speed considered stuck when moving slowly.")] private float stuckSpeedThreshold = 0.05f;
     [SerializeField, Tooltip("Seconds of low speed before forcing a new destination.")] private float stuckTime = 1.5f;
+    [Header("Update Throttling")]
+    [SerializeField, Tooltip("Seconds between full-speed gate updates. 0 = every frame.")] private float fullSpeedGateInterval = 0.05f;
+    [SerializeField, Tooltip("Seconds between animator updates. 0 = every frame.")] private float animatorUpdateInterval = 0.1f;
+    [SerializeField, Tooltip("Randomize update offsets so NPCs do not update in sync.")] private bool staggerUpdates = true;
 
     private static readonly List<NpcNavAgent> ActiveAgents = new List<NpcNavAgent>();
+    private static readonly Dictionary<Vector2Int, List<NpcNavAgent>> CrowdGrid = new Dictionary<Vector2Int, List<NpcNavAgent>>();
+    private static float CrowdGridCellSize = 2.5f;
+    private static bool CrowdGridInitialized;
 
     private Vector3 _origin;
     private CharacterHealth _health;
@@ -56,6 +67,12 @@ public class NpcNavAgent : MonoBehaviour
     private float _resumeTimer;
     private float _crowdCheckTimer;
     private float _crowdCooldownTimer;
+    private Vector2Int _gridCell;
+    private bool _gridRegistered;
+    private float _nextAnimatorUpdateTime;
+    private float _nextGateUpdateTime;
+    private float _lastGateUpdateTime;
+    private float _nextGridUpdateTime;
 
     private void Awake()
     {
@@ -81,6 +98,7 @@ public class NpcNavAgent : MonoBehaviour
         }
 
         RegisterAgent();
+        ScheduleUpdateTimers();
 
         if (_loopRoutine == null && agent)
         {
@@ -106,8 +124,42 @@ public class NpcNavAgent : MonoBehaviour
 
     private void Update()
     {
-        UpdateFullSpeedGate();
-        UpdateAnimatorState();
+        float now = Time.time;
+
+        if (fullSpeedGateInterval <= 0f)
+        {
+            UpdateFullSpeedGate(Time.deltaTime);
+        }
+        else if (now >= _nextGateUpdateTime)
+        {
+            float dt = _lastGateUpdateTime > 0f ? now - _lastGateUpdateTime : fullSpeedGateInterval;
+            _lastGateUpdateTime = now;
+            _nextGateUpdateTime = now + fullSpeedGateInterval;
+            UpdateFullSpeedGate(dt);
+        }
+
+        if (animatorUpdateInterval <= 0f)
+        {
+            UpdateAnimatorState();
+        }
+        else if (now >= _nextAnimatorUpdateTime)
+        {
+            _nextAnimatorUpdateTime = now + animatorUpdateInterval;
+            UpdateAnimatorState();
+        }
+
+        if (useCrowdGrid)
+        {
+            if (crowdGridUpdateInterval <= 0f)
+            {
+                UpdateGridCell(force: false);
+            }
+            else if (now >= _nextGridUpdateTime)
+            {
+                _nextGridUpdateTime = now + crowdGridUpdateInterval;
+                UpdateGridCell(force: false);
+            }
+        }
     }
 
     private void OnDied(CharacterHealth _)
@@ -322,7 +374,7 @@ public class NpcNavAgent : MonoBehaviour
         }
     }
 
-    private void UpdateFullSpeedGate()
+    private void UpdateFullSpeedGate(float deltaTime)
     {
         if (!requireFullSpeedToWalk || !agent || !agent.enabled || !agent.isOnNavMesh)
         {
@@ -352,7 +404,7 @@ public class NpcNavAgent : MonoBehaviour
         {
             if (_resumeTimer > 0f)
             {
-                _resumeTimer = Mathf.Max(0f, _resumeTimer - Time.deltaTime);
+                _resumeTimer = Mathf.Max(0f, _resumeTimer - deltaTime);
             }
 
             if (_resumeTimer <= 0f)
@@ -373,7 +425,7 @@ public class NpcNavAgent : MonoBehaviour
 
         if (belowFull)
         {
-            _forcedIdleTimer += Time.deltaTime;
+            _forcedIdleTimer += deltaTime;
             if (_forcedIdleTimer >= slowToIdleDelay)
             {
                 _forcedIdle = true;
@@ -415,7 +467,17 @@ public class NpcNavAgent : MonoBehaviour
         }
     }
 
-    private static int CountNearbyAgents(Vector3 point, float radius, NpcNavAgent ignore)
+    private int CountNearbyAgents(Vector3 point, float radius, NpcNavAgent ignore)
+    {
+        if (useCrowdGrid && CrowdGridCellSize > 0.01f)
+        {
+            return CountNearbyAgentsGrid(point, radius, ignore);
+        }
+
+        return CountNearbyAgentsLinear(point, radius, ignore);
+    }
+
+    private static int CountNearbyAgentsLinear(Vector3 point, float radius, NpcNavAgent ignore)
     {
         float radiusSqr = radius * radius;
         int count = 0;
@@ -443,17 +505,181 @@ public class NpcNavAgent : MonoBehaviour
         return count;
     }
 
+    private static int CountNearbyAgentsGrid(Vector3 point, float radius, NpcNavAgent ignore)
+    {
+        float cellSize = Mathf.Max(0.01f, CrowdGridCellSize);
+        int cellRadius = Mathf.Max(1, Mathf.CeilToInt(radius / cellSize));
+        Vector2Int center = WorldToCell(point);
+        float radiusSqr = radius * radius;
+        int count = 0;
+
+        for (int x = -cellRadius; x <= cellRadius; x++)
+        {
+            for (int y = -cellRadius; y <= cellRadius; y++)
+            {
+                Vector2Int cell = new Vector2Int(center.x + x, center.y + y);
+                if (!CrowdGrid.TryGetValue(cell, out List<NpcNavAgent> list))
+                {
+                    continue;
+                }
+
+                for (int i = list.Count - 1; i >= 0; i--)
+                {
+                    NpcNavAgent other = list[i];
+                    if (!other)
+                    {
+                        list.RemoveAt(i);
+                        continue;
+                    }
+                    if (other == ignore)
+                    {
+                        continue;
+                    }
+
+                    Vector3 delta = other.transform.position - point;
+                    delta.y = 0f;
+                    if (delta.sqrMagnitude <= radiusSqr)
+                    {
+                        count++;
+                    }
+                }
+            }
+        }
+
+        return count;
+    }
+
     private void RegisterAgent()
     {
         if (!ActiveAgents.Contains(this))
         {
             ActiveAgents.Add(this);
         }
+
+        if (useCrowdGrid)
+        {
+            SetCrowdGridCellSize(crowdGridCellSize);
+            UpdateGridCell(force: true);
+        }
     }
 
     private void UnregisterAgent()
     {
         ActiveAgents.Remove(this);
+        RemoveFromGrid();
+    }
+
+    private void ScheduleUpdateTimers()
+    {
+        float now = Time.time;
+        float gateInterval = Mathf.Max(0f, fullSpeedGateInterval);
+        float animInterval = Mathf.Max(0f, animatorUpdateInterval);
+        float gridInterval = Mathf.Max(0f, crowdGridUpdateInterval);
+
+        float gateOffset = staggerUpdates && gateInterval > 0f ? Random.Range(0f, gateInterval) : 0f;
+        float animOffset = staggerUpdates && animInterval > 0f ? Random.Range(0f, animInterval) : 0f;
+        float gridOffset = staggerUpdates && gridInterval > 0f ? Random.Range(0f, gridInterval) : 0f;
+
+        _nextGateUpdateTime = now + gateOffset;
+        _lastGateUpdateTime = now;
+        _nextAnimatorUpdateTime = now + animOffset;
+        _nextGridUpdateTime = now + gridOffset;
+    }
+
+    private void UpdateGridCell(bool force)
+    {
+        if (!useCrowdGrid)
+        {
+            return;
+        }
+
+        if (CrowdGridCellSize <= 0.01f)
+        {
+            CrowdGridCellSize = 0.5f;
+        }
+
+        Vector2Int cell = WorldToCell(transform.position);
+        if (!force && _gridRegistered && cell == _gridCell)
+        {
+            return;
+        }
+
+        RemoveFromGrid();
+        _gridCell = cell;
+        AddToGrid(cell);
+        _gridRegistered = true;
+    }
+
+    private void AddToGrid(Vector2Int cell)
+    {
+        if (!CrowdGrid.TryGetValue(cell, out List<NpcNavAgent> list))
+        {
+            list = new List<NpcNavAgent>();
+            CrowdGrid.Add(cell, list);
+        }
+
+        list.Add(this);
+    }
+
+    private void RemoveFromGrid()
+    {
+        if (!_gridRegistered)
+        {
+            return;
+        }
+
+        if (CrowdGrid.TryGetValue(_gridCell, out List<NpcNavAgent> list))
+        {
+            list.Remove(this);
+            if (list.Count == 0)
+            {
+                CrowdGrid.Remove(_gridCell);
+            }
+        }
+
+        _gridRegistered = false;
+    }
+
+    private static Vector2Int WorldToCell(Vector3 position)
+    {
+        float size = Mathf.Max(0.01f, CrowdGridCellSize);
+        return new Vector2Int(Mathf.FloorToInt(position.x / size), Mathf.FloorToInt(position.z / size));
+    }
+
+    private static void SetCrowdGridCellSize(float size)
+    {
+        float clamped = Mathf.Max(0.1f, size);
+        if (!CrowdGridInitialized)
+        {
+            CrowdGridCellSize = clamped;
+            CrowdGridInitialized = true;
+            return;
+        }
+
+        if (clamped <= CrowdGridCellSize + 0.01f)
+        {
+            return;
+        }
+
+        CrowdGridCellSize = clamped;
+        RebuildCrowdGrid();
+    }
+
+    private static void RebuildCrowdGrid()
+    {
+        CrowdGrid.Clear();
+        for (int i = ActiveAgents.Count - 1; i >= 0; i--)
+        {
+            NpcNavAgent agent = ActiveAgents[i];
+            if (!agent)
+            {
+                ActiveAgents.RemoveAt(i);
+                continue;
+            }
+
+            agent._gridRegistered = false;
+            agent.UpdateGridCell(force: true);
+        }
     }
 
     private void SetBoolSafe(string parameterName, bool value)

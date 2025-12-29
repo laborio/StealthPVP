@@ -10,6 +10,7 @@ public class GameplayTuningApplier : MonoBehaviour
 {
     [SerializeField] private GameplayTuning tuning;
     [SerializeField] private AbilityRunner playerRevealAbility;
+    [SerializeField] private SmokeAbility playerSmokeAbility;
     [SerializeField, Tooltip("Optional player reveal indicator to apply fade settings.")] private RevealIndicatorController playerRevealIndicator;
     [SerializeField, Tooltip("Apply to all VisionSources found in the scene.")] private bool autoApplyVisionSources = true;
     [SerializeField, Tooltip("Optional explicit VisionSources to override when autoApplyVisionSources is false.")] private VisionSource[] visionSources;
@@ -39,6 +40,11 @@ public class GameplayTuningApplier : MonoBehaviour
         {
             // Match indicator fades to reveal fade for simplicity.
             playerRevealIndicator.ApplyFadeConfig(tuning.revealFade, tuning.revealFade);
+        }
+
+        if (playerSmokeAbility)
+        {
+            playerSmokeAbility.SetCooldown(tuning.smokeCooldown);
         }
 
         if (playerHighGroundReveal)
