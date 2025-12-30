@@ -80,9 +80,18 @@ public class LocalVersusGameManager : MonoBehaviour
     [SerializeField, Tooltip("Gamepad vertical axis for player 3.")] private string player3MoveVerticalAxis = "Vertical3";
     [SerializeField, Tooltip("Gamepad aim horizontal axis for player 3.")] private string player3AimHorizontalAxis = "AimHorizontal3";
     [SerializeField, Tooltip("Gamepad aim vertical axis for player 3.")] private string player3AimVerticalAxis = "AimVertical3";
+    [Header("Gamepad Triggers")]
+    [SerializeField, Tooltip("Primary trigger axis (attack) for player 2.")] private string player2PrimaryTriggerAxis = "Axis6";
+    [SerializeField, Tooltip("Primary trigger axis (attack) for player 3.")] private string player3PrimaryTriggerAxis = "Axis6";
+    [Header("Gamepad Axis Inversion")]
+    [SerializeField] private bool invertGamepadMoveX = false;
+    [SerializeField] private bool invertGamepadMoveY = false;
+    [SerializeField] private bool invertGamepadAimX = false;
+    [SerializeField] private bool invertGamepadAimY = false;
     [Header("Player 2 KeyCodes")]
     [SerializeField, Tooltip("If false, primary keycode is ignored so trigger/aim-only can be used.")] private bool player2UsePrimaryKeycode = true;
     [SerializeField] private KeyCode player2PrimaryKeyCode = KeyCode.JoystickButton12;
+    [SerializeField] private KeyCode player2StunKeyCode = KeyCode.JoystickButton14;
     [SerializeField] private KeyCode player2JumpKeyCode = KeyCode.Joystick1Button0;
     [SerializeField] private KeyCode player2DashKeyCode = KeyCode.Joystick1Button1;
     [SerializeField] private KeyCode player2RunKeyCode = KeyCode.Joystick1Button5;
@@ -90,6 +99,7 @@ public class LocalVersusGameManager : MonoBehaviour
     [Header("Player 3 KeyCodes")]
     [SerializeField, Tooltip("If false, primary keycode is ignored so trigger/aim-only can be used.")] private bool player3UsePrimaryKeycode = true;
     [SerializeField] private KeyCode player3PrimaryKeyCode = KeyCode.Joystick2Button12;
+    [SerializeField] private KeyCode player3StunKeyCode = KeyCode.Joystick2Button14;
     [SerializeField] private KeyCode player3JumpKeyCode = KeyCode.Joystick2Button0;
     [SerializeField] private KeyCode player3DashKeyCode = KeyCode.Joystick2Button1;
     [SerializeField] private KeyCode player3RunKeyCode = KeyCode.Joystick2Button5;
@@ -142,6 +152,7 @@ public class LocalVersusGameManager : MonoBehaviour
         UpdateCompasses();
         UpdateStunBindings();
         UpdateSmokeBindings();
+        UpdateDashBindings();
         UpdateScoreboards();
     }
 
@@ -715,6 +726,7 @@ public class LocalVersusGameManager : MonoBehaviour
         UpdateRevealBindings();
         UpdateStunBindings();
         UpdateSmokeBindings();
+        UpdateDashBindings();
         _respawnInProgress = false;
     }
 
@@ -1248,6 +1260,11 @@ public class LocalVersusGameManager : MonoBehaviour
         return root ? root.GetComponent<VisionSource>() ?? root.GetComponentInChildren<VisionSource>(true) : null;
     }
 
+    private SimpleCharacterController GetController(GameObject root)
+    {
+        return root ? root.GetComponent<SimpleCharacterController>() ?? root.GetComponentInChildren<SimpleCharacterController>(true) : null;
+    }
+
     private AbilityRunner GetAbility(GameObject root)
     {
         return root ? root.GetComponent<AbilityRunner>() ?? root.GetComponentInChildren<AbilityRunner>(true) : null;
@@ -1387,6 +1404,60 @@ public class LocalVersusGameManager : MonoBehaviour
         ApplyStunDuration(_player1Instance, duration);
         ApplyStunDuration(_player2Instance, duration);
         ApplyStunDuration(_player3Instance, duration);
+    }
+
+    private void UpdateDashBindings()
+    {
+        float speedMultiplier = 0f;
+        float airSpeedMultiplier = 0f;
+        float duration = 0f;
+        float cooldown = 0f;
+        if (!gameplayTuning)
+        {
+            ResolveGameplayTuning();
+        }
+        if (gameplayTuning)
+        {
+            speedMultiplier = gameplayTuning.dashSpeedMultiplier;
+            airSpeedMultiplier = gameplayTuning.dashAirSpeedMultiplier;
+            duration = gameplayTuning.dashDuration;
+            cooldown = gameplayTuning.dashCooldown;
+        }
+
+        ApplyDashConfig(_player1Instance, speedMultiplier, airSpeedMultiplier, duration, cooldown);
+        ApplyDashConfig(_player2Instance, speedMultiplier, airSpeedMultiplier, duration, cooldown);
+        ApplyDashConfig(_player3Instance, speedMultiplier, airSpeedMultiplier, duration, cooldown);
+
+        if (player1Ui)
+        {
+            player1Ui.SetDashController(GetController(_player1Instance));
+        }
+
+        if (player2Ui)
+        {
+            player2Ui.SetDashController(GetController(_player2Instance));
+        }
+
+        if (player3Ui)
+        {
+            player3Ui.SetDashController(GetController(_player3Instance));
+        }
+    }
+
+    private void ApplyDashConfig(GameObject instance, float speedMultiplier, float airSpeedMultiplier, float duration, float cooldown)
+    {
+        if (!instance || !gameplayTuning)
+        {
+            return;
+        }
+
+        SimpleCharacterController controller = GetController(instance);
+        if (!controller)
+        {
+            return;
+        }
+
+        controller.ApplyDashConfig(speedMultiplier, airSpeedMultiplier, duration, cooldown);
     }
 
     private void ApplyStunDuration(GameObject instance, float duration)
@@ -1544,6 +1615,21 @@ public class LocalVersusGameManager : MonoBehaviour
         KeyCode run = usePlayer2Bindings ? player2RunKeyCode : player3RunKeyCode;
         KeyCode interact = usePlayer2Bindings ? player2InteractKeyCode : player3InteractKeyCode;
         gamepad.SetButtonKeyCodes(primary, jump, dash, run, interact);
+        KeyCode stun = usePlayer2Bindings ? player2StunKeyCode : player3StunKeyCode;
+        gamepad.SetSecondaryKeyCode(stun);
+        gamepad.SetSecondaryTrigger(string.Empty, false);
+
+        string primaryTrigger = usePlayer2Bindings ? player2PrimaryTriggerAxis : player3PrimaryTriggerAxis;
+        if (!string.IsNullOrEmpty(primaryTrigger))
+        {
+            gamepad.SetPrimaryTrigger(primaryTrigger, true);
+        }
+        else
+        {
+            gamepad.SetPrimaryTrigger(string.Empty, false);
+        }
+
+        gamepad.SetAxisInversion(invertGamepadMoveX, invertGamepadMoveY, invertGamepadAimX, invertGamepadAimY);
     }
 
     private void UpdateInputAssignments()

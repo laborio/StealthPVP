@@ -11,6 +11,8 @@ public class GameplayTuningApplier : MonoBehaviour
     [SerializeField] private GameplayTuning tuning;
     [SerializeField] private AbilityRunner playerRevealAbility;
     [SerializeField] private SmokeAbility playerSmokeAbility;
+    [SerializeField] private SimpleCharacterController[] dashControllers;
+    [SerializeField, Tooltip("Apply to all SimpleCharacterControllers found in the scene.")] private bool autoApplyDashControllers = true;
     [SerializeField, Tooltip("Optional player reveal indicator to apply fade settings.")] private RevealIndicatorController playerRevealIndicator;
     [SerializeField, Tooltip("Apply to all VisionSources found in the scene.")] private bool autoApplyVisionSources = true;
     [SerializeField, Tooltip("Optional explicit VisionSources to override when autoApplyVisionSources is false.")] private VisionSource[] visionSources;
@@ -47,6 +49,8 @@ public class GameplayTuningApplier : MonoBehaviour
             playerSmokeAbility.SetCooldown(tuning.smokeCooldown);
         }
 
+        ApplyDash();
+
         if (playerHighGroundReveal)
         {
             playerHighGroundReveal.ApplyConfig(
@@ -55,6 +59,33 @@ public class GameplayTuningApplier : MonoBehaviour
         }
 
         ApplyVision();
+    }
+
+    private void ApplyDash()
+    {
+        SimpleCharacterController[] targets = autoApplyDashControllers
+            ? FindObjectsByType<SimpleCharacterController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None)
+            : dashControllers;
+
+        if (targets == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < targets.Length; i++)
+        {
+            SimpleCharacterController controller = targets[i];
+            if (!controller)
+            {
+                continue;
+            }
+
+            controller.ApplyDashConfig(
+                tuning.dashSpeedMultiplier,
+                tuning.dashAirSpeedMultiplier,
+                tuning.dashDuration,
+                tuning.dashCooldown);
+        }
     }
 
     private void ApplyVision()

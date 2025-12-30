@@ -11,6 +11,8 @@ public class GameUiManager : MonoBehaviour
     [SerializeField, Tooltip("Cooldown text for the reveal ability.")] private TMP_Text revealCooldownText;
     [SerializeField, Tooltip("Smoke ability for this player.")] private SmokeAbility smokeAbility;
     [SerializeField, Tooltip("Cooldown text for the smoke ability.")] private TMP_Text smokeCooldownText;
+    [SerializeField, Tooltip("Dash controller for this player.")] private SimpleCharacterController dashController;
+    [SerializeField, Tooltip("Cooldown text for the dash ability.")] private TMP_Text dashCooldownText;
     [Header("Target UI")]
     [SerializeField, Tooltip("Container that holds the target image prefab.")] private Transform targetContainer;
     [SerializeField, Tooltip("Fallback name used to find the target container if not assigned.")] private string targetContainerName = "TargetContainer";
@@ -22,6 +24,7 @@ public class GameUiManager : MonoBehaviour
     {
         UpdateRevealCooldown();
         UpdateSmokeCooldown();
+        UpdateDashCooldown();
     }
 
     public void SetRevealAbility(AbilityRunner ability)
@@ -72,6 +75,11 @@ public class GameUiManager : MonoBehaviour
         smokeAbility = ability;
     }
 
+    public void SetDashController(SimpleCharacterController controller)
+    {
+        dashController = controller;
+    }
+
     private void UpdateSmokeCooldown()
     {
         if (!smokeCooldownText || !smokeAbility)
@@ -87,6 +95,24 @@ public class GameUiManager : MonoBehaviour
         else
         {
             smokeCooldownText.text = string.Empty;
+        }
+    }
+
+    private void UpdateDashCooldown()
+    {
+        if (!dashCooldownText || !dashController)
+        {
+            return;
+        }
+
+        float remaining = dashController.DashCooldownRemaining;
+        if (remaining > 0f)
+        {
+            dashCooldownText.text = Mathf.CeilToInt(remaining).ToString();
+        }
+        else
+        {
+            dashCooldownText.text = string.Empty;
         }
     }
 
