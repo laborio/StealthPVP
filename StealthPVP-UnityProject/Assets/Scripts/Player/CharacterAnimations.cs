@@ -57,6 +57,18 @@ public class CharacterAnimations : MonoBehaviour
     private int _stunTagHash;
     private int _hitTriggerHash;
     private int _upperBodyLayerIndex = -1;
+    private bool _hasWalkingBool;
+    private bool _hasIdleBool;
+    private bool _hasRunningBool;
+    private bool _hasRunningBackwardBool;
+    private bool _hasStrafingBool;
+    private bool _hasStrafeDirectionFloat;
+    private bool _hasJumpingBool;
+    private bool _hasFallingBool;
+    private bool _hasSittingBool;
+    private bool _hasStandToSitSpeedFloat;
+    private bool _hasTeleportedBool;
+    private bool _hasStunnedBool;
 
     private void Awake()
     {
@@ -82,16 +94,16 @@ public class CharacterAnimations : MonoBehaviour
             return;
         }
 
-        SetBool(animator, _walkingBoolHash, walkingBoolName, data.IsWalking);
-        SetBool(animator, _runningBoolHash, runningBoolName, data.IsRunning);
-        SetBool(animator, _runningBackwardBoolHash, runningBackwardBoolName, data.IsRunningBackward);
-        SetBool(animator, _strafingBoolHash, strafingBoolName, data.IsStrafing);
-        SetFloat(animator, _strafeDirectionFloatHash, strafeDirectionFloatName, data.StrafeDirection);
-        SetBool(animator, _jumpingBoolHash, jumpingBoolName, data.IsJumping);
-        SetBool(animator, _fallingBoolHash, fallingBoolName, data.IsFalling);
+        SetBool(animator, _walkingBoolHash, walkingBoolName, data.IsWalking, _hasWalkingBool);
+        SetBool(animator, _runningBoolHash, runningBoolName, data.IsRunning, _hasRunningBool);
+        SetBool(animator, _runningBackwardBoolHash, runningBackwardBoolName, data.IsRunningBackward, _hasRunningBackwardBool);
+        SetBool(animator, _strafingBoolHash, strafingBoolName, data.IsStrafing, _hasStrafingBool);
+        SetFloat(animator, _strafeDirectionFloatHash, strafeDirectionFloatName, data.StrafeDirection, _hasStrafeDirectionFloat);
+        SetBool(animator, _jumpingBoolHash, jumpingBoolName, data.IsJumping, _hasJumpingBool);
+        SetBool(animator, _fallingBoolHash, fallingBoolName, data.IsFalling, _hasFallingBool);
 
         bool isIdle = !data.IsWalking && !data.IsRunning && !data.IsRunningBackward && !data.IsStrafing && !data.IsJumping && !data.IsFalling;
-        SetBool(animator, _idleBoolHash, idleBoolName, isIdle);
+        SetBool(animator, _idleBoolHash, idleBoolName, isIdle, _hasIdleBool);
 
         float animatorSpeed = 1f;
         if (data.IsRunning || data.IsRunningBackward)
@@ -130,8 +142,8 @@ public class CharacterAnimations : MonoBehaviour
             return;
         }
 
-        SetBool(animator, _sittingBoolHash, sittingBoolName, isSitting);
-        if (!string.IsNullOrEmpty(standToSitSpeedFloatName))
+        SetBool(animator, _sittingBoolHash, sittingBoolName, isSitting, _hasSittingBool);
+        if (!string.IsNullOrEmpty(standToSitSpeedFloatName) && _hasStandToSitSpeedFloat)
         {
             if (_standToSitSpeedHash == 0)
             {
@@ -149,15 +161,15 @@ public class CharacterAnimations : MonoBehaviour
             return;
         }
 
-        SetBool(animator, _walkingBoolHash, walkingBoolName, false);
-        SetBool(animator, _runningBoolHash, runningBoolName, false);
-        SetBool(animator, _runningBackwardBoolHash, runningBackwardBoolName, false);
-        SetBool(animator, _strafingBoolHash, strafingBoolName, false);
-        SetFloat(animator, _strafeDirectionFloatHash, strafeDirectionFloatName, 0f);
-        SetBool(animator, _jumpingBoolHash, jumpingBoolName, false);
-        SetBool(animator, _fallingBoolHash, fallingBoolName, false);
-        SetBool(animator, _sittingBoolHash, sittingBoolName, false);
-        SetBool(animator, _idleBoolHash, idleBoolName, true);
+        SetBool(animator, _walkingBoolHash, walkingBoolName, false, _hasWalkingBool);
+        SetBool(animator, _runningBoolHash, runningBoolName, false, _hasRunningBool);
+        SetBool(animator, _runningBackwardBoolHash, runningBackwardBoolName, false, _hasRunningBackwardBool);
+        SetBool(animator, _strafingBoolHash, strafingBoolName, false, _hasStrafingBool);
+        SetFloat(animator, _strafeDirectionFloatHash, strafeDirectionFloatName, 0f, _hasStrafeDirectionFloat);
+        SetBool(animator, _jumpingBoolHash, jumpingBoolName, false, _hasJumpingBool);
+        SetBool(animator, _fallingBoolHash, fallingBoolName, false, _hasFallingBool);
+        SetBool(animator, _sittingBoolHash, sittingBoolName, false, _hasSittingBool);
+        SetBool(animator, _idleBoolHash, idleBoolName, true, _hasIdleBool);
         SetTeleportedState(false);
         animator.speed = 1f;
     }
@@ -165,7 +177,10 @@ public class CharacterAnimations : MonoBehaviour
     public void SetTeleportedState(bool isPorted)
     {
         Animator targetAnimator = vfxAnimator ? vfxAnimator : animator;
-        SetBool(targetAnimator, _teleportedBoolHash, teleportedBoolName, isPorted);
+        bool hasTeleported = targetAnimator == animator
+            ? _hasTeleportedBool
+            : ParameterExists(targetAnimator, _teleportedBoolHash, teleportedBoolName, AnimatorControllerParameterType.Bool);
+        SetBool(targetAnimator, _teleportedBoolHash, teleportedBoolName, isPorted, hasTeleported);
     }
 
     public void TriggerAttack(string overrideTrigger = null)
@@ -187,7 +202,7 @@ public class CharacterAnimations : MonoBehaviour
     {
         string triggerName = string.IsNullOrEmpty(overrideTrigger) ? stunnedTriggerName : overrideTrigger;
         int hash = HashOrZero(triggerName);
-        SetBool(animator, hash, triggerName, true);
+        SetBool(animator, hash, triggerName, true, _hasStunnedBool);
         if (vfxAnimator && vfxAnimator != animator)
         {
             TriggerAnimator(vfxAnimator, triggerName, hash, allowMissing: false);
@@ -198,7 +213,7 @@ public class CharacterAnimations : MonoBehaviour
     {
         string triggerName = string.IsNullOrEmpty(overrideTrigger) ? stunnedTriggerName : overrideTrigger;
         int hash = HashOrZero(triggerName);
-        SetBool(animator, hash, triggerName, false);
+        SetBool(animator, hash, triggerName, false, _hasStunnedBool);
         if (vfxAnimator && vfxAnimator != animator)
         {
             ResetTriggerAnimator(vfxAnimator, triggerName, hash, allowMissing: false);
@@ -276,6 +291,37 @@ public class CharacterAnimations : MonoBehaviour
         _attackTagHash = HashOrZero(attackStateTag);
         _stunTagHash = HashOrZero(stunStateTag);
         _hitTriggerHash = HashOrZero(hitTriggerName);
+
+        if (animator)
+        {
+            _hasWalkingBool = ParameterExists(animator, _walkingBoolHash, walkingBoolName, AnimatorControllerParameterType.Bool);
+            _hasIdleBool = ParameterExists(animator, _idleBoolHash, idleBoolName, AnimatorControllerParameterType.Bool);
+            _hasRunningBool = ParameterExists(animator, _runningBoolHash, runningBoolName, AnimatorControllerParameterType.Bool);
+            _hasRunningBackwardBool = ParameterExists(animator, _runningBackwardBoolHash, runningBackwardBoolName, AnimatorControllerParameterType.Bool);
+            _hasStrafingBool = ParameterExists(animator, _strafingBoolHash, strafingBoolName, AnimatorControllerParameterType.Bool);
+            _hasStrafeDirectionFloat = ParameterExists(animator, _strafeDirectionFloatHash, strafeDirectionFloatName, AnimatorControllerParameterType.Float);
+            _hasJumpingBool = ParameterExists(animator, _jumpingBoolHash, jumpingBoolName, AnimatorControllerParameterType.Bool);
+            _hasFallingBool = ParameterExists(animator, _fallingBoolHash, fallingBoolName, AnimatorControllerParameterType.Bool);
+            _hasSittingBool = ParameterExists(animator, _sittingBoolHash, sittingBoolName, AnimatorControllerParameterType.Bool);
+            _hasStandToSitSpeedFloat = ParameterExists(animator, _standToSitSpeedHash, standToSitSpeedFloatName, AnimatorControllerParameterType.Float);
+            _hasTeleportedBool = ParameterExists(animator, _teleportedBoolHash, teleportedBoolName, AnimatorControllerParameterType.Bool);
+            _hasStunnedBool = ParameterExists(animator, HashOrZero(stunnedTriggerName), stunnedTriggerName, AnimatorControllerParameterType.Bool);
+        }
+        else
+        {
+            _hasWalkingBool = false;
+            _hasIdleBool = false;
+            _hasRunningBool = false;
+            _hasRunningBackwardBool = false;
+            _hasStrafingBool = false;
+            _hasStrafeDirectionFloat = false;
+            _hasJumpingBool = false;
+            _hasFallingBool = false;
+            _hasSittingBool = false;
+            _hasStandToSitSpeedFloat = false;
+            _hasTeleportedBool = false;
+            _hasStunnedBool = false;
+        }
     }
 
     private void ResolveUpperBodyLayer()
@@ -507,9 +553,14 @@ public class CharacterAnimations : MonoBehaviour
         }
     }
 
-    private static void SetBool(Animator targetAnimator, int hash, string parameterName, bool value)
+    private static void SetBool(Animator targetAnimator, int hash, string parameterName, bool value, bool parameterExists)
     {
         if (!targetAnimator)
+        {
+            return;
+        }
+
+        if (!parameterExists)
         {
             return;
         }
@@ -524,9 +575,14 @@ public class CharacterAnimations : MonoBehaviour
         }
     }
 
-    private static void SetFloat(Animator targetAnimator, int hash, string parameterName, float value)
+    private static void SetFloat(Animator targetAnimator, int hash, string parameterName, float value, bool parameterExists)
     {
         if (!targetAnimator)
+        {
+            return;
+        }
+
+        if (!parameterExists)
         {
             return;
         }

@@ -15804,6 +15804,10 @@ GameObject:
   - component: {fileID: 994498819}
   - component: {fileID: 994498818}
   - component: {fileID: 994498820}
+  - component: {fileID: 994498824}
+  - component: {fileID: 994498823}
+  - component: {fileID: 994498822}
+  - component: {fileID: 994498821}
   m_Layer: 0
   m_Name: SYSTEMS
   m_TagString: Untagged
@@ -15874,6 +15878,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 727f2de2c7c6342a68e322f392657ee0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LocalVersusGameManager
+  spawner: {fileID: 0}
+  rules: {fileID: 0}
+  bindings: {fileID: 0}
+  visuals: {fileID: 0}
   player1Prefab: {fileID: 1108990670101397810, guid: 72c712b07c2a546b4a913a2230f18273, type: 3}
   player2Prefab: {fileID: 1108990670101397810, guid: 25b5b20f11cec499c98d1e91794b0a23, type: 3}
   player3Prefab: {fileID: 1108990670101397810, guid: d85538f96d09a4bd287f2e32f6678480, type: 3}
@@ -15910,11 +15918,11 @@ MonoBehaviour:
   player3Minimap: {fileID: 1374986926}
   gameplayTuning: {fileID: 0}
   player1RevealKey: 102
-  player2RevealKey: 335
-  player3RevealKey: 335
+  player2RevealKey: 342
+  player3RevealKey: 384
   player1SmokeKey: 99
   player2SmokeKey: 348
-  player3SmokeKey: 368
+  player3SmokeKey: 333
   player1HorizontalAxis: Horizontal
   player1VerticalAxis: Vertical
   player2MoveHorizontalAxis: Horizontal2
@@ -15926,28 +15934,28 @@ MonoBehaviour:
   player3AimHorizontalAxis: AimHorizontal3
   player3AimVerticalAxis: AimVertical3
   player2PrimaryTriggerAxis: Axis6
-  player3PrimaryTriggerAxis: Axis6
+  player3PrimaryTriggerAxis: Axis6_P3
   invertGamepadMoveX: 0
   invertGamepadMoveY: 0
   invertGamepadAimX: 0
   invertGamepadAimY: 0
   player2UsePrimaryKeycode: 0
-  player2PrimaryKeyCode: 344
-  player2StunKeyCode: 344
+  player2PrimaryKeyCode: 364
+  player2StunKeyCode: 364
   player2JumpKeyCode: 346
   player2DashKeyCode: 347
   player2RunKeyCode: 343
   player2InteractKeyCode: 349
   player3UsePrimaryKeycode: 0
-  player3PrimaryKeyCode: 384
-  player3StunKeyCode: 384
-  player3JumpKeyCode: 386
-  player3DashKeyCode: 387
-  player3RunKeyCode: 383
-  player3InteractKeyCode: 389
-  shareSingleGamepadBetweenPlayer2And3: 1
+  player3PrimaryKeyCode: 377
+  player3StunKeyCode: 377
+  player3JumpKeyCode: 370
+  player3DashKeyCode: 371
+  player3RunKeyCode: 376
+  player3InteractKeyCode: 374
+  shareSingleGamepadBetweenPlayer2And3: 0
   sharedGamepadTarget: 0
-  player3UsePlayer2Bindings: 1
+  player3UsePlayer2Bindings: 0
   spawnPoints:
   - {fileID: 1966851062}
   - {fileID: 1699200515}
@@ -15971,6 +15979,58 @@ MonoBehaviour:
   minSpawnSeparation: 25
   navMeshSampleRadius: 6
   respawnDelay: 5
+--- !u!114 &994498821
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 994498815}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1787a57f6c9c24acd8300aec31ef7bc2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalVersusVisuals
+  manager: {fileID: 994498820}
+--- !u!114 &994498822
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 994498815}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e1d0385817184f6490dd6db3d3cb4a7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalVersusSpawner
+  manager: {fileID: 994498820}
+--- !u!114 &994498823
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 994498815}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fee4891aef2948dc9afe875dd8dd25a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalVersusRules
+  manager: {fileID: 994498820}
+--- !u!114 &994498824
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 994498815}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a425261bbdf6343dc95de3fb2a4b9e8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalVersusBindings
+  manager: {fileID: 994498820}
 --- !u!1001 &994991552
 PrefabInstance:
   m_ObjectHideFlags: 0

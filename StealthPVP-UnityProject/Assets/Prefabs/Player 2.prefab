@@ -165,6 +165,10 @@ MonoBehaviour:
   dashButton: 
   runButton: 
   interactButton: 
-  debugInputs: 1
+  debugInputs: 0
+  invertMoveX: 0
+  invertMoveY: 0
+  invertAimX: 0
+  invertAimY: 0
   aimDistance: 8
   aimDeadZone: 0.15
