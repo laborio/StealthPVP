@@ -76,6 +76,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player 3
       objectReference: {fileID: 0}
+    - target: {fileID: 5776939949241814741, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
+      propertyPath: inputRouter
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 6903999798086121422, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
       propertyPath: m_Layer
       value: 13
@@ -88,8 +92,87 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 13
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 9134023850950813770, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5601125754130475395, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8665519383993141903}
   m_SourcePrefab: {fileID: 100100000, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
+--- !u!1 &1108990670101397810 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5601125754130475395, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
+  m_PrefabInstance: {fileID: 4816845065641060529}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8665519383993141903
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1108990670101397810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff14bb8168ab24c489956e4229b4cdba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInputRouterGamepad
+  inputCamera: {fileID: 0}
+  runKey: 304
+  stopKey: 115
+  jumpKey: 32
+  dashKey: 114
+  interactKey: 101
+  horizontalAxis: Horizontal
+  verticalAxis: Vertical
+  inputEnabled: 1
+  inputSuppressed: 0
+  keyboardOnlyMovement: 0
+  moveLeftKey: 97
+  moveRightKey: 100
+  moveUpKey: 119
+  moveDownKey: 115
+  attackRayDistance: 250
+  attackGroundMask:
+    serializedVersion: 2
+    m_Bits: 16379
+  maximumRayDistance: 250
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 0
+  moveHorizontalAxis: Horizontal2
+  moveVerticalAxis: Vertical2
+  aimHorizontalAxis: AimHorizontal2
+  aimVerticalAxis: AimVertical2
+  aimHorizontalFallbackAxes:
+  - 4th Axis
+  - Axis6
+  - RightStickHorizontal
+  - RightStickX
+  aimVerticalFallbackAxes:
+  - 5th Axis
+  - Axis6
+  - RightStickVertical
+  - RightStickY
+  primaryTriggerAxis: 
+  triggerPressThreshold: 0.5
+  invertTriggerAxis: 0
+  useTriggerForPrimary: 0
+  secondaryTriggerAxis: 
+  secondaryTriggerPressThreshold: 0.5
+  invertSecondaryTriggerAxis: 0
+  useTriggerForSecondary: 0
+  primaryButton: 
+  secondaryButton: 
+  jumpButton: 
+  dashButton: 
+  runButton: 
+  interactButton: 
+  debugInputs: 0
+  invertMoveX: 0
+  invertMoveY: 0
+  invertAimX: 0
+  invertAimY: 0
+  aimDistance: 8
+  aimDeadZone: 0.15

@@ -64,6 +64,11 @@ public class SmokeAbility : MonoBehaviour
         smokeDuration = Mathf.Max(0f, seconds);
     }
 
+    public void SetUseInput(bool enabled)
+    {
+        useInput = enabled;
+    }
+
     public void SetInputEnabled(bool enabled)
     {
         _inputEnabled = enabled;

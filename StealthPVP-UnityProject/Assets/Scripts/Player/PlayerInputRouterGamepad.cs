@@ -18,6 +18,11 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
     [SerializeField, Tooltip("Normalized trigger value required to count as pressed.")] private float triggerPressThreshold = 0.5f;
     [SerializeField, Tooltip("If true, 0 means fully pressed and 1 means released (invert axis).")] private bool invertTriggerAxis = false;
     [SerializeField, Tooltip("If true, the trigger will drive primary pressed/held/released.")] private bool useTriggerForPrimary = false;
+    [Header("Secondary Trigger")]
+    [SerializeField, Tooltip("Analog trigger axis name used for secondary/stun (e.g., \"RT\" or \"TriggerRight\"). Leave empty to ignore.")] private string secondaryTriggerAxis = "";
+    [SerializeField, Tooltip("Normalized trigger value required to count as pressed for secondary.")] private float secondaryTriggerPressThreshold = 0.5f;
+    [SerializeField, Tooltip("If true, 0 means fully pressed and 1 means released (invert axis).")] private bool invertSecondaryTriggerAxis = false;
+    [SerializeField, Tooltip("If true, the trigger will drive secondary pressed/held/released.")] private bool useTriggerForSecondary = false;
     [Header("Buttons (set via LocalVersusGameManager)")]
     [SerializeField, Tooltip("Optional button name for primary/attack. Leave empty to use keycodes only.")] private string primaryButton = "";
     [SerializeField, Tooltip("Optional button name for secondary attack. Leave empty to use keycodes only.")] private string secondaryButton = "";
@@ -28,6 +33,11 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
 
     [Header("Debug")]
     [SerializeField, Tooltip("Prints when buttons/axes are detected; useful for finding the right joystick button ids.")] private bool debugInputs = false;
+    [Header("Axis Inversion")]
+    [SerializeField] private bool invertMoveX;
+    [SerializeField] private bool invertMoveY;
+    [SerializeField] private bool invertAimX;
+    [SerializeField] private bool invertAimY;
 
     private KeyCode primaryKeyCode = KeyCode.JoystickButton2;
     private KeyCode secondaryKeyCode = KeyCode.None;
@@ -57,14 +67,33 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
         }
         bool triggerHeld = useTriggerForPrimary && triggerValue >= triggerPressThreshold;
 
+        float secondaryTriggerValue = SafeGetAxisRaw(secondaryTriggerAxis);
+        if (invertSecondaryTriggerAxis)
+        {
+            secondaryTriggerValue = 1f - secondaryTriggerValue;
+        }
+        bool secondaryTriggerHeld = useTriggerForSecondary && secondaryTriggerValue >= secondaryTriggerPressThreshold;
+
         bool primaryButtonHeld = GetButton(primaryButton, primaryKeyCode, false);
         bool primaryHeld = primaryButtonHeld || triggerHeld;
         bool primaryPressed = primaryHeld && !_previousPrimaryHeld;
         bool primaryReleased = !primaryHeld && _previousPrimaryHeld;
 
-        bool secondaryHeld = GetButton(secondaryButton, secondaryKeyCode, false);
+        bool secondaryHeld = GetButton(secondaryButton, secondaryKeyCode, false) || secondaryTriggerHeld;
         bool secondaryPressed = secondaryHeld && !_previousSecondaryHeld;
         bool secondaryReleased = !secondaryHeld && _previousSecondaryHeld;
+
+        Vector2 moveAxis = new Vector2(
+            SafeGetAxisRaw(moveHorizontalAxis),
+            SafeGetAxisRaw(moveVerticalAxis));
+        if (invertMoveX)
+        {
+            moveAxis.x = -moveAxis.x;
+        }
+        if (invertMoveY)
+        {
+            moveAxis.y = -moveAxis.y;
+        }
 
         PlayerInputSnapshot snapshot = new PlayerInputSnapshot
         {
@@ -79,14 +108,20 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
             SecondaryPressed = secondaryPressed,
             SecondaryHeld = secondaryHeld,
             SecondaryReleased = secondaryReleased,
-            MoveAxis = new Vector2(
-                SafeGetAxisRaw(moveHorizontalAxis),
-                SafeGetAxisRaw(moveVerticalAxis))
+            MoveAxis = moveAxis
         };
 
         Vector2 aimAxis = new Vector2(
             SafeGetAxisWithFallback(aimHorizontalAxis, aimHorizontalFallbackAxes),
             SafeGetAxisWithFallback(aimVerticalAxis, aimVerticalFallbackAxes));
+        if (invertAimX)
+        {
+            aimAxis.x = -aimAxis.x;
+        }
+        if (invertAimY)
+        {
+            aimAxis.y = -aimAxis.y;
+        }
 
         if (aimAxis.sqrMagnitude >= aimDeadZone * aimDeadZone || snapshot.PrimaryHeld || snapshot.PrimaryPressed || snapshot.PrimaryReleased
             || snapshot.SecondaryHeld || snapshot.SecondaryPressed || snapshot.SecondaryReleased)
@@ -103,7 +138,7 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
 
         if (debugInputs)
         {
-            DebugDetected(snapshot, aimAxis, triggerValue);
+            DebugDetected(snapshot, aimAxis, triggerValue, secondaryTriggerValue);
             DebugKeycodes();
         }
 
@@ -223,6 +258,30 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
         secondaryButton = name ?? string.Empty;
     }
 
+    public void SetPrimaryTrigger(string axisName, bool use, float threshold = 0.5f, bool invert = false)
+    {
+        primaryTriggerAxis = axisName ?? string.Empty;
+        useTriggerForPrimary = use;
+        triggerPressThreshold = Mathf.Clamp01(threshold);
+        invertTriggerAxis = invert;
+    }
+
+    public void SetSecondaryTrigger(string axisName, bool use, float threshold = 0.5f, bool invert = false)
+    {
+        secondaryTriggerAxis = axisName ?? string.Empty;
+        useTriggerForSecondary = use;
+        secondaryTriggerPressThreshold = Mathf.Clamp01(threshold);
+        invertSecondaryTriggerAxis = invert;
+    }
+
+    public void SetAxisInversion(bool moveX, bool moveY, bool aimX, bool aimY)
+    {
+        invertMoveX = moveX;
+        invertMoveY = moveY;
+        invertAimX = aimX;
+        invertAimY = aimY;
+    }
+
     private float SafeGetAxisRaw(string axisName)
     {
         if (string.IsNullOrEmpty(axisName))
@@ -328,11 +387,11 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
         }
     }
 
-    private void DebugDetected(PlayerInputSnapshot snapshot, Vector2 aimAxis, float triggerValue)
+    private void DebugDetected(PlayerInputSnapshot snapshot, Vector2 aimAxis, float triggerValue, float secondaryTriggerValue)
     {
         if (snapshot.PrimaryPressed || snapshot.JumpPressed || snapshot.DashPressed || snapshot.InteractPressed || snapshot.RunHeld)
         {
-            Debug.Log($"[PlayerInputRouterGamepad] Button detected: Primary={snapshot.PrimaryPressed} Jump={snapshot.JumpPressed} Dash={snapshot.DashPressed} Interact={snapshot.InteractPressed} RunHeld={snapshot.RunHeld} trigger={triggerValue:0.00} keycodes: P={primaryKeyCode} J={jumpKeyCode} D={dashKeyCode} R={runKeyCode} I={interactKeyCode}", this);
+            Debug.Log($"[PlayerInputRouterGamepad] Button detected: Primary={snapshot.PrimaryPressed} Secondary={snapshot.SecondaryPressed} Jump={snapshot.JumpPressed} Dash={snapshot.DashPressed} Interact={snapshot.InteractPressed} RunHeld={snapshot.RunHeld} trigger={triggerValue:0.00} secondaryTrigger={secondaryTriggerValue:0.00} keycodes: P={primaryKeyCode} S={secondaryKeyCode} J={jumpKeyCode} D={dashKeyCode} R={runKeyCode} I={interactKeyCode}", this);
         }
 
         if (snapshot.MoveAxis.sqrMagnitude > 0.01f || aimAxis.sqrMagnitude > 0.01f)

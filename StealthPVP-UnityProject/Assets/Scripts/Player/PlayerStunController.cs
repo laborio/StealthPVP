@@ -12,6 +12,7 @@ public class PlayerStunController : MonoBehaviour
     [SerializeField] private CharacterAnimations characterAnimations;
     [SerializeField] private SimpleCharacterController characterController;
     [SerializeField] private SmokeAbility smokeAbility;
+    [SerializeField] private DefensiveAbilityCycler defensiveAbilityCycler;
     [SerializeField] private PlayerFloatingTextController floatingTextController;
 
     private float _stunTimer;
@@ -56,6 +57,12 @@ public class PlayerStunController : MonoBehaviour
         if (!smokeAbility)
         {
             smokeAbility = GetComponent<SmokeAbility>() ?? GetComponentInChildren<SmokeAbility>(true);
+        }
+
+        if (!defensiveAbilityCycler)
+        {
+            defensiveAbilityCycler = GetComponent<DefensiveAbilityCycler>()
+                ?? GetComponentInChildren<DefensiveAbilityCycler>(true);
         }
 
         if (!floatingTextController)
@@ -141,6 +148,11 @@ public class PlayerStunController : MonoBehaviour
         if (smokeAbility)
         {
             smokeAbility.SetInputSuppressed(value);
+        }
+
+        if (defensiveAbilityCycler)
+        {
+            defensiveAbilityCycler.SetInputSuppressed(value);
         }
 
         if (floatingTextController)

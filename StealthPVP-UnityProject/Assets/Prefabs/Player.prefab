@@ -5038,7 +5038,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 7fa1e073975074aa5919ca3b5d7aec5a, type: 3}
-  m_Color: {r: 0.99215686, g: 0.8951586, b: 0, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -5332,9 +5332,11 @@ MonoBehaviour:
   - key: Stunned
     label: Stunned
     priority: 1
+    visibleToAll: 1
   - key: Pacified
     label: Pacified
     priority: 0
+    visibleToAll: 1
   popupDuration: 1.2
   popupFadeIn: 0.2
   popupFadeOut: 0.3
@@ -17125,7 +17127,7 @@ MonoBehaviour:
   jumpVelocity: 19
   coyoteTime: 0.15
   jumpBufferTime: 0.2
-  airControl: 2.01
+  airControl: 1.5
   attackTriggerName: Attack
   stunTriggerName: Stun
   rangeIndicator: {fileID: 560367178118575264}
@@ -17136,6 +17138,8 @@ MonoBehaviour:
     m_Bits: 264
   attackLockMinDuration: 0
   lockMovementDuringAttack: 0
+  rangeIndicatorAttackColor: {r: 1, g: 0, b: 0, a: 1}
+  rangeIndicatorStunColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   backwardRunDotThreshold: -0.2
   strafeDotThreshold: 0.35
   rigidbodyPushForce: 4
@@ -17144,8 +17148,8 @@ MonoBehaviour:
   dashCooldown: 1
   groundProbeRadius: 0.2
   groundProbeDistance: 0.2
-  wallJumpUpVelocity: 24
-  wallJumpHorizontalSpeed: 11
+  wallJumpUpVelocity: 20
+  wallJumpHorizontalSpeed: 9
   wallContactLinger: 0.15
   wallJumpCooldown: 0
   overrideCamera: {fileID: 0}

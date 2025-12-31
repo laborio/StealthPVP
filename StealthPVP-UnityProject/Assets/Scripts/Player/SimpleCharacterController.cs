@@ -34,10 +34,13 @@ public partial class SimpleCharacterController : MonoBehaviour
     [SerializeField, Tooltip("Layers considered for attack aiming.")] private LayerMask attackGroundMask = Physics.DefaultRaycastLayers;
     [SerializeField, Tooltip("Minimum time attack input stays locked after triggering an attack.")] private float attackLockMinDuration = 0.05f;
     [SerializeField, Tooltip("If true, movement input is locked while an attack is active.")] private bool lockMovementDuringAttack = false;
+    [SerializeField, Tooltip("Range indicator color for regular attacks.")] private Color rangeIndicatorAttackColor = Color.red;
+    [SerializeField, Tooltip("Range indicator color for stun attacks.")] private Color rangeIndicatorStunColor = Color.yellow;
     [SerializeField, Range(-1f, 1f), Tooltip("Dot threshold to treat movement as opposite the attack aim (used for backward run).")] private float backwardRunDotThreshold = -0.2f;
     [SerializeField, Range(0f, 1f), Tooltip("Abs(dot) threshold to treat movement as perpendicular to attack aim (used for strafing).")] private float strafeDotThreshold = 0.35f;
     [SerializeField, Tooltip("Impulse applied to rigidbodies when bumped by the CharacterController.")] private float rigidbodyPushForce = 3f;
     [SerializeField] private float dashSpeedMultiplier = 3f;
+    [SerializeField] private float dashAirSpeedMultiplier = 2f;
     [SerializeField] private float dashDuration = 0.25f;
     [SerializeField] private float dashCooldown = 1f;
     [SerializeField] private float groundProbeRadius = 0.2f;
@@ -90,10 +93,12 @@ public partial class SimpleCharacterController : MonoBehaviour
     private Vector3 _lastAimDirection = Vector3.forward;
     private Vector3 _lastAttackAimDirection = Vector3.forward;
     private Transform _rangeIndicatorTransform;
+    private SpriteRenderer _rangeIndicatorRenderer;
     private float _attackLockTimer;
     private bool _inputSuppressed;
     private int _attackSuppressionCount;
     private bool _attackSuppressed;
+    private bool _lastAttackWasSecondary;
 
     private void Awake()
     {
@@ -145,6 +150,8 @@ public partial class SimpleCharacterController : MonoBehaviour
         SetRangeIndicatorActive(shouldShowRangeIndicator);
         if (shouldShowRangeIndicator)
         {
+            bool useSecondaryColor = _attackChargeActive ? _attackChargeFromSecondary : _lastAttackWasSecondary;
+            ApplyRangeIndicatorColor(useSecondaryColor);
             Vector3 indicatorDirection = _attackChargeActive ? _lastAimDirection : _lastAttackAimDirection;
             if (indicatorDirection.sqrMagnitude < 0.0001f)
             {
@@ -295,7 +302,8 @@ public partial class SimpleCharacterController : MonoBehaviour
                 }
                 forward.Normalize();
 
-                float speed = moveSpeed * runMultiplier * dashSpeedMultiplier * waterSpeedMultiplier;
+                float dashMultiplier = isGrounded ? dashSpeedMultiplier : dashAirSpeedMultiplier;
+                float speed = moveSpeed * runMultiplier * dashMultiplier * waterSpeedMultiplier;
                 _currentPlanarVelocity = forward * speed;
                 _dashTimer = dashDuration;
                 _dashCooldownTimer = dashCooldown;
@@ -528,6 +536,7 @@ public partial class SimpleCharacterController : MonoBehaviour
         _attackAimHasInput = false;
         _lastAimDirection = transform.forward;
         SetRangeIndicatorActive(true);
+        ApplyRangeIndicatorColor(fromSecondary);
         ApplyRangeIndicatorRotation(_lastAimDirection);
     }
 
@@ -568,6 +577,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     {
         SetRangeIndicatorActive(false);
         _attackChargeActive = false;
+        _lastAttackWasSecondary = _attackChargeFromSecondary;
 
         Vector3 aimDirection = _lastAimDirection;
         if (TryGetAimPoint(input, out Vector3 aimPoint))
@@ -691,6 +701,7 @@ public partial class SimpleCharacterController : MonoBehaviour
         if (rangeIndicator)
         {
             _rangeIndicatorTransform = rangeIndicator.transform;
+            _rangeIndicatorRenderer = rangeIndicator.GetComponentInChildren<SpriteRenderer>(true);
             return;
         }
 
@@ -701,6 +712,7 @@ public partial class SimpleCharacterController : MonoBehaviour
             {
                 _rangeIndicatorTransform = children[i];
                 rangeIndicator = children[i].gameObject;
+                _rangeIndicatorRenderer = rangeIndicator.GetComponentInChildren<SpriteRenderer>(true);
                 break;
             }
         }
@@ -728,6 +740,20 @@ public partial class SimpleCharacterController : MonoBehaviour
         float yaw = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
         Quaternion rotation = Quaternion.Euler(90f, yaw, 0f);
         _rangeIndicatorTransform.rotation = rotation;
+    }
+
+    private void ApplyRangeIndicatorColor(bool useSecondaryColor)
+    {
+        if (!_rangeIndicatorRenderer)
+        {
+            return;
+        }
+
+        Color target = useSecondaryColor ? rangeIndicatorStunColor : rangeIndicatorAttackColor;
+        if (_rangeIndicatorRenderer.color != target)
+        {
+            _rangeIndicatorRenderer.color = target;
+        }
     }
 
     private bool IsGrounded()
@@ -876,6 +902,10 @@ public partial class SimpleCharacterController : MonoBehaviour
         jumpVelocity = Mathf.Max(0f, jumpVelocity);
         coyoteTime = Mathf.Max(0f, coyoteTime);
         jumpBufferTime = Mathf.Max(0f, jumpBufferTime);
+        dashSpeedMultiplier = Mathf.Max(0f, dashSpeedMultiplier);
+        dashAirSpeedMultiplier = Mathf.Max(0f, dashAirSpeedMultiplier);
+        dashDuration = Mathf.Max(0f, dashDuration);
+        dashCooldown = Mathf.Max(0f, dashCooldown);
         airControl = Mathf.Clamp(airControl, 0f, 5f);
         groundProbeRadius = Mathf.Max(0f, groundProbeRadius);
         groundProbeDistance = Mathf.Max(0f, groundProbeDistance);
@@ -1026,6 +1056,15 @@ public partial class SimpleCharacterController : MonoBehaviour
     }
 
     public PlayerInputRouter InputRouter => inputRouter;
+    public float DashCooldownRemaining => _dashCooldownTimer;
+
+    public void ApplyDashConfig(float speedMultiplier, float airSpeedMultiplier, float duration, float cooldown)
+    {
+        dashSpeedMultiplier = Mathf.Max(0f, speedMultiplier);
+        dashAirSpeedMultiplier = Mathf.Max(0f, airSpeedMultiplier);
+        dashDuration = Mathf.Max(0f, duration);
+        dashCooldown = Mathf.Max(0f, cooldown);
+    }
 
     public void SetInputSuppressed(bool suppressed)
     {
