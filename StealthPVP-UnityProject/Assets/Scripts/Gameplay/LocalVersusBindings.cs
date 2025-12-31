@@ -162,6 +162,9 @@ public class LocalVersusBindings : MonoBehaviour
         SmokeAbility smoke1 = GetSmokeAbility(_player1Instance, addIfMissing: true);
         SmokeAbility smoke2 = GetSmokeAbility(_player2Instance, addIfMissing: true);
         SmokeAbility smoke3 = GetSmokeAbility(_player3Instance, addIfMissing: true);
+        DefensiveAbilityCycler defensive1 = GetDefensiveCycler(_player1Instance, addIfMissing: true);
+        DefensiveAbilityCycler defensive2 = GetDefensiveCycler(_player2Instance, addIfMissing: true);
+        DefensiveAbilityCycler defensive3 = GetDefensiveCycler(_player3Instance, addIfMissing: true);
         bool useSharedBindings = shareSingleGamepadBetweenPlayer2And3 && player3UsePlayer2Bindings;
         KeyCode smoke3Key = useSharedBindings ? player2SmokeKey : player3SmokeKey;
         bool enableSmoke2 = smoke2 != null;
@@ -179,11 +182,27 @@ public class LocalVersusBindings : MonoBehaviour
             smoke1.SetInputEnabled(true);
         }
 
+        if (defensive1)
+        {
+            defensive1.SetSmokeAbility(smoke1);
+            defensive1.SetDefensive02Cooldown(cooldown);
+            defensive1.SetOverrideKey(player1SmokeKey);
+            defensive1.SetInputEnabled(true);
+        }
+
         if (smoke2)
         {
             smoke2.SetCooldown(cooldown);
             smoke2.SetOverrideKey(player2SmokeKey);
             smoke2.SetInputEnabled(enableSmoke2);
+        }
+
+        if (defensive2)
+        {
+            defensive2.SetSmokeAbility(smoke2);
+            defensive2.SetDefensive02Cooldown(cooldown);
+            defensive2.SetOverrideKey(player2SmokeKey);
+            defensive2.SetInputEnabled(enableSmoke2);
         }
 
         if (smoke3)
@@ -193,19 +212,30 @@ public class LocalVersusBindings : MonoBehaviour
             smoke3.SetInputEnabled(enableSmoke3);
         }
 
+        if (defensive3)
+        {
+            defensive3.SetSmokeAbility(smoke3);
+            defensive3.SetDefensive02Cooldown(cooldown);
+            defensive3.SetOverrideKey(smoke3Key);
+            defensive3.SetInputEnabled(enableSmoke3);
+        }
+
         if (player1Ui)
         {
             player1Ui.SetSmokeAbility(smoke1);
+            player1Ui.SetDefensiveAbility(defensive1);
         }
 
         if (player2Ui)
         {
             player2Ui.SetSmokeAbility(smoke2);
+            player2Ui.SetDefensiveAbility(defensive2);
         }
 
         if (player3Ui)
         {
             player3Ui.SetSmokeAbility(smoke3);
+            player3Ui.SetDefensiveAbility(defensive3);
         }
     }
 
@@ -223,6 +253,23 @@ public class LocalVersusBindings : MonoBehaviour
         }
 
         return ability;
+    }
+
+    private DefensiveAbilityCycler GetDefensiveCycler(GameObject root, bool addIfMissing)
+    {
+        if (!root)
+        {
+            return null;
+        }
+
+        DefensiveAbilityCycler cycler = root.GetComponent<DefensiveAbilityCycler>()
+            ?? root.GetComponentInChildren<DefensiveAbilityCycler>(true);
+        if (!cycler && addIfMissing)
+        {
+            cycler = root.AddComponent<DefensiveAbilityCycler>();
+        }
+
+        return cycler;
     }
 
     internal void UpdateStunBindings()
@@ -378,6 +425,8 @@ public class LocalVersusBindings : MonoBehaviour
         AbilityRunner ability3 = GetAbility(_player3Instance);
         SmokeAbility smoke2 = GetSmokeAbility(_player2Instance, addIfMissing: false);
         SmokeAbility smoke3 = GetSmokeAbility(_player3Instance, addIfMissing: false);
+        DefensiveAbilityCycler defensive2 = GetDefensiveCycler(_player2Instance, addIfMissing: false);
+        DefensiveAbilityCycler defensive3 = GetDefensiveCycler(_player3Instance, addIfMissing: false);
 
         if (shareSingleGamepadBetweenPlayer2And3 && _player3Instance)
         {
@@ -389,6 +438,8 @@ public class LocalVersusBindings : MonoBehaviour
             SetAbilityInputEnabled(ability3, enablePlayer3);
             SetSmokeInputEnabled(smoke2, enablePlayer2);
             SetSmokeInputEnabled(smoke3, enablePlayer3);
+            SetDefensiveInputEnabled(defensive2, enablePlayer2);
+            SetDefensiveInputEnabled(defensive3, enablePlayer3);
         }
         else
         {
@@ -398,6 +449,8 @@ public class LocalVersusBindings : MonoBehaviour
             SetAbilityInputEnabled(ability3, true);
             SetSmokeInputEnabled(smoke2, true);
             SetSmokeInputEnabled(smoke3, true);
+            SetDefensiveInputEnabled(defensive2, true);
+            SetDefensiveInputEnabled(defensive3, true);
         }
     }
 
@@ -419,6 +472,16 @@ public class LocalVersusBindings : MonoBehaviour
         }
 
         ability.SetInputEnabled(enabled);
+    }
+
+    private void SetDefensiveInputEnabled(DefensiveAbilityCycler cycler, bool enabled)
+    {
+        if (!cycler)
+        {
+            return;
+        }
+
+        cycler.SetInputEnabled(enabled);
     }
 
     internal void SetInputEnabledForInstance(GameObject instance, PlayerSlot slot, bool enabled)
