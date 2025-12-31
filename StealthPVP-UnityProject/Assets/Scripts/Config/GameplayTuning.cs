@@ -20,6 +20,11 @@ public float playerStunDuration = 3f;
 [Header("Smoke")]
 public float smokeCooldown = 90f;
 
+[Header("Morph")]
+public float morphDuration = 6f;
+public float morphMoveSpeed = 1.25f;
+public float morphSearchRadius = 6f;
+
 [Header("Dash")]
 public float dashSpeedMultiplier = 3f;
 public float dashAirSpeedMultiplier = 2f;

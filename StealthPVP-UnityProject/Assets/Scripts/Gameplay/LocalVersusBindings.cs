@@ -158,6 +158,15 @@ public class LocalVersusBindings : MonoBehaviour
         {
             cooldown = gameplayTuning.smokeCooldown;
         }
+        float morphDuration = 0f;
+        float morphMoveSpeed = 0f;
+        float morphSearchRadius = 0f;
+        if (gameplayTuning)
+        {
+            morphDuration = gameplayTuning.morphDuration;
+            morphMoveSpeed = gameplayTuning.morphMoveSpeed;
+            morphSearchRadius = gameplayTuning.morphSearchRadius;
+        }
 
         SmokeAbility smoke1 = GetSmokeAbility(_player1Instance, addIfMissing: true);
         SmokeAbility smoke2 = GetSmokeAbility(_player2Instance, addIfMissing: true);
@@ -165,6 +174,9 @@ public class LocalVersusBindings : MonoBehaviour
         DefensiveAbilityCycler defensive1 = GetDefensiveCycler(_player1Instance, addIfMissing: true);
         DefensiveAbilityCycler defensive2 = GetDefensiveCycler(_player2Instance, addIfMissing: true);
         DefensiveAbilityCycler defensive3 = GetDefensiveCycler(_player3Instance, addIfMissing: true);
+        MorphAbility morph1 = GetMorphAbility(_player1Instance, addIfMissing: true);
+        MorphAbility morph2 = GetMorphAbility(_player2Instance, addIfMissing: true);
+        MorphAbility morph3 = GetMorphAbility(_player3Instance, addIfMissing: true);
         bool useSharedBindings = shareSingleGamepadBetweenPlayer2And3 && player3UsePlayer2Bindings;
         KeyCode smoke3Key = useSharedBindings ? player2SmokeKey : player3SmokeKey;
         bool enableSmoke2 = smoke2 != null;
@@ -185,9 +197,15 @@ public class LocalVersusBindings : MonoBehaviour
         if (defensive1)
         {
             defensive1.SetSmokeAbility(smoke1);
+            defensive1.SetMorphAbility(morph1);
             defensive1.SetDefensive02Cooldown(cooldown);
             defensive1.SetOverrideKey(player1SmokeKey);
             defensive1.SetInputEnabled(true);
+        }
+
+        if (morph1)
+        {
+            morph1.ApplyMorphConfig(morphDuration, morphMoveSpeed, morphSearchRadius);
         }
 
         if (smoke2)
@@ -200,9 +218,15 @@ public class LocalVersusBindings : MonoBehaviour
         if (defensive2)
         {
             defensive2.SetSmokeAbility(smoke2);
+            defensive2.SetMorphAbility(morph2);
             defensive2.SetDefensive02Cooldown(cooldown);
             defensive2.SetOverrideKey(player2SmokeKey);
             defensive2.SetInputEnabled(enableSmoke2);
+        }
+
+        if (morph2)
+        {
+            morph2.ApplyMorphConfig(morphDuration, morphMoveSpeed, morphSearchRadius);
         }
 
         if (smoke3)
@@ -215,9 +239,15 @@ public class LocalVersusBindings : MonoBehaviour
         if (defensive3)
         {
             defensive3.SetSmokeAbility(smoke3);
+            defensive3.SetMorphAbility(morph3);
             defensive3.SetDefensive02Cooldown(cooldown);
             defensive3.SetOverrideKey(smoke3Key);
             defensive3.SetInputEnabled(enableSmoke3);
+        }
+
+        if (morph3)
+        {
+            morph3.ApplyMorphConfig(morphDuration, morphMoveSpeed, morphSearchRadius);
         }
 
         if (player1Ui)
@@ -270,6 +300,22 @@ public class LocalVersusBindings : MonoBehaviour
         }
 
         return cycler;
+    }
+
+    private MorphAbility GetMorphAbility(GameObject root, bool addIfMissing)
+    {
+        if (!root)
+        {
+            return null;
+        }
+
+        MorphAbility ability = root.GetComponent<MorphAbility>() ?? root.GetComponentInChildren<MorphAbility>(true);
+        if (!ability && addIfMissing)
+        {
+            ability = root.AddComponent<MorphAbility>();
+        }
+
+        return ability;
     }
 
     internal void UpdateStunBindings()

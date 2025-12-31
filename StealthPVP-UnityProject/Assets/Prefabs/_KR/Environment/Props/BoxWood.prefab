@@ -13,12 +13,13 @@ GameObject:
   - component: {fileID: 5317426509702832644}
   - component: {fileID: 7892410883444318565}
   - component: {fileID: 1181364112347291606}
+  - component: {fileID: 1682534864566074071}
   m_Layer: 8
   m_Name: BoxWood
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &1813110242893373728
 Transform:
@@ -128,3 +129,17 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.5, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &1682534864566074071
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6844455840755525824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cc9fd7abe8b54422aed8cb01c0203e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MorphTarget
+  renderers: []
+  previewIcon: {fileID: 21300000, guid: a834e8844d51f45d99436410b2b5ce4c, type: 3}
