@@ -6098,7 +6098,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 194.87, y: 50}
+  m_SizeDelta: {x: 238.54, y: 117.77}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3142705214326076144
 CanvasRenderer:
@@ -6131,7 +6131,7 @@ MonoBehaviour:
   m_text: Pacified
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: b7e49c0f7bd484be9bff927fc7340a61, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: -2804448476607716584, guid: b7e49c0f7bd484be9bff927fc7340a61, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -6196,7 +6196,7 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
-  m_hasFontAssetChanged: 1
+  m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
 --- !u!114 &2267402647676656218
@@ -17116,6 +17116,7 @@ MonoBehaviour:
   runMultiplier: 3.5
   rotationSpeed: 720
   inputRouter: {fileID: 9134023850950813770}
+  morphAbility: {fileID: 0}
   groundMask:
     serializedVersion: 2
     m_Bits: 264
@@ -17144,6 +17145,7 @@ MonoBehaviour:
   strafeDotThreshold: 0.35
   rigidbodyPushForce: 4
   dashSpeedMultiplier: 3
+  dashAirSpeedMultiplier: 2
   dashDuration: 0.2
   dashCooldown: 1
   groundProbeRadius: 0.2

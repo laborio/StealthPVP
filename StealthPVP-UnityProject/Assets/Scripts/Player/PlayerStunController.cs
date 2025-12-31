@@ -13,6 +13,7 @@ public class PlayerStunController : MonoBehaviour
     [SerializeField] private SimpleCharacterController characterController;
     [SerializeField] private SmokeAbility smokeAbility;
     [SerializeField] private DefensiveAbilityCycler defensiveAbilityCycler;
+    [SerializeField] private MorphAbility morphAbility;
     [SerializeField] private PlayerFloatingTextController floatingTextController;
 
     private float _stunTimer;
@@ -65,6 +66,11 @@ public class PlayerStunController : MonoBehaviour
                 ?? GetComponentInChildren<DefensiveAbilityCycler>(true);
         }
 
+        if (!morphAbility)
+        {
+            morphAbility = GetComponent<MorphAbility>() ?? GetComponentInChildren<MorphAbility>(true);
+        }
+
         if (!floatingTextController)
         {
             floatingTextController = GetComponent<PlayerFloatingTextController>()
@@ -102,6 +108,16 @@ public class PlayerStunController : MonoBehaviour
         if (applied <= 0f)
         {
             return;
+        }
+
+        if (!morphAbility)
+        {
+            morphAbility = GetComponent<MorphAbility>() ?? GetComponentInChildren<MorphAbility>(true);
+        }
+
+        if (morphAbility)
+        {
+            morphAbility.BreakMorph();
         }
 
         _stunTimer = Mathf.Max(_stunTimer, applied);

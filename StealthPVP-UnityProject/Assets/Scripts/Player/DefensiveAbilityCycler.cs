@@ -15,6 +15,7 @@ public class DefensiveAbilityCycler : MonoBehaviour
     public event System.Action<DefensiveSlot> SlotChanged;
 
     [SerializeField, Tooltip("Smoke ability to trigger as Defensive 01.")] private SmokeAbility smokeAbility;
+    [SerializeField, Tooltip("Morph ability to trigger as Defensive 02.")] private MorphAbility morphAbility;
     [SerializeField, Tooltip("Cooldown for the placeholder Defensive 02 ability.")] private float defensive02CooldownSeconds = 90f;
     [SerializeField, Tooltip("If true, listens for input to trigger defensive abilities.")] private bool useInput = true;
     [SerializeField, Tooltip("Override key for defensive ability activation.")] private KeyCode overrideKey = KeyCode.C;
@@ -27,6 +28,7 @@ public class DefensiveAbilityCycler : MonoBehaviour
 
     public DefensiveSlot NextSlot => _nextSlot;
     public float Defensive02CooldownRemaining => _defensive02CooldownTimer;
+    public MorphAbility MorphAbility => morphAbility;
 
     private void Awake()
     {
@@ -41,6 +43,12 @@ public class DefensiveAbilityCycler : MonoBehaviour
 
         if (useInput && _inputEnabled && !_inputSuppressed && Input.GetKeyDown(_resolvedKey))
         {
+            if (morphAbility && morphAbility.IsMorphed)
+            {
+                morphAbility.BreakMorph();
+                return;
+            }
+
             TryTrigger();
         }
     }
@@ -49,6 +57,11 @@ public class DefensiveAbilityCycler : MonoBehaviour
     {
         smokeAbility = ability;
         DisableSmokeInput();
+    }
+
+    public void SetMorphAbility(MorphAbility ability)
+    {
+        morphAbility = ability;
     }
 
     public void SetDefensive02Cooldown(float seconds)
@@ -109,7 +122,11 @@ public class DefensiveAbilityCycler : MonoBehaviour
             return;
         }
 
-        Debug.Log("[DefensiveAbilityCycler] Defensive 02 activated.", this);
+        if (!morphAbility || !morphAbility.TryTrigger())
+        {
+            return;
+        }
+
         _defensive02CooldownTimer = Mathf.Max(0f, defensive02CooldownSeconds);
         SetNextSlot(DefensiveSlot.Smoke);
     }

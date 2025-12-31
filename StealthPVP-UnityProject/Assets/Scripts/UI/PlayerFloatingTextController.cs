@@ -102,6 +102,29 @@ public class PlayerFloatingTextController : MonoBehaviour
         UpdateStatusText();
     }
 
+    public void SetStatusLabel(string key, string label, int priority = 0, bool? visibleToAll = null)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return;
+        }
+
+        if (!_statusLookup.TryGetValue(key, out StatusDefinition def))
+        {
+            def = new StatusDefinition { key = key };
+            _statusLookup[key] = def;
+        }
+
+        def.label = string.IsNullOrWhiteSpace(label) ? key : label;
+        def.priority = priority;
+        if (visibleToAll.HasValue)
+        {
+            def.visibleToAll = visibleToAll.Value;
+        }
+
+        UpdateStatusText();
+    }
+
     public void ShowKill(int points)
     {
         if (!killText)

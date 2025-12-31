@@ -31,15 +31,18 @@ public class GameUiManager : MonoBehaviour
     private GameObject _activeTargetInstance;
     private GameObject _activeTargetPrefab;
     private bool _defensiveCyclerSubscribed;
+    private Sprite _defensiveDefaultIcon;
+    private bool _defensiveDefaultCached;
 
     private const string RevealLabel = "Compass";
     private const string DefensiveSmokeLabel = "Smoke";
-    private const string DefensiveAltLabel = "Defensive 02";
+    private const string DefensiveAltLabel = "Morph";
     private const string MovementLabel = "Dash";
 
     private void OnEnable()
     {
         BindDefensiveCycler(defensiveAbilityCycler);
+        CacheDefensiveDefaultIcon();
         UpdateRevealName();
         UpdateMovementName();
         UpdateDefensiveNameFromCycler();
@@ -128,7 +131,7 @@ public class GameUiManager : MonoBehaviour
         float defensiveRemaining = defensiveAbilityCycler ? defensiveAbilityCycler.Defensive02CooldownRemaining : 0f;
         float remaining = Mathf.Max(smokeRemaining, defensiveRemaining);
         UpdateCooldownText(defensiveCooldownText, remaining);
-        SetIconVisibility(defensiveIcon, remaining);
+        UpdateDefensiveIcon(remaining);
     }
 
     private void UpdateMovementCooldown()
@@ -190,6 +193,53 @@ public class GameUiManager : MonoBehaviour
         defensiveNameText.text = slot == DefensiveAbilityCycler.DefensiveSlot.Smoke
             ? DefensiveSmokeLabel
             : DefensiveAltLabel;
+    }
+
+    private void CacheDefensiveDefaultIcon()
+    {
+        if (_defensiveDefaultCached || !defensiveIcon)
+        {
+            return;
+        }
+
+        _defensiveDefaultIcon = defensiveIcon.sprite;
+        _defensiveDefaultCached = true;
+    }
+
+    private void UpdateDefensiveIcon(float cooldownRemaining)
+    {
+        if (!defensiveIcon)
+        {
+            return;
+        }
+
+        CacheDefensiveDefaultIcon();
+
+        bool isMorphSlot = defensiveAbilityCycler
+            && defensiveAbilityCycler.NextSlot == DefensiveAbilityCycler.DefensiveSlot.Defensive02;
+        if (isMorphSlot && defensiveAbilityCycler.MorphAbility)
+        {
+            if (defensiveAbilityCycler.MorphAbility.TryGetPreviewSprite(out Sprite previewSprite))
+            {
+                defensiveIcon.sprite = previewSprite;
+                defensiveIcon.enabled = true;
+            }
+            else
+            {
+                defensiveIcon.sprite = null;
+                defensiveIcon.enabled = false;
+            }
+        }
+        else
+        {
+            if (_defensiveDefaultCached)
+            {
+                defensiveIcon.sprite = _defensiveDefaultIcon;
+            }
+            defensiveIcon.enabled = true;
+        }
+
+        SetIconVisibility(defensiveIcon, cooldownRemaining);
     }
 
     private void UpdateRevealName()

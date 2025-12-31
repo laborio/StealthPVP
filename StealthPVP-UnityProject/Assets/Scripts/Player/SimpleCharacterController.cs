@@ -11,6 +11,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     [SerializeField] private float runMultiplier = 1.5f;
     [SerializeField] private float rotationSpeed = 720f;
     [SerializeField] private PlayerInputRouter inputRouter;
+    [SerializeField] private MorphAbility morphAbility;
 
     [Header("Click To Move")]
     [SerializeField] private LayerMask groundMask;
@@ -99,6 +100,8 @@ public partial class SimpleCharacterController : MonoBehaviour
     private int _attackSuppressionCount;
     private bool _attackSuppressed;
     private bool _lastAttackWasSecondary;
+    private bool _morphActive;
+    private float _morphMoveSpeed;
 
     private void Awake()
     {
@@ -114,6 +117,7 @@ public partial class SimpleCharacterController : MonoBehaviour
         {
             inputRouter = GetComponent<PlayerInputRouter>();
         }
+        ResolveMorphAbility();
         if (inputRouter)
         {
             inputRouter.SetInputCamera(_camera);
@@ -130,6 +134,27 @@ public partial class SimpleCharacterController : MonoBehaviour
         {
             inputSnapshot = default;
         }
+        ResolveMorphAbility();
+        bool morphActive = _morphActive || (morphAbility && morphAbility.IsMorphed);
+        bool attackHeld = inputSnapshot.PrimaryHeld || inputSnapshot.SecondaryHeld;
+        bool attackReleased = inputSnapshot.PrimaryReleased || inputSnapshot.SecondaryReleased;
+        bool attackHoldMovement = inputSnapshot.MoveAxis.sqrMagnitude > 0.0001f || inputSnapshot.MoveIssued;
+        if (morphActive && (attackReleased || (attackHeld && attackHoldMovement)
+            || inputSnapshot.JumpPressed || inputSnapshot.DashPressed))
+        {
+            if (morphAbility)
+            {
+                morphAbility.BreakMorph();
+            }
+            morphActive = false;
+        }
+        if (morphActive)
+        {
+            inputSnapshot.RunHeld = true;
+            inputSnapshot.JumpPressed = false;
+            inputSnapshot.DashPressed = false;
+            inputSnapshot.InteractPressed = false;
+        }
         bool isGrounded = IsGrounded();
         if (_teleportLocked)
         {
@@ -138,6 +163,10 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
 
         HandleClickToMove(inputSnapshot);
+        bool wantsMoveWhileMorphed = morphActive
+            && (inputSnapshot.MoveAxis.sqrMagnitude > 0.0001f || inputSnapshot.MoveIssued || _hasMoveTarget);
+        bool lockMorphPosition = morphActive && !wantsMoveWhileMorphed;
+        Vector3 morphLockPosition = transform.position;
         Vector2 movementInputRaw = inputSnapshot.MoveAxis;
         bool requestedMovement = movementInputRaw.sqrMagnitude > 0.0001f;
         bool interactPressed = inputSnapshot.InteractPressed;
@@ -159,7 +188,7 @@ public partial class SimpleCharacterController : MonoBehaviour
             }
             ApplyRangeIndicatorRotation(indicatorDirection);
         }
-        bool actionKeyAllowed = _seatingState == SeatingState.Standing;
+        bool actionKeyAllowed = _seatingState == SeatingState.Standing && !morphActive;
         HandleActionInput(interactPressed && actionKeyAllowed, isGrounded);
 
         bool seatingLocked = _seatingState != SeatingState.Standing;
@@ -178,6 +207,7 @@ public partial class SimpleCharacterController : MonoBehaviour
         _isInWater = DetectWater();
         float waterSpeedMultiplier = _isInWater ? this.waterMoveSpeedMultiplier : 1f;
         float waterJumpMultiplier = _isInWater ? this.waterJumpVelocityMultiplier : 1f;
+        float baseMoveSpeed = morphActive ? _morphMoveSpeed : moveSpeed;
 
         Vector3 desiredPlanarVelocity = Vector3.zero;
 
@@ -218,7 +248,7 @@ public partial class SimpleCharacterController : MonoBehaviour
             if (hasMovementInput)
             {
                 moveDirection.Normalize();
-                float speed = moveSpeed * ((wantsToWalk || walkOverrideActive) ? 1f : runMultiplier);
+                float speed = baseMoveSpeed * ((wantsToWalk || walkOverrideActive) ? 1f : runMultiplier);
                 speed *= waterSpeedMultiplier;
                 desiredPlanarVelocity = moveDirection * speed;
                 _hasMoveTarget = false;
@@ -235,7 +265,7 @@ public partial class SimpleCharacterController : MonoBehaviour
                 }
                 else
                 {
-                    float speed = moveSpeed * ((wantsToWalk || walkOverrideActive) ? 1f : runMultiplier);
+                    float speed = baseMoveSpeed * ((wantsToWalk || walkOverrideActive) ? 1f : runMultiplier);
                     speed *= waterSpeedMultiplier;
                     desiredPlanarVelocity = toTarget.normalized * speed;
                     hasMovementInput = true;
@@ -303,7 +333,7 @@ public partial class SimpleCharacterController : MonoBehaviour
                 forward.Normalize();
 
                 float dashMultiplier = isGrounded ? dashSpeedMultiplier : dashAirSpeedMultiplier;
-                float speed = moveSpeed * runMultiplier * dashMultiplier * waterSpeedMultiplier;
+                float speed = baseMoveSpeed * runMultiplier * dashMultiplier * waterSpeedMultiplier;
                 _currentPlanarVelocity = forward * speed;
                 _dashTimer = dashDuration;
                 _dashCooldownTimer = dashCooldown;
@@ -409,6 +439,13 @@ public partial class SimpleCharacterController : MonoBehaviour
         Vector3 motion = _currentPlanarVelocity;
         motion.y = _verticalVelocity;
         _characterController.Move(motion * Time.deltaTime);
+        if (lockMorphPosition)
+        {
+            Vector3 lockedPosition = transform.position;
+            lockedPosition.x = morphLockPosition.x;
+            lockedPosition.z = morphLockPosition.z;
+            transform.position = lockedPosition;
+        }
 
         Vector3 planarMove = new Vector3(_currentPlanarVelocity.x, 0f, _currentPlanarVelocity.z);
         float planarSpeed = planarMove.magnitude;
@@ -429,7 +466,8 @@ public partial class SimpleCharacterController : MonoBehaviour
 
         bool attackRotationApplied = ProcessAttackAimRotation(deltaTime);
 
-        if (!attackRotationApplied && !isAttacking && !shouldRunBackward && !shouldStrafe && planarMove.sqrMagnitude > 0.0001f)
+        if (!morphActive && !attackRotationApplied && !isAttacking && !shouldRunBackward && !shouldStrafe
+            && planarMove.sqrMagnitude > 0.0001f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(planarMove.normalized, Vector3.up);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * deltaTime);
@@ -468,13 +506,13 @@ public partial class SimpleCharacterController : MonoBehaviour
             IsJumping = _isJumping,
             IsFalling = _isFalling,
             PlanarSpeed = planarSpeed,
-            WalkSpeed = moveSpeed,
-            RunSpeed = moveSpeed * runMultiplier,
+            WalkSpeed = baseMoveSpeed,
+            RunSpeed = baseMoveSpeed * runMultiplier,
             JumpAnimationSpeed = 1f
         });
         UpdateSeatingState(deltaTime);
         ProcessBenchCollisionRestore(deltaTime);
-        UpdateActionHintDisplay(_seatingState == SeatingState.Standing, isGrounded);
+        UpdateActionHintDisplay(actionKeyAllowed, isGrounded);
     }
 
     private void HandleAttackInput(PlayerInputSnapshot input, bool isGrounded)
@@ -1064,6 +1102,27 @@ public partial class SimpleCharacterController : MonoBehaviour
         dashAirSpeedMultiplier = Mathf.Max(0f, airSpeedMultiplier);
         dashDuration = Mathf.Max(0f, duration);
         dashCooldown = Mathf.Max(0f, cooldown);
+    }
+
+    public void SetMorphState(bool active, float moveSpeedOverride)
+    {
+        _morphActive = active;
+        _morphMoveSpeed = Mathf.Max(0f, moveSpeedOverride);
+
+        if (active)
+        {
+            _hasMoveTarget = false;
+            _isDashing = false;
+            _dashTimer = 0f;
+        }
+    }
+
+    private void ResolveMorphAbility()
+    {
+        if (!morphAbility)
+        {
+            morphAbility = GetComponent<MorphAbility>() ?? GetComponentInChildren<MorphAbility>(true);
+        }
     }
 
     public void SetInputSuppressed(bool suppressed)

@@ -13,12 +13,13 @@ GameObject:
   - component: {fileID: 1232636595893516589}
   - component: {fileID: 5645491568476995233}
   - component: {fileID: 6437628959508980604}
+  - component: {fileID: 3454160520699610653}
   m_Layer: 0
   m_Name: Jar_Color2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &5720924669999357837
 Transform:
@@ -129,3 +130,17 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0.563, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &3454160520699610653
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5324601346268135174}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cc9fd7abe8b54422aed8cb01c0203e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MorphTarget
+  renderers: []
+  previewIcon: {fileID: 21300000, guid: 801f23b77c727479195d39bd6bcc1ba6, type: 3}

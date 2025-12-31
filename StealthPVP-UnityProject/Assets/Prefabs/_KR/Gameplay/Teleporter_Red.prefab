@@ -54,7 +54,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 5, y: 2.9999995, z: 4}
+  m_Size: {x: 4, y: 2.9999995, z: 3}
   m_Center: {x: 0, y: 1.4799998, z: 0.5}
 --- !u!95 &4109096590956938877
 Animator:
@@ -95,7 +95,7 @@ MonoBehaviour:
   teleporterAnimator: {fileID: 4109096590956938877}
   onBoolName: On
   actionPriority: 200
-  cameraService: {fileID: 0}
+  mainCameraOverride: {fileID: 0}
   cameraMoveDelay: 1
   cameraMoveCurve:
     serializedVersion: 2

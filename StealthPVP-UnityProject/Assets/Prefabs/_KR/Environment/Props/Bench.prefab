@@ -14,7 +14,7 @@ GameObject:
   m_TagString: BenchSitPoint
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &2943732332732637730
 Transform:
@@ -49,7 +49,7 @@ GameObject:
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &5826131165895642039
 Transform:
@@ -174,7 +174,7 @@ GameObject:
   m_TagString: BenchSitPoint
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &1891658895645522342
 Transform:
@@ -201,12 +201,13 @@ GameObject:
   m_Component:
   - component: {fileID: 3634263278278829196}
   - component: {fileID: 5807380612793079128}
+  - component: {fileID: -4667670165271518510}
   m_Layer: 0
   m_Name: Bench
   m_TagString: Bench
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 2147483647
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &3634263278278829196
 Transform:
@@ -247,3 +248,17 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2.5, y: 0.87727374, z: 1.3000001}
   m_Center: {x: 0, y: 0.44863692, z: -0.16476916}
+--- !u!114 &-4667670165271518510
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7700622857875469713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cc9fd7abe8b54422aed8cb01c0203e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MorphTarget
+  renderers: []
+  previewIcon: {fileID: 21300000, guid: 7a78cb075660346668f997e8b28976f0, type: 3}
