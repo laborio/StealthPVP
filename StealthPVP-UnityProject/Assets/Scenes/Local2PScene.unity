@@ -3599,9 +3599,9 @@ MonoBehaviour:
   - {fileID: 3862951192762057215, guid: fab4a28bbebc3413a8da3c306b039579, type: 3}
   - {fileID: 3862951192762057215, guid: 19eef9a92259b4f89903d98e6e5a3a0e, type: 3}
   decoyPrefabs:
-  - {fileID: 8308234682327654559, guid: 1b3796f71c82a49bcabb2e668959b559, type: 3}
-  - {fileID: 3862951192762057215, guid: 2047f82e07a2d47f19dd0c4d84aa3426, type: 3}
-  - {fileID: 3862951192762057215, guid: 6e104486172a747999a8e82e0bbe76f2, type: 3}
+  - {fileID: 8179491082229621717, guid: 21f788c4b4bd04dc1b890be2d409d058, type: 3}
+  - {fileID: 8179491082229621717, guid: 08097a163339342bead8c672512535d9, type: 3}
+  - {fileID: 8179491082229621717, guid: 94af4aa8f3c224d548571277d09c0ab7, type: 3}
   decoyCount: 75
   spawnPoints:
   - {fileID: 1966851062}
