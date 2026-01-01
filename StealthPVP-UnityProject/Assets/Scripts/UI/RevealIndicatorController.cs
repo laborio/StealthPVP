@@ -390,15 +390,17 @@ public class RevealIndicatorController : MonoBehaviour
 
         float desiredCircleAlpha = 0f;
         float desiredFillAmount = 0f;
+        bool forceFullFill = false;
 
         if (hasTarget && abilityAlpha > 0f)
         {
             desiredCircleAlpha = abilityAlpha;
+            forceFullFill = targetVisible;
             desiredFillAmount = targetVisible ? 1f : ComputeFillAmount(distanceToTarget);
         }
 
         _currentCircleAlpha = SmoothTowards(_currentCircleAlpha, desiredCircleAlpha, circleFadeDuration);
-        _currentFillAmount = SmoothTowards(_currentFillAmount, desiredFillAmount, circleFadeDuration);
+        _currentFillAmount = forceFullFill ? 1f : SmoothTowards(_currentFillAmount, desiredFillAmount, circleFadeDuration);
 
         if (compassCircle)
         {

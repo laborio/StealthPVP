@@ -185,10 +185,11 @@ public class RagdollController : MonoBehaviour
             }
 
             body.isKinematic = !active;
-            if (active && deathImpulseForce > 0f && ((1 << body.gameObject.layer) & impulseMask.value) != 0)
+            float impulseForce = GetDeathImpulseForce();
+            if (active && impulseForce > 0f && ((1 << body.gameObject.layer) & impulseMask.value) != 0)
             {
                 Vector3 dir = GetDeathImpulseDirection(body);
-                body.AddForce(dir * deathImpulseForce, ForceMode.Impulse);
+                body.AddForce(dir * impulseForce, ForceMode.Impulse);
             }
         }
 
@@ -379,6 +380,11 @@ public class RagdollController : MonoBehaviour
 
     private Vector3 GetDeathImpulseDirection(Rigidbody body)
     {
+        if (_hasLastDamage && _lastDamage.ImpulseDirection.sqrMagnitude > 0.0001f)
+        {
+            return _lastDamage.ImpulseDirection.normalized;
+        }
+
         if (_hasLastDamage)
         {
             if (!impulseFromInstigatorOnly)
@@ -403,6 +409,16 @@ public class RagdollController : MonoBehaviour
         }
 
         return Vector3.up;
+    }
+
+    private float GetDeathImpulseForce()
+    {
+        if (_hasLastDamage && _lastDamage.ImpulseStrength > 0f)
+        {
+            return _lastDamage.ImpulseStrength;
+        }
+
+        return deathImpulseForce;
     }
 
     private void OnValidate()
