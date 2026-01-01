@@ -101,6 +101,8 @@ public class CharacterAnimations : MonoBehaviour
             return;
         }
 
+        ApplyUpperBodySpeedDefault();
+
         SetBool(animator, _walkingBoolHash, walkingBoolName, data.IsWalking, _hasWalkingBool);
         SetBool(animator, _runningBoolHash, runningBoolName, data.IsRunning, _hasRunningBool);
         SetBool(animator, _runningBackwardBoolHash, runningBackwardBoolName, data.IsRunningBackward, _hasRunningBackwardBool);
