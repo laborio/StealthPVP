@@ -17090,6 +17090,8 @@ MonoBehaviour:
   upperBodyLayerName: Upper Body
   upperBodyIdleWeight: 0
   upperBodyAttackWeight: 1
+  upperBodySpeedParam: UpperBodySpeed
+  upperBodySpeedDefault: 1
   debugLogs: 0
 --- !u!114 &5776939949241814741
 MonoBehaviour:
@@ -28732,6 +28734,10 @@ PrefabInstance:
       propertyPath: owner
       value: 
       objectReference: {fileID: 5931815322622634413}
+    - target: {fileID: 3296497756875453812, guid: 6324464aa87e643c7a2368670c3d7314, type: 3}
+      propertyPath: damageAmount
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 4725108888031884080, guid: 6324464aa87e643c7a2368670c3d7314, type: 3}
       propertyPath: m_Name
       value: Weapon_Pan

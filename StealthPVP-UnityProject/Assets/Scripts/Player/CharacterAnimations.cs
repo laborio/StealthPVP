@@ -38,6 +38,8 @@ public class CharacterAnimations : MonoBehaviour
     [SerializeField, Tooltip("Animator layer name for upper-body attack animations.")] private string upperBodyLayerName = "Upper Body";
     [SerializeField, Range(0f, 1f), Tooltip("Layer weight when not attacking.")] private float upperBodyIdleWeight = 0f;
     [SerializeField, Range(0f, 1f), Tooltip("Layer weight while attacking.")] private float upperBodyAttackWeight = 1f;
+    [SerializeField, Tooltip("Optional float parameter to scale upper-body animation speed.")] private string upperBodySpeedParam = "UpperBodySpeed";
+    [SerializeField, Tooltip("Default value for the upper-body speed parameter.")] private float upperBodySpeedDefault = 1f;
     [Header("Debug")]
     [SerializeField] private bool debugLogs = false;
 
@@ -57,6 +59,8 @@ public class CharacterAnimations : MonoBehaviour
     private int _stunTagHash;
     private int _hitTriggerHash;
     private int _upperBodyLayerIndex = -1;
+    private int _upperBodySpeedHash;
+    private bool _hasUpperBodySpeedParam;
     private bool _hasWalkingBool;
     private bool _hasIdleBool;
     private bool _hasRunningBool;
@@ -75,6 +79,7 @@ public class CharacterAnimations : MonoBehaviour
         ResolveAnimators();
         CacheHashes();
         ResolveUpperBodyLayer();
+        ApplyUpperBodySpeedDefault();
     }
 
     private void OnValidate()
@@ -82,9 +87,11 @@ public class CharacterAnimations : MonoBehaviour
         walkAnimationBaseSpeed = Mathf.Max(0.01f, walkAnimationBaseSpeed);
         runAnimationBaseSpeed = Mathf.Max(0.01f, runAnimationBaseSpeed);
         jumpAnimationBaseSpeed = Mathf.Max(0.01f, jumpAnimationBaseSpeed);
+        upperBodySpeedDefault = Mathf.Max(0f, upperBodySpeedDefault);
         ResolveAnimators();
         CacheHashes();
         ResolveUpperBodyLayer();
+        ApplyUpperBodySpeedDefault();
     }
 
     public void ApplyLocomotion(CharacterLocomotionAnimationData data)
@@ -306,6 +313,8 @@ public class CharacterAnimations : MonoBehaviour
             _hasStandToSitSpeedFloat = ParameterExists(animator, _standToSitSpeedHash, standToSitSpeedFloatName, AnimatorControllerParameterType.Float);
             _hasTeleportedBool = ParameterExists(animator, _teleportedBoolHash, teleportedBoolName, AnimatorControllerParameterType.Bool);
             _hasStunnedBool = ParameterExists(animator, HashOrZero(stunnedTriggerName), stunnedTriggerName, AnimatorControllerParameterType.Bool);
+            _upperBodySpeedHash = HashOrZero(upperBodySpeedParam);
+            _hasUpperBodySpeedParam = ParameterExists(animator, _upperBodySpeedHash, upperBodySpeedParam, AnimatorControllerParameterType.Float);
         }
         else
         {
@@ -321,6 +330,22 @@ public class CharacterAnimations : MonoBehaviour
             _hasStandToSitSpeedFloat = false;
             _hasTeleportedBool = false;
             _hasStunnedBool = false;
+            _hasUpperBodySpeedParam = false;
+            _upperBodySpeedHash = 0;
+        }
+    }
+
+    private void ApplyUpperBodySpeedDefault()
+    {
+        if (!animator || !_hasUpperBodySpeedParam)
+        {
+            return;
+        }
+
+        float current = animator.GetFloat(_upperBodySpeedHash);
+        if (current <= 0.01f && upperBodySpeedDefault > 0f)
+        {
+            animator.SetFloat(_upperBodySpeedHash, upperBodySpeedDefault);
         }
     }
 
