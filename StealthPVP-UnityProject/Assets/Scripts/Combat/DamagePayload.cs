@@ -11,4 +11,6 @@ public struct DamagePayload
     public GameObject Source;
     public GameObject Instigator;
     public Collider HitCollider;
+    public Vector3 ImpulseDirection;
+    public float ImpulseStrength;
 }
