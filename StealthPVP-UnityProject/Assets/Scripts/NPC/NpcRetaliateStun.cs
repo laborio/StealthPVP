@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 /// <summary>
 /// Triggers a stun attack animation toward the attacker when this NPC is damaged by a player.
@@ -11,15 +12,23 @@ public class NpcRetaliateStun : MonoBehaviour
     [SerializeField, Tooltip("Animator to drive upper-body layer weights. Defaults to a child animator.")] private Animator animator;
     [SerializeField, Tooltip("Trigger name for the stun attack animation.")] private string stunAttackTriggerName = "Stun";
     [SerializeField, Tooltip("Only retaliate when the instigator is a player.")] private bool playersOnly = true;
+    [SerializeField, Tooltip("Only retaliate when the hit collider has this tag.")] private string retaliateWeaponTag = "WeaponKill";
     [SerializeField, Tooltip("Rotate the NPC to face the attacker before triggering the animation.")] private bool faceAttacker = true;
     [SerializeField, Tooltip("Minimum seconds between retaliations.")] private float retaliationCooldown = 0.35f;
     [SerializeField, Tooltip("Skip retaliation if the NPC is already in an attack/stun animation.")] private bool skipIfAlreadyAttacking = true;
     [Header("Navigation")]
-    [SerializeField, Tooltip("Optional NavMeshAgent to stop during the stun animation.")] private UnityEngine.AI.NavMeshAgent navMeshAgent;
+    [SerializeField, Tooltip("Optional NavMeshAgent to stop during the stun animation.")] private NavMeshAgent navMeshAgent;
+    [SerializeField, Tooltip("Optional NPC nav controller to disable while retaliating.")] private NpcNavAgent npcNavAgent;
     [SerializeField, Tooltip("Seconds to stop navigation after triggering stun.")] private float stopDuration = 0.25f;
+    [SerializeField, Tooltip("Distance required to trigger stun immediately. Otherwise the NPC will chase.")] private float retaliateRange = 2f;
+    [SerializeField, Tooltip("Seconds to chase the attacker when out of range.")] private float chaseDuration = 1.5f;
+    [SerializeField, Tooltip("Seconds between chase destination updates.")] private float chaseRepathInterval = 0.15f;
+    [SerializeField, Tooltip("Speed multiplier while chasing.")] private float chaseSpeedMultiplier = 1.35f;
+    [SerializeField, Tooltip("Disable the NPC wander controller while chasing.")] private bool disableWanderDuringRetaliation = true;
     [Header("Animator Speed")]
-    [SerializeField, Tooltip("Animator speed while playing the stun animation.")] private float stunAnimatorSpeed = 1.35f;
-    [SerializeField, Tooltip("Seconds to keep the animator speed override after triggering.")] private float stunSpeedHoldDuration = 0.15f;
+    [SerializeField, Tooltip("Upper body speed parameter used to speed up stun without affecting base layer.")] private string upperBodySpeedParam = "UpperBodySpeed";
+    [SerializeField, Tooltip("Speed value for upper body stun animation.")] private float stunAnimatorSpeed = 1.35f;
+    [SerializeField, Tooltip("Seconds to keep the upper body speed override after triggering.")] private float stunSpeedHoldDuration = 0.15f;
     [Header("Upper Body Layer")]
     [SerializeField, Tooltip("If true, manage the upper body layer weight during stun attacks.")] private bool manageUpperBodyLayer = true;
     [SerializeField] private string upperBodyLayerName = "Upper Body";
@@ -28,6 +37,8 @@ public class NpcRetaliateStun : MonoBehaviour
     [SerializeField, Tooltip("Animator tag used for regular attacks.")] private string attackStateTag = "Attack";
     [SerializeField, Tooltip("Animator tag used for stun attacks.")] private string stunStateTag = "Stun";
     [SerializeField, Tooltip("Seconds to keep the upper body layer active after triggering.")] private float upperBodyHoldDuration = 0.15f;
+    [Header("Chase Animation")]
+    [SerializeField, Tooltip("Animator bool set true while chasing.")] private string runningBoolName = "isRunning";
 
     private float _nextAllowedTime;
     private int _upperBodyLayerIndex = -1;
@@ -36,7 +47,21 @@ public class NpcRetaliateStun : MonoBehaviour
     private float _navStopTimer;
     private bool _navWasStopped;
     private float _animSpeedTimer;
-    private float _baseAnimatorSpeed = 1f;
+    private bool _hasUpperBodySpeedParam;
+    private float _upperBodySpeedDefault = 1f;
+    private float _baseAgentSpeed;
+    private bool _agentSpeedOverridden;
+    private float _chaseTimer;
+    private float _nextChaseRepathTime;
+    private Transform _chaseTarget;
+    private PlayerStunController _chaseTargetStun;
+    private DamagePayload _lastPayload;
+    private bool _hasLastPayload;
+    private bool _navControllerDisabled;
+    private int _runningBoolHash;
+    private bool _hasRunningBool;
+    private bool _runningApplied;
+    private bool _hasSwungDuringChase;
 
     private void Awake()
     {
@@ -57,13 +82,24 @@ public class NpcRetaliateStun : MonoBehaviour
 
         if (!navMeshAgent)
         {
-            navMeshAgent = GetComponent<UnityEngine.AI.NavMeshAgent>()
-                ?? GetComponentInChildren<UnityEngine.AI.NavMeshAgent>(true);
+            navMeshAgent = GetComponent<NavMeshAgent>()
+                ?? GetComponentInChildren<NavMeshAgent>(true);
+        }
+
+        if (!npcNavAgent)
+        {
+            npcNavAgent = GetComponent<NpcNavAgent>() ?? GetComponentInChildren<NpcNavAgent>(true);
         }
 
         if (animator)
         {
-            _baseAnimatorSpeed = animator.speed;
+            _runningBoolHash = Animator.StringToHash(runningBoolName);
+            _hasRunningBool = HasParameter(animator, runningBoolName, AnimatorControllerParameterType.Bool);
+            _hasUpperBodySpeedParam = HasParameter(animator, upperBodySpeedParam, AnimatorControllerParameterType.Float);
+            if (_hasUpperBodySpeedParam)
+            {
+                _upperBodySpeedDefault = animator.GetFloat(upperBodySpeedParam);
+            }
         }
 
         ResolveUpperBodyLayer();
@@ -83,6 +119,8 @@ public class NpcRetaliateStun : MonoBehaviour
         {
             health.Damaged -= HandleDamaged;
         }
+
+        StopChase();
     }
 
     private void HandleDamaged(DamagePayload payload)
@@ -92,12 +130,12 @@ public class NpcRetaliateStun : MonoBehaviour
             return;
         }
 
-        if (Time.time < _nextAllowedTime)
+        if (playersOnly && !IsPlayerInstigator(payload.Instigator))
         {
             return;
         }
 
-        if (playersOnly && !IsPlayerInstigator(payload.Instigator))
+        if (!IsRetaliationHit(payload))
         {
             return;
         }
@@ -105,6 +143,27 @@ public class NpcRetaliateStun : MonoBehaviour
         if (skipIfAlreadyAttacking && characterAnimations && characterAnimations.IsInAttackState())
         {
             return;
+        }
+
+        Transform instigatorTransform = payload.Instigator ? payload.Instigator.transform : null;
+        if (instigatorTransform)
+        {
+            StartChase(instigatorTransform, payload);
+        }
+
+        if (Time.time >= _nextAllowedTime && instigatorTransform && !ShouldChase(instigatorTransform.position))
+        {
+            TriggerStun(payload);
+        }
+    }
+
+    private void TriggerStun(DamagePayload payload)
+    {
+        if (_chaseTarget)
+        {
+            _lastPayload = payload;
+            _hasLastPayload = true;
+            _hasSwungDuringChase = true;
         }
 
         if (faceAttacker)
@@ -123,7 +182,7 @@ public class NpcRetaliateStun : MonoBehaviour
             animator.SetTrigger(hash);
         }
 
-        if (navMeshAgent && stopDuration > 0f)
+        if (navMeshAgent && stopDuration > 0f && !ShouldResumeChase())
         {
             _navStopTimer = Mathf.Max(_navStopTimer, stopDuration);
             if (!navMeshAgent.isStopped)
@@ -133,10 +192,10 @@ public class NpcRetaliateStun : MonoBehaviour
             }
         }
 
-        if (animator && stunAnimatorSpeed > 0f)
+        if (animator && _hasUpperBodySpeedParam && stunAnimatorSpeed > 0f)
         {
             _animSpeedTimer = Mathf.Max(_animSpeedTimer, stunSpeedHoldDuration);
-            animator.speed = stunAnimatorSpeed;
+            animator.SetFloat(upperBodySpeedParam, stunAnimatorSpeed);
         }
 
         if (manageUpperBodyLayer && animator && _upperBodyLayerIndex >= 0)
@@ -172,6 +231,27 @@ public class NpcRetaliateStun : MonoBehaviour
             || instigator.GetComponentInParent<SimpleCharacterController>();
     }
 
+    private bool IsRetaliationHit(DamagePayload payload)
+    {
+        if (string.IsNullOrEmpty(retaliateWeaponTag))
+        {
+            return true;
+        }
+
+        Collider hitCollider = payload.HitCollider;
+        if (hitCollider && hitCollider.CompareTag(retaliateWeaponTag))
+        {
+            return true;
+        }
+
+        if (payload.Source && payload.Source.CompareTag(retaliateWeaponTag))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     private void FaceInstigator(DamagePayload payload)
     {
         Vector3 targetPosition = payload.Instigator ? payload.Instigator.transform.position : payload.HitPoint;
@@ -187,6 +267,8 @@ public class NpcRetaliateStun : MonoBehaviour
 
     private void Update()
     {
+        UpdateChase();
+
         if (!manageUpperBodyLayer || !animator || _upperBodyLayerIndex < 0)
         {
             UpdateNavigationStop();
@@ -223,6 +305,126 @@ public class NpcRetaliateStun : MonoBehaviour
         }
 
         _upperBodyLayerIndex = animator.GetLayerIndex(upperBodyLayerName);
+    }
+
+    private void StartChase(Transform instigator, DamagePayload payload)
+    {
+        if (!instigator || chaseDuration <= 0f)
+        {
+            return;
+        }
+
+        _navStopTimer = 0f;
+        _navWasStopped = false;
+        _lastPayload = payload;
+        _hasLastPayload = true;
+        _chaseTarget = instigator;
+        _chaseTargetStun = instigator.GetComponent<PlayerStunController>()
+            ?? instigator.GetComponentInChildren<PlayerStunController>(true)
+            ?? instigator.GetComponentInParent<PlayerStunController>();
+        _hasSwungDuringChase = false;
+        _chaseTimer = Mathf.Max(_chaseTimer, chaseDuration);
+        _nextChaseRepathTime = 0f;
+
+        if (disableWanderDuringRetaliation && npcNavAgent && npcNavAgent.enabled)
+        {
+            npcNavAgent.enabled = false;
+            _navControllerDisabled = true;
+        }
+
+        if (navMeshAgent && navMeshAgent.isOnNavMesh)
+        {
+            if (!_agentSpeedOverridden)
+            {
+                _baseAgentSpeed = navMeshAgent.speed;
+                _agentSpeedOverridden = true;
+            }
+
+            if (chaseSpeedMultiplier > 0f)
+            {
+                navMeshAgent.speed = _baseAgentSpeed * chaseSpeedMultiplier;
+            }
+
+            navMeshAgent.isStopped = false;
+            navMeshAgent.SetDestination(instigator.position);
+        }
+    }
+
+    private void StopChase()
+    {
+        _chaseTimer = 0f;
+        _chaseTarget = null;
+        _chaseTargetStun = null;
+        _hasSwungDuringChase = false;
+
+        if (navMeshAgent && _agentSpeedOverridden)
+        {
+            navMeshAgent.speed = _baseAgentSpeed;
+            _agentSpeedOverridden = false;
+            navMeshAgent.ResetPath();
+            navMeshAgent.isStopped = false;
+        }
+
+        if (_navControllerDisabled && npcNavAgent)
+        {
+            npcNavAgent.enabled = true;
+            _navControllerDisabled = false;
+        }
+
+        SetRunning(false);
+    }
+
+    private void UpdateChase()
+    {
+        if (_chaseTimer <= 0f || !_chaseTarget)
+        {
+            SetRunning(false);
+            return;
+        }
+
+        if (_hasSwungDuringChase && _chaseTargetStun && _chaseTargetStun.IsStunned)
+        {
+            StopChase();
+            return;
+        }
+
+        _chaseTimer = Mathf.Max(0f, _chaseTimer - Time.deltaTime);
+        bool shouldChase = ShouldChase(_chaseTarget.position);
+        SetRunning(shouldChase);
+
+        if (navMeshAgent && navMeshAgent.isOnNavMesh && Time.time >= _nextChaseRepathTime)
+        {
+            navMeshAgent.SetDestination(_chaseTarget.position);
+            _nextChaseRepathTime = Time.time + Mathf.Max(0.05f, chaseRepathInterval);
+        }
+
+        if (Time.time >= _nextAllowedTime && CanTriggerSwing())
+        {
+            TriggerStun(BuildPayloadForTarget(_chaseTarget));
+        }
+
+        if (_chaseTimer <= 0f)
+        {
+            StopChase();
+        }
+    }
+
+    private bool ShouldChase(Vector3 instigatorPosition)
+    {
+        float range = GetRetaliateRange();
+        Vector3 toTarget = instigatorPosition - transform.position;
+        toTarget.y = 0f;
+        return toTarget.sqrMagnitude > range * range;
+    }
+
+    private float GetRetaliateRange()
+    {
+        if (navMeshAgent)
+        {
+            return Mathf.Max(retaliateRange, navMeshAgent.stoppingDistance);
+        }
+
+        return retaliateRange;
     }
 
     private bool IsInUpperBodyAttackState()
@@ -267,6 +469,17 @@ public class NpcRetaliateStun : MonoBehaviour
             return;
         }
 
+        if (ShouldResumeChase())
+        {
+            _navStopTimer = 0f;
+            if (navMeshAgent.isStopped)
+            {
+                navMeshAgent.isStopped = false;
+                _navWasStopped = false;
+            }
+            return;
+        }
+
         if (_navStopTimer > 0f)
         {
             _navStopTimer = Mathf.Max(0f, _navStopTimer - Time.deltaTime);
@@ -285,7 +498,7 @@ public class NpcRetaliateStun : MonoBehaviour
 
     private void UpdateAnimatorSpeed()
     {
-        if (!animator || stunAnimatorSpeed <= 0f)
+        if (!animator || !_hasUpperBodySpeedParam || stunAnimatorSpeed <= 0f)
         {
             return;
         }
@@ -293,12 +506,81 @@ public class NpcRetaliateStun : MonoBehaviour
         if (_animSpeedTimer > 0f)
         {
             _animSpeedTimer = Mathf.Max(0f, _animSpeedTimer - Time.deltaTime);
-            animator.speed = stunAnimatorSpeed;
+            animator.SetFloat(upperBodySpeedParam, stunAnimatorSpeed);
         }
         else
         {
-            animator.speed = _baseAnimatorSpeed;
+            animator.SetFloat(upperBodySpeedParam, _upperBodySpeedDefault);
         }
+    }
+
+    private bool ShouldResumeChase()
+    {
+        return _chaseTarget && _chaseTimer > 0f && ShouldChase(_chaseTarget.position);
+    }
+
+    private bool CanTriggerSwing()
+    {
+        if (characterAnimations)
+        {
+            return !characterAnimations.IsInAttackState();
+        }
+
+        if (animator && _upperBodyLayerIndex >= 0)
+        {
+            return !IsInUpperBodyAttackState();
+        }
+
+        return true;
+    }
+
+    private DamagePayload BuildPayloadForTarget(Transform target)
+    {
+        DamagePayload payload = _hasLastPayload ? _lastPayload : default;
+        if (target)
+        {
+            payload.Instigator = target.gameObject;
+            payload.HitPoint = target.position;
+            payload.HitNormal = (transform.position - target.position).normalized;
+        }
+
+        return payload;
+    }
+
+    private void SetRunning(bool value)
+    {
+        if (!animator || !_hasRunningBool)
+        {
+            return;
+        }
+
+        if (_runningApplied && animator.GetBool(_runningBoolHash) == value)
+        {
+            return;
+        }
+
+        animator.SetBool(_runningBoolHash, value);
+        _runningApplied = true;
+    }
+
+    private static bool HasParameter(Animator target, string name, AnimatorControllerParameterType type)
+    {
+        if (!target || string.IsNullOrEmpty(name))
+        {
+            return false;
+        }
+
+        AnimatorControllerParameter[] parameters = target.parameters;
+        for (int i = 0; i < parameters.Length; i++)
+        {
+            AnimatorControllerParameter param = parameters[i];
+            if (param != null && param.type == type && param.name == name)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void OnValidate()
@@ -308,6 +590,14 @@ public class NpcRetaliateStun : MonoBehaviour
         upperBodyIdleWeight = Mathf.Clamp01(upperBodyIdleWeight);
         upperBodyHoldDuration = Mathf.Max(0f, upperBodyHoldDuration);
         stopDuration = Mathf.Max(0f, stopDuration);
+        retaliateRange = Mathf.Max(0f, retaliateRange);
+        chaseDuration = Mathf.Max(0f, chaseDuration);
+        chaseRepathInterval = Mathf.Max(0f, chaseRepathInterval);
+        chaseSpeedMultiplier = Mathf.Max(0f, chaseSpeedMultiplier);
+        if (string.IsNullOrWhiteSpace(upperBodySpeedParam))
+        {
+            upperBodySpeedParam = "UpperBodySpeed";
+        }
         stunAnimatorSpeed = Mathf.Max(0f, stunAnimatorSpeed);
         stunSpeedHoldDuration = Mathf.Max(0f, stunSpeedHoldDuration);
     }

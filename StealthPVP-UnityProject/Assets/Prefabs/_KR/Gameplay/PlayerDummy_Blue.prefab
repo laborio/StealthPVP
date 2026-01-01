@@ -6201,6 +6201,8 @@ MonoBehaviour:
   upperBodyLayerName: Upper Body
   upperBodyIdleWeight: 0
   upperBodyAttackWeight: 1
+  upperBodySpeedParam: UpperBodySpeed
+  upperBodySpeedDefault: 1
   debugLogs: 0
 --- !u!114 &8202753440923050041
 MonoBehaviour:
@@ -12861,8 +12863,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8945044522417601190}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.41098708, y: -0.22485328, z: 0.105351925, w: 0.8771725}
-  m_LocalPosition: {x: 12.274839, y: 1.0463296, z: 29.98261}
+  m_LocalRotation: {x: -0.10863723, y: -0.88534105, z: 0.3697218, w: -0.2601442}
+  m_LocalPosition: {x: 37.24533, y: -0.9149844, z: -4.5376315}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
