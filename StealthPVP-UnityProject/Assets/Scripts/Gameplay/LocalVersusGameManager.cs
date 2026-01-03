@@ -137,7 +137,6 @@ public class LocalVersusGameManager : MonoBehaviour
     {
         if (Instance && Instance != this)
         {
-            Debug.LogWarning("[LocalVersusGameManager] Multiple instances detected; using the latest.", this);
         }
         Instance = this;
         ActivateDisplays();

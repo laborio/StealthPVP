@@ -369,7 +369,6 @@ public class LocalVersusVisuals : MonoBehaviour
             {
                 player1Fog.visionSources.Add(vision1);
             }
-            Debug.Log($"[LocalVersusGameManager] Bound player1 fog to vision {(vision1 ? vision1.name : "null")} worldMin={player1Fog.worldMin} worldMax={player1Fog.worldMax}", player1Fog);
         }
 
         if (player2Fog)
@@ -380,7 +379,6 @@ public class LocalVersusVisuals : MonoBehaviour
             {
                 player2Fog.visionSources.Add(vision2);
             }
-            Debug.Log($"[LocalVersusGameManager] Bound player2 fog to vision {(vision2 ? vision2.name : "null")} worldMin={player2Fog.worldMin} worldMax={player2Fog.worldMax}", player2Fog);
         }
 
         if (player3Fog)
@@ -391,7 +389,6 @@ public class LocalVersusVisuals : MonoBehaviour
             {
                 player3Fog.visionSources.Add(vision3);
             }
-            Debug.Log($"[LocalVersusGameManager] Bound player3 fog to vision {(vision3 ? vision3.name : "null")} worldMin={player3Fog.worldMin} worldMax={player3Fog.worldMax}", player3Fog);
         }
 
         BindCameraToFog(player1Camera, player1Fog);
@@ -410,26 +407,22 @@ public class LocalVersusVisuals : MonoBehaviour
         FogOfWarManager[] fogs = FindObjectsByType<FogOfWarManager>(FindObjectsSortMode.None);
         if (fogs == null || fogs.Length == 0)
         {
-            Debug.LogWarning("[LocalVersusGameManager] No FogOfWarManager instances found.", this);
             return;
         }
 
         if (!player1Fog)
         {
             player1Fog = fogs[0];
-            Debug.Log($"[LocalVersusGameManager] Auto-assigned player1Fog to {player1Fog.name}", this);
         }
 
         if (!player2Fog)
         {
             player2Fog = fogs.Length > 1 ? fogs[1] : fogs[0];
-            Debug.Log($"[LocalVersusGameManager] Auto-assigned player2Fog to {player2Fog.name}", this);
         }
 
         if (!player3Fog)
         {
             player3Fog = fogs.Length > 2 ? fogs[2] : (fogs.Length > 1 ? fogs[1] : fogs[0]);
-            Debug.Log($"[LocalVersusGameManager] Auto-assigned player3Fog to {player3Fog.name}", this);
         }
     }
 
@@ -446,7 +439,6 @@ public class LocalVersusVisuals : MonoBehaviour
             binder = cam.gameObject.AddComponent<FogOfWarCameraBinder>();
         }
         binder.SetFogManager(fog);
-        Debug.Log($"[LocalVersusGameManager] Bound camera {cam.name} to fog {fog.name}", cam);
     }
 
     internal void AutoAssignCompasses()
@@ -542,7 +534,6 @@ public class LocalVersusVisuals : MonoBehaviour
         int player3LayerId = usePlayer3 ? LayerMask.NameToLayer(player3OnlyLayer) : -1;
         if (player1LayerId < 0 || player2LayerId < 0 || (usePlayer3 && player3LayerId < 0))
         {
-            Debug.LogWarning($"[LocalVersusGameManager] Missing layers for player-only visuals. Define '{player1OnlyLayer}', '{player2OnlyLayer}'{(usePlayer3 ? $" and '{player3OnlyLayer}'" : string.Empty)} in TagManager.", this);
             return;
         }
 

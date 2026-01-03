@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,6 +10,8 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class WeaponDamage : MonoBehaviour
 {
+    public static event Action<CharacterHealth, CharacterHealth> AnyStunned;
+
     [SerializeField, Tooltip("Owning unit so we don't damage ourselves. If left empty, will search in parents.")] private CharacterHealth owner;
     [SerializeField, Tooltip("Damage dealt per successful hit.")] private float damageAmount = 25f;
     [SerializeField, Tooltip("Optional layer filter; empty = everything.")] private LayerMask targetLayers = ~0;
@@ -126,6 +129,8 @@ public class WeaponDamage : MonoBehaviour
         {
             manager.TryHandleHumiliation(owner, targetHealth);
         }
+
+        AnyStunned?.Invoke(owner, targetHealth);
         return true;
     }
 
