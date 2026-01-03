@@ -20,6 +20,7 @@ public class CharacterHealth : MonoBehaviour, IDamageable
 
     public event Action<DamagePayload> Damaged;
     public event Action<CharacterHealth> Died;
+    public static event Action<CharacterHealth, DamagePayload> AnyDied;
 
     private void Awake()
     {
@@ -64,6 +65,7 @@ public class CharacterHealth : MonoBehaviour, IDamageable
             IsDead = true;
             LogDebug("Health reached 0 -> Died event");
             Died?.Invoke(this);
+            AnyDied?.Invoke(this, _lastDamage);
             if (destroyOnDeath)
             {
                 Destroy(gameObject);

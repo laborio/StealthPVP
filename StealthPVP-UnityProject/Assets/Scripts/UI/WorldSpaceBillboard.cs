@@ -84,4 +84,17 @@ public class WorldSpaceBillboard : MonoBehaviour
 
         transform.rotation = Quaternion.LookRotation(-lookDirection.normalized, Vector3.up);
     }
+
+    public void SetTargetCamera(Camera camera)
+    {
+        targetCamera = camera;
+    }
+
+    public void SetUseRenderingCamera(bool value)
+    {
+        useRenderingCamera = value;
+    }
+
+    public Camera TargetCamera => targetCamera;
+    public bool UseRenderingCamera => useRenderingCamera;
 }

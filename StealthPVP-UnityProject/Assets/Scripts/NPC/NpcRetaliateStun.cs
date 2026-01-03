@@ -123,6 +123,55 @@ public class NpcRetaliateStun : MonoBehaviour
         StopChase();
     }
 
+    public bool IsRetaliating
+    {
+        get
+        {
+            if (_chaseTimer > 0f)
+            {
+                return true;
+            }
+
+            if (characterAnimations)
+            {
+                return characterAnimations.IsInAttackState();
+            }
+
+            if (animator && _upperBodyLayerIndex >= 0)
+            {
+                return IsInUpperBodyAttackState();
+            }
+
+            return false;
+        }
+    }
+
+    public void TriggerAwarenessRetaliation(Transform instigator)
+    {
+        if (!instigator || !health || health.CurrentHealth <= 0f)
+        {
+            return;
+        }
+
+        if (playersOnly && !IsPlayerInstigator(instigator.gameObject))
+        {
+            return;
+        }
+
+        if (skipIfAlreadyAttacking && characterAnimations && characterAnimations.IsInAttackState())
+        {
+            return;
+        }
+
+        DamagePayload payload = BuildPayloadForTarget(instigator);
+        StartChase(instigator, payload);
+
+        if (Time.time >= _nextAllowedTime && !ShouldChase(instigator.position))
+        {
+            TriggerStun(payload);
+        }
+    }
+
     private void HandleDamaged(DamagePayload payload)
     {
         if (!health || health.CurrentHealth <= 0f)

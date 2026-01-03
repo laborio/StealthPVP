@@ -73,6 +73,7 @@ public class NpcNavAgent : MonoBehaviour
     private float _nextGateUpdateTime;
     private float _lastGateUpdateTime;
     private float _nextGridUpdateTime;
+    private bool _wanderSuppressed;
 
     private void Awake()
     {
@@ -176,6 +177,12 @@ public class NpcNavAgent : MonoBehaviour
         WaitForSeconds wait = new WaitForSeconds(repathInterval);
         while (true)
         {
+            if (_wanderSuppressed)
+            {
+                yield return wait;
+                continue;
+            }
+
             if (agent && agent.isOnNavMesh && !agent.pathPending)
             {
                 if (!agent.hasPath || agent.remainingDistance <= agent.stoppingDistance + 0.1f)
@@ -193,6 +200,28 @@ public class NpcNavAgent : MonoBehaviour
             CheckStuck();
             yield return wait;
         }
+    }
+
+    public void SetWanderSuppressed(bool value)
+    {
+        _wanderSuppressed = value;
+        if (!value && agent && agent.enabled && agent.isOnNavMesh && !agent.hasPath && !agent.pathPending)
+        {
+            TrySetNextDestination();
+        }
+    }
+
+    public void ForceImmediateDestination()
+    {
+        if (!agent || !agent.enabled || !agent.isOnNavMesh)
+        {
+            return;
+        }
+
+        _forcedIdle = false;
+        _forcedIdleTimer = 0f;
+        _resumeTimer = 0f;
+        TrySetNextDestination();
     }
 
     private void TrySetNextDestination(bool preferLeastCrowded = false)

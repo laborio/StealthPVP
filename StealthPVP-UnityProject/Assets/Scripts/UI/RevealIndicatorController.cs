@@ -50,13 +50,11 @@ public class RevealIndicatorController : MonoBehaviour
     public void SetTarget(NpcIdentity identity)
     {
         currentTarget = identity;
-        Debug.Log($"[RevealIndicatorController] SetTarget -> {(identity ? identity.name : "null")}", this);
     }
 
     public void ClearTarget()
     {
         currentTarget = null;
-        Debug.Log("[RevealIndicatorController] ClearTarget", this);
     }
 
     public void ConfigurePlayer(Transform player, VisionSource vision, AbilityRunner ability, Camera camera = null)
@@ -131,14 +129,12 @@ public class RevealIndicatorController : MonoBehaviour
 
         if (!playerTransform || !compassRoot || !compassCircle)
         {
-            Debug.LogWarning("[RevealIndicatorController] Missing refs (player/compass/circle).", this);
             return;
         }
 
         Transform targetTransform = currentTarget ? currentTarget.transform : null;
         if (!targetTransform)
         {
-            Debug.Log("[RevealIndicatorController] No target set; hiding visuals.", this);
             UpdateVisibility(targetVisible: false, hasTarget: false, distanceToTarget: 0f);
             return;
         }

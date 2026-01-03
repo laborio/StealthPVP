@@ -1095,6 +1095,8 @@ public partial class SimpleCharacterController : MonoBehaviour
 
     public PlayerInputRouter InputRouter => inputRouter;
     public float DashCooldownRemaining => _dashCooldownTimer;
+    public bool IsRunning => _isRunning || _isDashing;
+    public bool IsJumping => _isJumping || _isFalling;
 
     public void ApplyDashConfig(float speedMultiplier, float airSpeedMultiplier, float duration, float cooldown)
     {
