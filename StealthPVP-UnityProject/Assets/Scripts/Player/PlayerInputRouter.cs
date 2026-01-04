@@ -13,6 +13,7 @@ public class PlayerInputRouter : MonoBehaviour
     [SerializeField] private KeyCode jumpKey = KeyCode.Space;
     [SerializeField] private KeyCode dashKey = KeyCode.R;
     [SerializeField] private KeyCode interactKey = KeyCode.E;
+    [SerializeField] private KeyCode interactAltKey = KeyCode.None;
     [SerializeField] private string horizontalAxis = "Horizontal";
     [SerializeField] private string verticalAxis = "Vertical";
     [Header("Input State")]
@@ -49,6 +50,7 @@ public class PlayerInputRouter : MonoBehaviour
             JumpPressed = Input.GetKeyDown(jumpKey),
             DashPressed = Input.GetKeyDown(dashKey),
             InteractPressed = Input.GetKeyDown(interactKey),
+            InteractAltPressed = interactAltKey != KeyCode.None && Input.GetKeyDown(interactAltKey),
             PrimaryPressed = Input.GetMouseButtonDown(0),
             PrimaryHeld = Input.GetMouseButton(0),
             PrimaryReleased = Input.GetMouseButtonUp(0),
@@ -159,6 +161,12 @@ public class PlayerInputRouter : MonoBehaviour
         verticalAxis = vertical;
     }
 
+    public void SetInteractKeys(KeyCode primary, KeyCode alternate)
+    {
+        interactKey = primary;
+        interactAltKey = alternate;
+    }
+
     public void SetKeyboardOnlyMovement(bool value)
     {
         keyboardOnlyMovement = value;
@@ -198,6 +206,7 @@ public struct PlayerInputSnapshot
     public bool JumpPressed;
     public bool DashPressed;
     public bool InteractPressed;
+    public bool InteractAltPressed;
     public bool PrimaryPressed;
     public bool PrimaryHeld;
     public bool PrimaryReleased;

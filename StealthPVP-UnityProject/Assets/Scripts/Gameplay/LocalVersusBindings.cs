@@ -35,6 +35,8 @@ public class LocalVersusBindings : MonoBehaviour
     private KeyCode player1SmokeKey => manager.player1SmokeKey;
     private KeyCode player2SmokeKey => manager.player2SmokeKey;
     private KeyCode player3SmokeKey => manager.player3SmokeKey;
+    private KeyCode player1InteractKeyCode => manager.player1InteractKeyCode;
+    private KeyCode player1InteractAltKeyCode => manager.player1InteractAltKeyCode;
     private bool shareSingleGamepadBetweenPlayer2And3 => manager.shareSingleGamepadBetweenPlayer2And3;
     private bool player3UsePlayer2Bindings => manager.player3UsePlayer2Bindings;
     private SharedGamepadTarget sharedGamepadTarget => manager.sharedGamepadTarget;
@@ -61,6 +63,7 @@ public class LocalVersusBindings : MonoBehaviour
     private KeyCode player2DashKeyCode => manager.player2DashKeyCode;
     private KeyCode player2RunKeyCode => manager.player2RunKeyCode;
     private KeyCode player2InteractKeyCode => manager.player2InteractKeyCode;
+    private KeyCode player2InteractAltKeyCode => manager.player2InteractAltKeyCode;
     private bool player3UsePrimaryKeycode => manager.player3UsePrimaryKeycode;
     private KeyCode player3PrimaryKeyCode => manager.player3PrimaryKeyCode;
     private KeyCode player3StunKeyCode => manager.player3StunKeyCode;
@@ -68,6 +71,7 @@ public class LocalVersusBindings : MonoBehaviour
     private KeyCode player3DashKeyCode => manager.player3DashKeyCode;
     private KeyCode player3RunKeyCode => manager.player3RunKeyCode;
     private KeyCode player3InteractKeyCode => manager.player3InteractKeyCode;
+    private KeyCode player3InteractAltKeyCode => manager.player3InteractAltKeyCode;
 
     public void Initialize(LocalVersusGameManager manager)
     {
@@ -318,6 +322,23 @@ public class LocalVersusBindings : MonoBehaviour
         return ability;
     }
 
+    private PlayerCarryController GetCarryController(GameObject root, bool addIfMissing)
+    {
+        if (!root)
+        {
+            return null;
+        }
+
+        PlayerCarryController controller = root.GetComponent<PlayerCarryController>()
+            ?? root.GetComponentInChildren<PlayerCarryController>(true);
+        if (!controller && addIfMissing)
+        {
+            controller = root.AddComponent<PlayerCarryController>();
+        }
+
+        return controller;
+    }
+
     internal void UpdateStunBindings()
     {
         float duration = 0f;
@@ -373,6 +394,31 @@ public class LocalVersusBindings : MonoBehaviour
         }
     }
 
+    internal void UpdateCarryBindings()
+    {
+        float moveSpeedMultiplier = 0f;
+        float dropForwardOffset = 0f;
+        float dropHeightOffset = 0f;
+        float forcedDropRadius = 0f;
+        float awarenessBoost = 0f;
+        if (!gameplayTuning)
+        {
+            ResolveGameplayTuning();
+        }
+        if (gameplayTuning)
+        {
+            moveSpeedMultiplier = gameplayTuning.carryMoveSpeedMultiplier;
+            dropForwardOffset = gameplayTuning.carryDropForwardOffset;
+            dropHeightOffset = gameplayTuning.carryDropHeightOffset;
+            forcedDropRadius = gameplayTuning.carryForcedDropRadius;
+            awarenessBoost = gameplayTuning.carryNpcAwarenessBoost;
+        }
+
+        ApplyCarryConfig(_player1Instance, moveSpeedMultiplier, dropForwardOffset, dropHeightOffset, forcedDropRadius, awarenessBoost);
+        ApplyCarryConfig(_player2Instance, moveSpeedMultiplier, dropForwardOffset, dropHeightOffset, forcedDropRadius, awarenessBoost);
+        ApplyCarryConfig(_player3Instance, moveSpeedMultiplier, dropForwardOffset, dropHeightOffset, forcedDropRadius, awarenessBoost);
+    }
+
     private void ApplyDashConfig(GameObject instance, float speedMultiplier, float airSpeedMultiplier, float duration, float cooldown)
     {
         if (!instance || !gameplayTuning)
@@ -387,6 +433,23 @@ public class LocalVersusBindings : MonoBehaviour
         }
 
         controller.ApplyDashConfig(speedMultiplier, airSpeedMultiplier, duration, cooldown);
+    }
+
+    private void ApplyCarryConfig(GameObject instance, float moveSpeedMultiplier, float dropForwardOffset, float dropHeightOffset,
+        float forcedDropRadius, float awarenessBoost)
+    {
+        if (!instance || !gameplayTuning)
+        {
+            return;
+        }
+
+        PlayerCarryController carryController = GetCarryController(instance, addIfMissing: false);
+        if (!carryController)
+        {
+            return;
+        }
+
+        carryController.ApplyCarryConfig(moveSpeedMultiplier, dropForwardOffset, dropHeightOffset, forcedDropRadius, awarenessBoost);
     }
 
     private void ApplyStunDuration(GameObject instance, float duration)
@@ -420,6 +483,7 @@ public class LocalVersusBindings : MonoBehaviour
         {
             router.SetAxes(player1HorizontalAxis, player1VerticalAxis);
             router.SetKeyboardOnlyMovement(true);
+            router.SetInteractKeys(player1InteractKeyCode, player1InteractAltKeyCode);
             return;
         }
 
@@ -447,7 +511,8 @@ public class LocalVersusBindings : MonoBehaviour
         KeyCode dash = usePlayer2Bindings ? player2DashKeyCode : player3DashKeyCode;
         KeyCode run = usePlayer2Bindings ? player2RunKeyCode : player3RunKeyCode;
         KeyCode interact = usePlayer2Bindings ? player2InteractKeyCode : player3InteractKeyCode;
-        gamepad.SetButtonKeyCodes(primary, jump, dash, run, interact);
+        KeyCode interactAlt = usePlayer2Bindings ? player2InteractAltKeyCode : player3InteractAltKeyCode;
+        gamepad.SetButtonKeyCodes(primary, jump, dash, run, interact, interactAlt);
         KeyCode stun = usePlayer2Bindings ? player2StunKeyCode : player3StunKeyCode;
         gamepad.SetSecondaryKeyCode(stun);
         gamepad.SetSecondaryTrigger(string.Empty, false);

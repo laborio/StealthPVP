@@ -45,6 +45,7 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
     private KeyCode dashKeyCode = KeyCode.JoystickButton1;
     private KeyCode runKeyCode = KeyCode.JoystickButton5;
     private KeyCode interactKeyCode = KeyCode.JoystickButton3;
+    private KeyCode interactKeyCodeAlt = KeyCode.None;
     private bool _previousPrimaryHeld;
     private bool _previousSecondaryHeld;
     [Header("Aim")]
@@ -102,6 +103,7 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
             JumpPressed = GetButtonDown(jumpButton, jumpKeyCode, false),
             DashPressed = GetButtonDown(dashButton, dashKeyCode, false),
             InteractPressed = GetButtonDown(interactButton, interactKeyCode, false),
+            InteractAltPressed = interactKeyCodeAlt != KeyCode.None && Input.GetKeyDown(interactKeyCodeAlt),
             PrimaryPressed = primaryPressed,
             PrimaryHeld = primaryHeld,
             PrimaryReleased = primaryReleased,
@@ -239,13 +241,14 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
         interactButton = interact ?? string.Empty;
     }
 
-    public void SetButtonKeyCodes(KeyCode primary, KeyCode jump, KeyCode dash, KeyCode run, KeyCode interact)
+    public void SetButtonKeyCodes(KeyCode primary, KeyCode jump, KeyCode dash, KeyCode run, KeyCode interact, KeyCode interactAlt = KeyCode.None)
     {
         primaryKeyCode = primary;
         jumpKeyCode = jump;
         dashKeyCode = dash;
         runKeyCode = run;
         interactKeyCode = interact;
+        interactKeyCodeAlt = interactAlt;
     }
 
     public void SetSecondaryKeyCode(KeyCode secondary)
@@ -389,9 +392,10 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
 
     private void DebugDetected(PlayerInputSnapshot snapshot, Vector2 aimAxis, float triggerValue, float secondaryTriggerValue)
     {
-        if (snapshot.PrimaryPressed || snapshot.JumpPressed || snapshot.DashPressed || snapshot.InteractPressed || snapshot.RunHeld)
+        if (snapshot.PrimaryPressed || snapshot.JumpPressed || snapshot.DashPressed || snapshot.InteractPressed
+            || snapshot.InteractAltPressed || snapshot.RunHeld)
         {
-            Debug.Log($"[PlayerInputRouterGamepad] Button detected: Primary={snapshot.PrimaryPressed} Secondary={snapshot.SecondaryPressed} Jump={snapshot.JumpPressed} Dash={snapshot.DashPressed} Interact={snapshot.InteractPressed} RunHeld={snapshot.RunHeld} trigger={triggerValue:0.00} secondaryTrigger={secondaryTriggerValue:0.00} keycodes: P={primaryKeyCode} S={secondaryKeyCode} J={jumpKeyCode} D={dashKeyCode} R={runKeyCode} I={interactKeyCode}", this);
+            Debug.Log($"[PlayerInputRouterGamepad] Button detected: Primary={snapshot.PrimaryPressed} Secondary={snapshot.SecondaryPressed} Jump={snapshot.JumpPressed} Dash={snapshot.DashPressed} Interact={snapshot.InteractPressed} InteractAlt={snapshot.InteractAltPressed} RunHeld={snapshot.RunHeld} trigger={triggerValue:0.00} secondaryTrigger={secondaryTriggerValue:0.00} keycodes: P={primaryKeyCode} S={secondaryKeyCode} J={jumpKeyCode} D={dashKeyCode} R={runKeyCode} I={interactKeyCode} IA={interactKeyCodeAlt}", this);
         }
 
         if (snapshot.MoveAxis.sqrMagnitude > 0.01f || aimAxis.sqrMagnitude > 0.01f)

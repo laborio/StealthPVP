@@ -1,0 +1,142 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &1765999494161110574
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4484783725555873356, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 108.38982
+      objectReference: {fileID: 0}
+    - target: {fileID: 4484783725555873356, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 10.23913
+      objectReference: {fileID: 0}
+    - target: {fileID: 4484783725555873356, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -4.76622
+      objectReference: {fileID: 0}
+    - target: {fileID: 4484783725555873356, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4484783725555873356, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4484783725555873356, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4484783725555873356, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4484783725555873356, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4484783725555873356, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4484783725555873356, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7950383326825302272, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+      propertyPath: m_Name
+      value: Player_TeamAtk_1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8342229978816130646, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+      propertyPath: inputRouter
+      value: 
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 6713969832712145097, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7950383326825302272, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8536165246733572253}
+  m_SourcePrefab: {fileID: 100100000, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+--- !u!1 &8563445903801868078 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7950383326825302272, guid: e1f1bede5e930464494e75207f19d0e1, type: 3}
+  m_PrefabInstance: {fileID: 1765999494161110574}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8536165246733572253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8563445903801868078}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff14bb8168ab24c489956e4229b4cdba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInputRouterGamepad
+  inputCamera: {fileID: 0}
+  runKey: 304
+  stopKey: 115
+  jumpKey: 32
+  dashKey: 114
+  interactKey: 101
+  horizontalAxis: Horizontal
+  verticalAxis: Vertical
+  inputEnabled: 1
+  inputSuppressed: 0
+  keyboardOnlyMovement: 0
+  moveLeftKey: 97
+  moveRightKey: 100
+  moveUpKey: 119
+  moveDownKey: 115
+  attackRayDistance: 250
+  attackGroundMask:
+    serializedVersion: 2
+    m_Bits: 16379
+  maximumRayDistance: 250
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 0
+  moveHorizontalAxis: Horizontal2
+  moveVerticalAxis: Vertical2
+  aimHorizontalAxis: AimHorizontal2
+  aimVerticalAxis: AimVertical2
+  aimHorizontalFallbackAxes:
+  - 4th Axis
+  - Axis6
+  - RightStickHorizontal
+  - RightStickX
+  aimVerticalFallbackAxes:
+  - 5th Axis
+  - Axis6
+  - RightStickVertical
+  - RightStickY
+  primaryTriggerAxis: 
+  triggerPressThreshold: 0.5
+  invertTriggerAxis: 0
+  useTriggerForPrimary: 0
+  secondaryTriggerAxis: 
+  secondaryTriggerPressThreshold: 0.5
+  invertSecondaryTriggerAxis: 0
+  useTriggerForSecondary: 0
+  primaryButton: 
+  secondaryButton: 
+  jumpButton: 
+  dashButton: 
+  runButton: 
+  interactButton: 
+  debugInputs: 0
+  invertMoveX: 0
+  invertMoveY: 0
+  invertAimX: 0
+  invertAimY: 0
+  aimDistance: 8
+  aimDeadZone: 0.15

@@ -852,6 +852,29 @@ public class NpcAwareness : MonoBehaviour
         SetAwarenessFull(instigatorTransform);
     }
 
+    public void ApplyAwarenessBoost(Transform instigator, float normalized)
+    {
+        if (!instigator)
+        {
+            return;
+        }
+
+        float clamped = Mathf.Clamp01(normalized);
+        if (clamped <= 0f)
+        {
+            return;
+        }
+
+        if (!IsWithinAwareness(instigator.position))
+        {
+            return;
+        }
+
+        _currentTrigger = instigator;
+        _retaliationTriggered = false;
+        SetAwareness(Mathf.Max(_awareness, clamped));
+    }
+
     private void SetAwarenessFull(Transform instigator)
     {
         _currentTrigger = instigator;

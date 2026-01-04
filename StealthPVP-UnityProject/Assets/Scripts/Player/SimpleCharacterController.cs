@@ -12,6 +12,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     [SerializeField] private float rotationSpeed = 720f;
     [SerializeField] private PlayerInputRouter inputRouter;
     [SerializeField] private MorphAbility morphAbility;
+    [SerializeField] private PlayerCarryController carryController;
 
     [Header("Click To Move")]
     [SerializeField] private LayerMask groundMask;
@@ -102,6 +103,8 @@ public partial class SimpleCharacterController : MonoBehaviour
     private bool _lastAttackWasSecondary;
     private bool _morphActive;
     private float _morphMoveSpeed;
+    private bool _carryActive;
+    private float _carryMoveSpeedMultiplier = 1f;
 
     private void Awake()
     {
@@ -118,6 +121,7 @@ public partial class SimpleCharacterController : MonoBehaviour
             inputRouter = GetComponent<PlayerInputRouter>();
         }
         ResolveMorphAbility();
+        ResolveCarryController();
         if (inputRouter)
         {
             inputRouter.SetInputCamera(_camera);
@@ -135,6 +139,7 @@ public partial class SimpleCharacterController : MonoBehaviour
             inputSnapshot = default;
         }
         ResolveMorphAbility();
+        ResolveCarryController();
         bool morphActive = _morphActive || (morphAbility && morphAbility.IsMorphed);
         bool attackHeld = inputSnapshot.PrimaryHeld || inputSnapshot.SecondaryHeld;
         bool attackReleased = inputSnapshot.PrimaryReleased || inputSnapshot.SecondaryReleased;
@@ -154,6 +159,7 @@ public partial class SimpleCharacterController : MonoBehaviour
             inputSnapshot.JumpPressed = false;
             inputSnapshot.DashPressed = false;
             inputSnapshot.InteractPressed = false;
+            inputSnapshot.InteractAltPressed = false;
         }
         bool isGrounded = IsGrounded();
         if (_teleportLocked)
@@ -170,7 +176,16 @@ public partial class SimpleCharacterController : MonoBehaviour
         Vector2 movementInputRaw = inputSnapshot.MoveAxis;
         bool requestedMovement = movementInputRaw.sqrMagnitude > 0.0001f;
         bool interactPressed = inputSnapshot.InteractPressed;
+        bool interactAltPressed = inputSnapshot.InteractAltPressed;
         float deltaTime = Time.deltaTime;
+        bool actionKeyAllowed = _seatingState == SeatingState.Standing && !morphActive;
+        if (actionKeyAllowed && interactAltPressed && carryController && carryController.IsCarrying)
+        {
+            if (carryController.TryDropInFront())
+            {
+                interactAltPressed = false;
+            }
+        }
         HandleBenchInput(requestedMovement, interactPressed);
         HandleAttackInput(inputSnapshot, isGrounded);
         UpdateAttackLockState(deltaTime);
@@ -188,8 +203,8 @@ public partial class SimpleCharacterController : MonoBehaviour
             }
             ApplyRangeIndicatorRotation(indicatorDirection);
         }
-        bool actionKeyAllowed = _seatingState == SeatingState.Standing && !morphActive;
         HandleActionInput(interactPressed && actionKeyAllowed, isGrounded);
+        HandlePickupInput(interactAltPressed && actionKeyAllowed, isGrounded);
 
         bool seatingLocked = _seatingState != SeatingState.Standing;
         bool attackMovementLocked = lockMovementDuringAttack && _attackLockActive;
@@ -208,6 +223,10 @@ public partial class SimpleCharacterController : MonoBehaviour
         float waterSpeedMultiplier = _isInWater ? this.waterMoveSpeedMultiplier : 1f;
         float waterJumpMultiplier = _isInWater ? this.waterJumpVelocityMultiplier : 1f;
         float baseMoveSpeed = morphActive ? _morphMoveSpeed : moveSpeed;
+        if (_carryActive)
+        {
+            baseMoveSpeed *= _carryMoveSpeedMultiplier;
+        }
 
         Vector3 desiredPlanarVelocity = Vector3.zero;
 
@@ -394,7 +413,7 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
         else
         {
-            bool canWallJump = !isGrounded && _wallContactTimer > 0f && _wallJumpCooldownTimer <= 0f;
+            bool canWallJump = !isGrounded && _wallContactTimer > 0f && _wallJumpCooldownTimer <= 0f && !_carryActive;
             if (bufferedJumpRequested && canWallJump)
             {
                 Vector3 planarIncoming = _currentPlanarVelocity;
@@ -975,6 +994,7 @@ public partial class SimpleCharacterController : MonoBehaviour
             JumpPressed = Input.GetKeyDown(KeyCode.Space),
             DashPressed = Input.GetKeyDown(KeyCode.R),
             InteractPressed = Input.GetKeyDown(KeyCode.E),
+            InteractAltPressed = false,
             PrimaryPressed = Input.GetMouseButtonDown(0),
             PrimaryHeld = Input.GetMouseButton(0),
             PrimaryReleased = Input.GetMouseButtonUp(0),
@@ -1097,6 +1117,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     public float DashCooldownRemaining => _dashCooldownTimer;
     public bool IsRunning => _isRunning || _isDashing;
     public bool IsJumping => _isJumping || _isFalling;
+    public bool IsCarrying => _carryActive;
 
     public void ApplyDashConfig(float speedMultiplier, float airSpeedMultiplier, float duration, float cooldown)
     {
@@ -1119,11 +1140,26 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
     }
 
+    public void SetCarryState(bool active, float moveSpeedMultiplier)
+    {
+        _carryActive = active;
+        _carryMoveSpeedMultiplier = Mathf.Max(0f, moveSpeedMultiplier);
+    }
+
     private void ResolveMorphAbility()
     {
         if (!morphAbility)
         {
             morphAbility = GetComponent<MorphAbility>() ?? GetComponentInChildren<MorphAbility>(true);
+        }
+    }
+
+    private void ResolveCarryController()
+    {
+        if (!carryController)
+        {
+            carryController = GetComponent<PlayerCarryController>()
+                ?? GetComponentInChildren<PlayerCarryController>(true);
         }
     }
 

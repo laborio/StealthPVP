@@ -202,6 +202,7 @@ GameObject:
   - component: {fileID: 3634263278278829196}
   - component: {fileID: 5807380612793079128}
   - component: {fileID: -4667670165271518510}
+  - component: {fileID: -9125920819924876531}
   m_Layer: 0
   m_Name: Bench
   m_TagString: Bench
@@ -262,3 +263,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MorphTarget
   renderers: []
   previewIcon: {fileID: 21300000, guid: 7a78cb075660346668f997e8b28976f0, type: 3}
+--- !u!114 &-9125920819924876531
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7700622857875469713}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d91b7152bc1f4cb584eccf09e94a0a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CarryableProp
+  actionPriority: 150
+  maxPickupDistance: 0
+  facingDotThreshold: -1
+  triggerCollider: {fileID: 0}

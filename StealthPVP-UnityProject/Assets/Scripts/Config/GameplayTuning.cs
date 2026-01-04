@@ -31,6 +31,13 @@ public float dashAirSpeedMultiplier = 2f;
 public float dashDuration = 0.25f;
 public float dashCooldown = 1f;
 
+[Header("Carry")]
+public float carryMoveSpeedMultiplier = 0.75f;
+public float carryDropForwardOffset = 1f;
+public float carryDropHeightOffset = 0f;
+public float carryForcedDropRadius = 0.4f;
+public float carryNpcAwarenessBoost = 0.25f;
+
 [Header("Reveal - Overlook Multipliers (uses VisionSource heights)")]
 public float overlookLevel1CooldownMultiplier = 2f;
 public float overlookLevel2CooldownMultiplier = 3f;

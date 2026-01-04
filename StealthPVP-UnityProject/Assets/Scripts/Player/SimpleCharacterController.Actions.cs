@@ -5,6 +5,7 @@ public partial class SimpleCharacterController
 {
     [Header("Context Actions")]
     [SerializeField, Tooltip("Action pop-up UI attached to the player. Set active while an action is available.")] private GameObject actionHintUI;
+    [SerializeField, Tooltip("Pickup pop-up UI attached to the player. Set active while a pickup action is available.")] private GameObject pickupHintUI;
 
     private readonly List<IContextualAction> _contextActions = new List<IContextualAction>();
     private readonly Dictionary<Collider, List<IContextualAction>> _colliderActions = new Dictionary<Collider, List<IContextualAction>>();
@@ -16,7 +17,21 @@ public partial class SimpleCharacterController
             return;
         }
 
-        IContextualAction action = GetBestContextAction(isGrounded, false);
+        IContextualAction action = GetBestContextAction(isGrounded, false, null);
+        if (action != null)
+        {
+            action.TryExecute(this, isGrounded);
+        }
+    }
+
+    private void HandlePickupInput(bool pickupPressed, bool isGrounded)
+    {
+        if (!pickupPressed || _seatingState != SeatingState.Standing)
+        {
+            return;
+        }
+
+        IContextualAction action = GetBestContextAction(isGrounded, false, ContextActionHintType.Pickup);
         if (action != null)
         {
             action.TryExecute(this, isGrounded);
@@ -25,13 +40,22 @@ public partial class SimpleCharacterController
 
     private void UpdateActionHintDisplay(bool actionKeyAllowed, bool isGrounded)
     {
-        if (!actionHintUI)
+        if (!actionHintUI && !pickupHintUI)
         {
             return;
         }
 
-        IContextualAction best = actionKeyAllowed ? GetBestContextAction(isGrounded, true) : null;
-        SetActionHintVisible(best != null);
+        if (_carryActive)
+        {
+            SetActionHintVisible(false);
+            SetPickupHintVisible(false);
+            return;
+        }
+
+        IContextualAction best = actionKeyAllowed ? GetBestContextAction(isGrounded, true, null) : null;
+        bool showPickup = ShouldUsePickupHint(best);
+        SetActionHintVisible(best != null && !showPickup);
+        SetPickupHintVisible(best != null && showPickup);
     }
 
     private void SetActionHintVisible(bool visible)
@@ -43,7 +67,30 @@ public partial class SimpleCharacterController
 
     }
 
+    private void SetPickupHintVisible(bool visible)
+    {
+        if (pickupHintUI && pickupHintUI.activeSelf != visible)
+        {
+            pickupHintUI.SetActive(visible);
+        }
+    }
+
+    private bool ShouldUsePickupHint(IContextualAction action)
+    {
+        if (action == null)
+        {
+            return false;
+        }
+
+        return action is IContextualActionHint hint && hint.HintType == ContextActionHintType.Pickup;
+    }
+
     private IContextualAction GetBestContextAction(bool isGrounded, bool forHint)
+    {
+        return GetBestContextAction(isGrounded, forHint, null);
+    }
+
+    private IContextualAction GetBestContextAction(bool isGrounded, bool forHint, ContextActionHintType? hintFilter)
     {
         IContextualAction bestAction = null;
         int bestPriority = int.MinValue;
@@ -60,6 +107,14 @@ public partial class SimpleCharacterController
             if (action.IsBusy)
             {
                 continue;
+            }
+
+            if (hintFilter.HasValue)
+            {
+                if (!(action is IContextualActionHint hint) || hint.HintType != hintFilter.Value)
+                {
+                    continue;
+                }
             }
 
             bool allowed = forHint ? action.ShouldShowHint(this, isGrounded) : action.CanExecute(this, isGrounded);
@@ -187,6 +242,7 @@ public partial class SimpleCharacterController
         _colliderActions.Clear();
         _contextActions.Clear();
         SetActionHintVisible(false);
+        SetPickupHintVisible(false);
     }
 
     public void RefreshContextActionsFromOverlaps()

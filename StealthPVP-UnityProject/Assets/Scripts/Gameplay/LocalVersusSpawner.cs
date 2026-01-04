@@ -126,6 +126,11 @@ public class LocalVersusSpawner : MonoBehaviour
         manager.bindings?.UpdateDashBindings();
     }
 
+    private void UpdateCarryBindings()
+    {
+        manager.bindings?.UpdateCarryBindings();
+    }
+
     private void EnsureVisionSource(GameObject root)
     {
         manager.visuals?.EnsureVisionSource(root);
@@ -197,6 +202,7 @@ public class LocalVersusSpawner : MonoBehaviour
 
         UpdateFogBindings();
         UpdateRevealBindings();
+        UpdateCarryBindings();
         UpdatePlayerOnlyVisuals();
         UpdateInputAssignments();
     }
@@ -451,6 +457,7 @@ public class LocalVersusSpawner : MonoBehaviour
         UpdateStunBindings();
         UpdateSmokeBindings();
         UpdateDashBindings();
+        UpdateCarryBindings();
         _respawnInProgress = false;
     }
 

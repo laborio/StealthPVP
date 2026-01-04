@@ -92,6 +92,9 @@ public class LocalVersusGameManager : MonoBehaviour
     [SerializeField] internal bool invertGamepadMoveY = false;
     [SerializeField] internal bool invertGamepadAimX = false;
     [SerializeField] internal bool invertGamepadAimY = false;
+    [Header("Player 1 KeyCodes")]
+    [SerializeField, Tooltip("Primary interact key for player 1 (keyboard/mouse).")] internal KeyCode player1InteractKeyCode = KeyCode.E;
+    [SerializeField, Tooltip("Optional alternate interact key for player 1.")] internal KeyCode player1InteractAltKeyCode = KeyCode.None;
     [Header("Player 2 KeyCodes")]
     [SerializeField, Tooltip("If false, primary keycode is ignored so trigger/aim-only can be used.")] internal bool player2UsePrimaryKeycode = true;
     [SerializeField] internal KeyCode player2PrimaryKeyCode = KeyCode.Joystick1Button12;
@@ -100,6 +103,7 @@ public class LocalVersusGameManager : MonoBehaviour
     [SerializeField] internal KeyCode player2DashKeyCode = KeyCode.Joystick1Button1;
     [SerializeField] internal KeyCode player2RunKeyCode = KeyCode.Joystick1Button5;
     [SerializeField] internal KeyCode player2InteractKeyCode = KeyCode.Joystick1Button3;
+    [SerializeField, Tooltip("Optional alternate interact key (e.g., gamepad A).")] internal KeyCode player2InteractAltKeyCode = KeyCode.None;
     [Header("Player 3 KeyCodes")]
     [SerializeField, Tooltip("If false, primary keycode is ignored so trigger/aim-only can be used.")] internal bool player3UsePrimaryKeycode = true;
     [SerializeField] internal KeyCode player3PrimaryKeyCode = KeyCode.Joystick2Button12;
@@ -108,6 +112,7 @@ public class LocalVersusGameManager : MonoBehaviour
     [SerializeField] internal KeyCode player3DashKeyCode = KeyCode.Joystick2Button1;
     [SerializeField] internal KeyCode player3RunKeyCode = KeyCode.Joystick2Button5;
     [SerializeField] internal KeyCode player3InteractKeyCode = KeyCode.Joystick2Button3;
+    [SerializeField, Tooltip("Optional alternate interact key (e.g., gamepad A).")] internal KeyCode player3InteractAltKeyCode = KeyCode.None;
     [Header("Gamepad Assignment")]
     [SerializeField, Tooltip("If true, a single gamepad controls either player 2 or player 3 (toggle below).")] internal bool shareSingleGamepadBetweenPlayer2And3 = true;
     [SerializeField, Tooltip("When sharing a single gamepad, select which player receives input.")] internal SharedGamepadTarget sharedGamepadTarget = SharedGamepadTarget.Player2;
@@ -157,6 +162,7 @@ public class LocalVersusGameManager : MonoBehaviour
         bindings?.UpdateStunBindings();
         bindings?.UpdateSmokeBindings();
         bindings?.UpdateDashBindings();
+        bindings?.UpdateCarryBindings();
         rules?.UpdateScoreboards();
     }
 
