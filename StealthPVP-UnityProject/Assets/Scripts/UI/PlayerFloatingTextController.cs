@@ -21,11 +21,15 @@ public class PlayerFloatingTextController : MonoBehaviour
     [Header("References")]
     [SerializeField, Tooltip("Root that contains the floating text TMP objects.")] private Transform floatingTextsRoot;
     [SerializeField] private TMP_Text statusText;
-    [SerializeField] private TMP_Text killText;
-    [SerializeField] private TMP_Text humiliationText;
+    [SerializeField] private TMP_Text pointsTypeText;
+    [SerializeField] private TMP_Text pointsValueText;
 
     [Header("Status")]
     [SerializeField] private List<StatusDefinition> statusDefinitions = new List<StatusDefinition>();
+
+    [Header("Points Popup")]
+    [SerializeField] private Color positivePointsColor = new Color(1f, 0.9f, 0.2f, 1f);
+    [SerializeField] private Color negativePointsColor = new Color(1f, 0.4f, 0.1f, 1f);
 
     [Header("Popup Animation")]
     [SerializeField, Tooltip("Total duration for the popup animation.")] private float popupDuration = 1.2f;
@@ -40,8 +44,7 @@ public class PlayerFloatingTextController : MonoBehaviour
     private readonly Dictionary<string, StatusDefinition> _statusLookup = new Dictionary<string, StatusDefinition>(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<TMP_Text, Vector3> _basePositions = new Dictionary<TMP_Text, Vector3>();
 
-    private Coroutine _killRoutine;
-    private Coroutine _humiliationRoutine;
+    private Coroutine _pointsRoutine;
     private Coroutine _layerRoutine;
     private int _sharedLayer = -1;
 
@@ -52,8 +55,8 @@ public class PlayerFloatingTextController : MonoBehaviour
         CacheBasePositions();
         ApplySharedLayer();
         SetTextActive(statusText, false);
-        SetTextActive(killText, false);
-        SetTextActive(humiliationText, false);
+        SetTextActive(pointsTypeText, false);
+        SetTextActive(pointsValueText, false);
     }
 
     private void OnEnable()
@@ -127,24 +130,17 @@ public class PlayerFloatingTextController : MonoBehaviour
 
     public void ShowKill(int points)
     {
-        if (!killText)
-        {
-            return;
-        }
-
-        string message = $"Elimination\n+{points}";
-        PlayPopup(killText, message, ref _killRoutine);
+        ShowPointsPopup("Elimination", points);
     }
 
     public void ShowHumiliation(int points)
     {
-        if (!humiliationText)
-        {
-            return;
-        }
+        ShowPointsPopup("Humiliation", points);
+    }
 
-        string message = $"Humiliation\n+{points}";
-        PlayPopup(humiliationText, message, ref _humiliationRoutine);
+    public void ShowWrongTarget(int points = -100)
+    {
+        ShowPointsPopup("Wrong Target", points);
     }
 
     private void ResolveReferences()
@@ -178,13 +174,15 @@ public class PlayerFloatingTextController : MonoBehaviour
             {
                 statusText = FindTextChild(floatingTextsRoot, "Status");
             }
-            if (!killText)
+            if (!pointsTypeText)
             {
-                killText = FindTextChild(floatingTextsRoot, "Kills");
+                pointsTypeText = FindTextChild(floatingTextsRoot, "PointsType_Txt")
+                    ?? FindTextChild(floatingTextsRoot, "PointsType");
             }
-            if (!humiliationText)
+            if (!pointsValueText)
             {
-                humiliationText = FindTextChild(floatingTextsRoot, "Humiliation");
+                pointsValueText = FindTextChild(floatingTextsRoot, "Points_Txt")
+                    ?? FindTextChild(floatingTextsRoot, "Points");
             }
         }
     }
@@ -262,8 +260,8 @@ public class PlayerFloatingTextController : MonoBehaviour
     private void CacheBasePositions()
     {
         CacheBasePosition(statusText);
-        CacheBasePosition(killText);
-        CacheBasePosition(humiliationText);
+        CacheBasePosition(pointsTypeText);
+        CacheBasePosition(pointsValueText);
     }
 
     private void CacheBasePosition(TMP_Text text)
@@ -280,7 +278,25 @@ public class PlayerFloatingTextController : MonoBehaviour
         }
     }
 
-    private void PlayPopup(TMP_Text text, string message, ref Coroutine routine)
+    private void ShowPointsPopup(string label, int points)
+    {
+        if (!pointsTypeText)
+        {
+            return;
+        }
+
+        pointsTypeText.text = label;
+
+        if (pointsValueText)
+        {
+            pointsValueText.text = points > 0 ? $"+{points}" : points.ToString();
+            pointsValueText.color = points >= 0 ? positivePointsColor : negativePointsColor;
+        }
+
+        PlayPopup(pointsTypeText, ref _pointsRoutine, pointsValueText);
+    }
+
+    private void PlayPopup(TMP_Text text, ref Coroutine routine, params TMP_Text[] extraTexts)
     {
         if (!text)
         {
@@ -292,13 +308,28 @@ public class PlayerFloatingTextController : MonoBehaviour
             StopCoroutine(routine);
         }
 
-        text.text = message;
-        routine = StartCoroutine(PopupRoutine(text));
+        routine = StartCoroutine(PopupRoutine(text, extraTexts));
     }
 
-    private System.Collections.IEnumerator PopupRoutine(TMP_Text text)
+    private System.Collections.IEnumerator PopupRoutine(TMP_Text text, TMP_Text[] extraTexts)
     {
         SetTextActive(text, true);
+        List<TMP_Text> fadeTexts = new List<TMP_Text> { text };
+        if (extraTexts != null)
+        {
+            for (int i = 0; i < extraTexts.Length; i++)
+            {
+                TMP_Text extra = extraTexts[i];
+                if (!extra || fadeTexts.Contains(extra))
+                {
+                    continue;
+                }
+
+                fadeTexts.Add(extra);
+                SetTextActive(extra, true);
+            }
+        }
+
         RectTransform rect = text.rectTransform;
         if (!_basePositions.TryGetValue(text, out Vector3 basePos))
         {
@@ -310,7 +341,11 @@ public class PlayerFloatingTextController : MonoBehaviour
         float fadeIn = Mathf.Clamp(popupFadeIn, 0f, duration);
         float fadeOut = Mathf.Clamp(popupFadeOut, 0f, duration);
         float fadeOutStart = Mathf.Max(0f, duration - fadeOut);
-        Color baseColor = text.color;
+        Color[] baseColors = new Color[fadeTexts.Count];
+        for (int i = 0; i < fadeTexts.Count; i++)
+        {
+            baseColors[i] = fadeTexts[i].color;
+        }
         float time = 0f;
 
         Transform parent = rect ? rect.parent : null;
@@ -333,9 +368,18 @@ public class PlayerFloatingTextController : MonoBehaviour
                 rect.position = baseWorld + new Vector3(0f, 0f, rise);
             }
 
-            Color c = baseColor;
-            c.a = alpha;
-            text.color = c;
+            for (int i = 0; i < fadeTexts.Count; i++)
+            {
+                TMP_Text fadeText = fadeTexts[i];
+                if (!fadeText)
+                {
+                    continue;
+                }
+
+                Color c = baseColors[i];
+                c.a = alpha;
+                fadeText.color = c;
+            }
 
             time += Time.deltaTime;
             yield return null;
@@ -346,8 +390,23 @@ public class PlayerFloatingTextController : MonoBehaviour
             rect.localPosition = basePos;
         }
 
-        baseColor.a = 1f;
-        text.color = baseColor;
+        for (int i = 0; i < fadeTexts.Count; i++)
+        {
+            TMP_Text fadeText = fadeTexts[i];
+            if (!fadeText)
+            {
+                continue;
+            }
+
+            Color c = baseColors[i];
+            c.a = 1f;
+            fadeText.color = c;
+            if (fadeText != text)
+            {
+                SetTextActive(fadeText, false);
+            }
+        }
+
         SetTextActive(text, false);
     }
 

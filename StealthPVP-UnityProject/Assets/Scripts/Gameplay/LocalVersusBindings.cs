@@ -161,11 +161,17 @@ public class LocalVersusBindings : MonoBehaviour
         float morphDuration = 0f;
         float morphMoveSpeed = 0f;
         float morphSearchRadius = 0f;
+        bool morphAllowNpc = true;
+        float morphNpcMoveSpeed = -1f;
+        float morphNpcMaterialColorTolerance = 0.05f;
         if (gameplayTuning)
         {
             morphDuration = gameplayTuning.morphDuration;
             morphMoveSpeed = gameplayTuning.morphMoveSpeed;
             morphSearchRadius = gameplayTuning.morphSearchRadius;
+            morphAllowNpc = gameplayTuning.morphAllowNpc;
+            morphNpcMoveSpeed = gameplayTuning.morphNpcMoveSpeed;
+            morphNpcMaterialColorTolerance = gameplayTuning.morphNpcMaterialColorTolerance;
         }
 
         SmokeAbility smoke1 = GetSmokeAbility(_player1Instance, addIfMissing: true);
@@ -206,6 +212,7 @@ public class LocalVersusBindings : MonoBehaviour
         if (morph1)
         {
             morph1.ApplyMorphConfig(morphDuration, morphMoveSpeed, morphSearchRadius);
+            morph1.ApplyNpcMorphConfig(morphAllowNpc, morphNpcMoveSpeed, morphNpcMaterialColorTolerance);
         }
 
         if (smoke2)
@@ -227,6 +234,7 @@ public class LocalVersusBindings : MonoBehaviour
         if (morph2)
         {
             morph2.ApplyMorphConfig(morphDuration, morphMoveSpeed, morphSearchRadius);
+            morph2.ApplyNpcMorphConfig(morphAllowNpc, morphNpcMoveSpeed, morphNpcMaterialColorTolerance);
         }
 
         if (smoke3)
@@ -248,6 +256,7 @@ public class LocalVersusBindings : MonoBehaviour
         if (morph3)
         {
             morph3.ApplyMorphConfig(morphDuration, morphMoveSpeed, morphSearchRadius);
+            morph3.ApplyNpcMorphConfig(morphAllowNpc, morphNpcMoveSpeed, morphNpcMaterialColorTolerance);
         }
 
         if (player1Ui)

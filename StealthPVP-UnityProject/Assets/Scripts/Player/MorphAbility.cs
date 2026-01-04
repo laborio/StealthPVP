@@ -15,6 +15,9 @@ public class MorphAbility : MonoBehaviour
     [SerializeField, Tooltip("Minimum capsule height while morphed.")] private float minMorphHeight = 0.25f;
     [SerializeField, Tooltip("Minimum capsule radius while morphed.")] private float minMorphRadius = 0.1f;
     [SerializeField, Tooltip("Seconds between preview target refreshes.")] private float previewRefreshInterval = 0.25f;
+    [SerializeField, Tooltip("If true, allow morphing into nearby NPCs by copying their materials.")] private bool allowNpcMorph = true;
+    [SerializeField, Tooltip("Move speed override while morphed into an NPC. Use -1 for default speed.")] private float npcMorphMoveSpeed = -1f;
+    [SerializeField, Tooltip("Color tolerance for considering NPC materials similar to the player.")] private float npcMaterialColorTolerance = 0.05f;
     [SerializeField, Tooltip("Enable debug logs.")] private bool debugLogs = false;
 
     private CharacterController _characterController;
@@ -24,6 +27,7 @@ public class MorphAbility : MonoBehaviour
     private CharacterAnimations _characterAnimations;
     private SkinnedMeshRenderer[] _playerRenderers;
     private bool[] _playerRendererStates;
+    private Material[][] _playerRendererMaterials;
     private float _morphTimer;
     private bool _isMorphed;
     private float _originalHeight;
@@ -37,7 +41,17 @@ public class MorphAbility : MonoBehaviour
     private const string MorphStatusKey = "Morph";
     private const int MorphStatusPriority = 3;
 
+    private enum MorphMode
+    {
+        None,
+        Prop,
+        Npc
+    }
+
+    private MorphMode _activeMorphMode = MorphMode.None;
+
     public bool IsMorphed => _isMorphed;
+    public bool IsNpcMorph => _isMorphed && _activeMorphMode == MorphMode.Npc;
 
     public bool TryGetPreviewSprite(out Sprite sprite)
     {
@@ -63,6 +77,8 @@ public class MorphAbility : MonoBehaviour
 
         _playerRenderers = GetComponentsInChildren<SkinnedMeshRenderer>(true);
         _playerRendererStates = new bool[_playerRenderers.Length];
+        _playerRendererMaterials = new Material[_playerRenderers.Length][];
+        CachePlayerRendererData();
 
         if (_characterController)
         {
@@ -132,6 +148,13 @@ public class MorphAbility : MonoBehaviour
         morphSearchRadius = Mathf.Max(0f, searchRadius);
     }
 
+    public void ApplyNpcMorphConfig(bool allowNpc, float moveSpeedOverride, float materialColorTolerance)
+    {
+        allowNpcMorph = allowNpc;
+        npcMorphMoveSpeed = moveSpeedOverride;
+        npcMaterialColorTolerance = Mathf.Max(0f, materialColorTolerance);
+    }
+
     public bool TryTrigger()
     {
         if (_isMorphed)
@@ -139,14 +162,28 @@ public class MorphAbility : MonoBehaviour
             return false;
         }
 
-        MorphTarget target = FindNearestTarget();
-        if (!target)
+        MorphTarget propTarget = FindNearestPropTarget(out float propDistanceSqr);
+        bool hasProp = propTarget != null;
+        NpcIdentity npcTarget = null;
+        SkinnedMeshRenderer npcRenderer = null;
+        float npcDistanceSqr = float.MaxValue;
+        bool hasNpc = allowNpcMorph && TryFindNearestNpc(out npcTarget, out npcRenderer, out npcDistanceSqr);
+
+        if (!hasProp && !hasNpc)
         {
             LogDebug("No morph target in range.");
             return false;
         }
 
-        BeginMorph(target);
+        if (hasProp && (!hasNpc || propDistanceSqr <= npcDistanceSqr))
+        {
+            BeginPropMorph(propTarget);
+        }
+        else
+        {
+            BeginNpcMorph(npcTarget, npcRenderer);
+        }
+
         return true;
     }
 
@@ -157,6 +194,7 @@ public class MorphAbility : MonoBehaviour
             return;
         }
 
+        MorphMode previousMode = _activeMorphMode;
         _isMorphed = false;
         _morphTimer = 0f;
         SetMorphStatusActive(false);
@@ -164,18 +202,24 @@ public class MorphAbility : MonoBehaviour
         {
             morphVisualRoot.gameObject.SetActive(false);
         }
+        if (previousMode == MorphMode.Npc)
+        {
+            RestorePlayerRendererMaterials();
+        }
         RestorePlayerRenderers();
         ClearMorphVisuals();
         RestoreCollider();
         _controller?.SetMorphState(false, 0f);
+        _activeMorphMode = MorphMode.None;
     }
 
-    private MorphTarget FindNearestTarget()
+    private MorphTarget FindNearestPropTarget(out float bestDistance)
     {
         IReadOnlyList<MorphTarget> candidates = explicitTargets != null && explicitTargets.Count > 0
             ? explicitTargets
             : MorphTarget.Active;
 
+        bestDistance = float.MaxValue;
         if (candidates == null || candidates.Count == 0)
         {
             return null;
@@ -183,7 +227,6 @@ public class MorphAbility : MonoBehaviour
 
         Vector3 origin = transform.position;
         float maxDistanceSqr = morphSearchRadius * morphSearchRadius;
-        float bestDistance = float.MaxValue;
         MorphTarget best = null;
 
         for (int i = 0; i < candidates.Count; i++)
@@ -216,7 +259,78 @@ public class MorphAbility : MonoBehaviour
         return best;
     }
 
-    private void BeginMorph(MorphTarget target)
+    private bool TryFindNearestNpc(out NpcIdentity bestNpc, out SkinnedMeshRenderer bestRenderer, out float bestDistance)
+    {
+        bestNpc = null;
+        bestRenderer = null;
+        bestDistance = float.MaxValue;
+
+        CachePlayerRendererData();
+
+        NpcIdentity[] candidates = Object.FindObjectsByType<NpcIdentity>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        if (candidates == null || candidates.Length == 0)
+        {
+            return false;
+        }
+
+        Vector3 origin = transform.position;
+        float maxDistanceSqr = morphSearchRadius * morphSearchRadius;
+
+        for (int i = 0; i < candidates.Length; i++)
+        {
+            NpcIdentity identity = candidates[i];
+            if (!identity)
+            {
+                continue;
+            }
+
+            if (identity.transform.root == transform.root)
+            {
+                continue;
+            }
+
+            if (identity.GetComponentInParent<PlayerInputRouter>())
+            {
+                continue;
+            }
+
+            CharacterHealth health = identity.GetComponentInParent<CharacterHealth>()
+                ?? identity.GetComponentInChildren<CharacterHealth>(true);
+            if (health && health.IsDead)
+            {
+                continue;
+            }
+
+            SkinnedMeshRenderer npcRenderer = identity.GetComponentInChildren<SkinnedMeshRenderer>(true);
+            if (!npcRenderer)
+            {
+                continue;
+            }
+
+            if (IsNpcMaterialSimilar(npcRenderer))
+            {
+                continue;
+            }
+
+            Vector3 center = npcRenderer.bounds.center;
+            float sqrDistance = (center - origin).sqrMagnitude;
+            if (sqrDistance > maxDistanceSqr)
+            {
+                continue;
+            }
+
+            if (sqrDistance < bestDistance)
+            {
+                bestDistance = sqrDistance;
+                bestNpc = identity;
+                bestRenderer = npcRenderer;
+            }
+        }
+
+        return bestNpc != null;
+    }
+
+    private void BeginPropMorph(MorphTarget target)
     {
         if (!_characterController || !target)
         {
@@ -224,6 +338,7 @@ public class MorphAbility : MonoBehaviour
         }
 
         _isMorphed = true;
+        _activeMorphMode = MorphMode.Prop;
         _morphTimer = Mathf.Max(0f, morphDurationSeconds);
         SetMorphStatusActive(true);
         transform.rotation = target.transform.rotation;
@@ -231,6 +346,7 @@ public class MorphAbility : MonoBehaviour
         {
             morphVisualRoot.gameObject.SetActive(true);
         }
+        CachePlayerRendererData();
         HidePlayerRenderers();
         BuildMorphVisuals(target);
         ApplyColliderFromTarget(target);
@@ -238,10 +354,46 @@ public class MorphAbility : MonoBehaviour
         _controller?.SetMorphState(true, morphMoveSpeed);
     }
 
+    private void BeginNpcMorph(NpcIdentity npcTarget, SkinnedMeshRenderer npcRenderer)
+    {
+        if (!_characterController || !npcTarget || !npcRenderer)
+        {
+            return;
+        }
+
+        _isMorphed = true;
+        _activeMorphMode = MorphMode.Npc;
+        _morphTimer = Mathf.Max(0f, morphDurationSeconds);
+        SetMorphStatusActive(true);
+        if (morphVisualRoot)
+        {
+            morphVisualRoot.gameObject.SetActive(false);
+        }
+        CachePlayerRendererData();
+        ApplyNpcMaterials(npcRenderer);
+        _controller?.SetMorphState(true, npcMorphMoveSpeed);
+    }
+
     private void RefreshPreviewSprite()
     {
-        MorphTarget target = FindNearestTarget();
-        _previewSprite = target ? target.PreviewIcon : null;
+        MorphTarget propTarget = FindNearestPropTarget(out float propDistanceSqr);
+        bool hasProp = propTarget != null;
+        NpcIdentity npcTarget = null;
+        float npcDistanceSqr = float.MaxValue;
+        bool hasNpc = allowNpcMorph && TryFindNearestNpc(out npcTarget, out _, out npcDistanceSqr);
+
+        if (hasProp && (!hasNpc || propDistanceSqr <= npcDistanceSqr))
+        {
+            _previewSprite = propTarget.PreviewIcon;
+        }
+        else if (hasNpc)
+        {
+            _previewSprite = npcTarget ? npcTarget.PreviewIcon : null;
+        }
+        else
+        {
+            _previewSprite = null;
+        }
     }
 
     private void EnsureVisualRoot()
@@ -294,6 +446,199 @@ public class MorphAbility : MonoBehaviour
 
             renderer.enabled = i < _playerRendererStates.Length && _playerRendererStates[i];
         }
+    }
+
+    private void CachePlayerRendererData()
+    {
+        if (_playerRenderers == null)
+        {
+            return;
+        }
+
+        if (_playerRendererStates == null || _playerRendererStates.Length != _playerRenderers.Length)
+        {
+            _playerRendererStates = new bool[_playerRenderers.Length];
+        }
+
+        if (_playerRendererMaterials == null || _playerRendererMaterials.Length != _playerRenderers.Length)
+        {
+            _playerRendererMaterials = new Material[_playerRenderers.Length][];
+        }
+
+        for (int i = 0; i < _playerRenderers.Length; i++)
+        {
+            SkinnedMeshRenderer renderer = _playerRenderers[i];
+            if (!renderer)
+            {
+                continue;
+            }
+
+            _playerRendererStates[i] = renderer.enabled;
+            _playerRendererMaterials[i] = renderer.sharedMaterials;
+        }
+    }
+
+    private void RestorePlayerRendererMaterials()
+    {
+        if (_playerRenderers == null || _playerRendererMaterials == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < _playerRenderers.Length; i++)
+        {
+            SkinnedMeshRenderer renderer = _playerRenderers[i];
+            if (!renderer)
+            {
+                continue;
+            }
+
+            Material[] materials = i < _playerRendererMaterials.Length ? _playerRendererMaterials[i] : null;
+            if (materials != null)
+            {
+                renderer.sharedMaterials = materials;
+            }
+        }
+    }
+
+    private void ApplyNpcMaterials(SkinnedMeshRenderer sourceRenderer)
+    {
+        if (!sourceRenderer || _playerRenderers == null)
+        {
+            return;
+        }
+
+        Material[] sourceMaterials = sourceRenderer.sharedMaterials;
+        if (sourceMaterials == null || sourceMaterials.Length == 0)
+        {
+            return;
+        }
+
+        for (int i = 0; i < _playerRenderers.Length; i++)
+        {
+            SkinnedMeshRenderer renderer = _playerRenderers[i];
+            if (!renderer)
+            {
+                continue;
+            }
+
+            renderer.sharedMaterials = sourceMaterials;
+        }
+    }
+
+    private bool IsNpcMaterialSimilar(SkinnedMeshRenderer npcRenderer)
+    {
+        if (!npcRenderer || _playerRendererMaterials == null || _playerRendererMaterials.Length == 0)
+        {
+            return false;
+        }
+
+        Material[] npcMaterials = npcRenderer.sharedMaterials;
+        if (npcMaterials == null || npcMaterials.Length == 0)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < npcMaterials.Length; i++)
+        {
+            Material npcMaterial = npcMaterials[i];
+            if (!npcMaterial)
+            {
+                continue;
+            }
+
+            for (int j = 0; j < _playerRendererMaterials.Length; j++)
+            {
+                Material[] playerMaterials = _playerRendererMaterials[j];
+                if (playerMaterials == null)
+                {
+                    continue;
+                }
+
+                for (int k = 0; k < playerMaterials.Length; k++)
+                {
+                    Material playerMaterial = playerMaterials[k];
+                    if (!playerMaterial)
+                    {
+                        continue;
+                    }
+
+                    if (IsMaterialSimilar(npcMaterial, playerMaterial))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsMaterialSimilar(Material a, Material b)
+    {
+        if (!a || !b)
+        {
+            return false;
+        }
+
+        if (a == b)
+        {
+            return true;
+        }
+
+        string aName = StripMaterialInstanceSuffix(a.name);
+        string bName = StripMaterialInstanceSuffix(b.name);
+        if (!string.IsNullOrEmpty(aName) && aName == bName)
+        {
+            return true;
+        }
+
+        if (a.shader != b.shader)
+        {
+            return false;
+        }
+
+        if (a.mainTexture != b.mainTexture)
+        {
+            return false;
+        }
+
+        if (TryGetMaterialColor(a, out Color aColor) && TryGetMaterialColor(b, out Color bColor))
+        {
+            Vector3 diff = new Vector3(aColor.r - bColor.r, aColor.g - bColor.g, aColor.b - bColor.b);
+            return diff.sqrMagnitude <= npcMaterialColorTolerance * npcMaterialColorTolerance;
+        }
+
+        return false;
+    }
+
+    private static bool TryGetMaterialColor(Material material, out Color color)
+    {
+        if (material && material.HasProperty("_BaseColor"))
+        {
+            color = material.GetColor("_BaseColor");
+            return true;
+        }
+
+        if (material && material.HasProperty("_Color"))
+        {
+            color = material.GetColor("_Color");
+            return true;
+        }
+
+        color = Color.white;
+        return false;
+    }
+
+    private static string StripMaterialInstanceSuffix(string name)
+    {
+        const string suffix = " (Instance)";
+        if (!string.IsNullOrEmpty(name) && name.EndsWith(suffix))
+        {
+            return name.Substring(0, name.Length - suffix.Length);
+        }
+
+        return name;
     }
 
     private void ClearMorphVisuals()

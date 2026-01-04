@@ -18,6 +18,7 @@ public class WeaponDamage : MonoBehaviour
     [SerializeField, Tooltip("Optional extra reach added when picking hit point.")] private float hitPointBias = 0f;
     [SerializeField, Tooltip("Tag used for weapons that can kill assigned targets.")] private string weaponKillTag = "WeaponKill";
     [SerializeField, Tooltip("Tag used for weapons that apply stun to players.")] private string weaponStunTag = "WeaponStun";
+    [SerializeField, Tooltip("If true, ignore SphereCollider hits (useful for NPC detection spheres).")] private bool ignoreSphereColliders = true;
 
     private readonly HashSet<CharacterHealth> _hitThisWindow = new HashSet<CharacterHealth>();
     private bool _windowActive;
@@ -62,6 +63,11 @@ public class WeaponDamage : MonoBehaviour
     private void TryDealDamage(Collider other)
     {
         if (!_windowActive || !other)
+        {
+            return;
+        }
+
+        if (ignoreSphereColliders && other is SphereCollider)
         {
             return;
         }

@@ -137,6 +137,7 @@ Material:
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _Edge_Width: 0.06
+    - _Effect: 1
     - _EnvironmentReflections: 1
     - _Face_axis_X: 1
     - _Face_axis_Y: 1

@@ -135,11 +135,13 @@ public partial class SimpleCharacterController : MonoBehaviour
             inputSnapshot = default;
         }
         ResolveMorphAbility();
+        bool npcMorphActive = morphAbility && morphAbility.IsNpcMorph;
         bool morphActive = _morphActive || (morphAbility && morphAbility.IsMorphed);
+        bool morphRestricted = morphActive && !npcMorphActive;
         bool attackHeld = inputSnapshot.PrimaryHeld || inputSnapshot.SecondaryHeld;
         bool attackReleased = inputSnapshot.PrimaryReleased || inputSnapshot.SecondaryReleased;
         bool attackHoldMovement = inputSnapshot.MoveAxis.sqrMagnitude > 0.0001f || inputSnapshot.MoveIssued;
-        if (morphActive && (attackReleased || (attackHeld && attackHoldMovement)
+        if (morphRestricted && (attackReleased || (attackHeld && attackHoldMovement)
             || inputSnapshot.JumpPressed || inputSnapshot.DashPressed))
         {
             if (morphAbility)
@@ -147,8 +149,9 @@ public partial class SimpleCharacterController : MonoBehaviour
                 morphAbility.BreakMorph();
             }
             morphActive = false;
+            morphRestricted = false;
         }
-        if (morphActive)
+        if (morphRestricted)
         {
             inputSnapshot.RunHeld = true;
             inputSnapshot.JumpPressed = false;
@@ -163,9 +166,9 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
 
         HandleClickToMove(inputSnapshot);
-        bool wantsMoveWhileMorphed = morphActive
+        bool wantsMoveWhileMorphed = morphRestricted
             && (inputSnapshot.MoveAxis.sqrMagnitude > 0.0001f || inputSnapshot.MoveIssued || _hasMoveTarget);
-        bool lockMorphPosition = morphActive && !wantsMoveWhileMorphed;
+        bool lockMorphPosition = morphRestricted && !wantsMoveWhileMorphed;
         Vector3 morphLockPosition = transform.position;
         Vector2 movementInputRaw = inputSnapshot.MoveAxis;
         bool requestedMovement = movementInputRaw.sqrMagnitude > 0.0001f;
@@ -188,7 +191,7 @@ public partial class SimpleCharacterController : MonoBehaviour
             }
             ApplyRangeIndicatorRotation(indicatorDirection);
         }
-        bool actionKeyAllowed = _seatingState == SeatingState.Standing && !morphActive;
+        bool actionKeyAllowed = _seatingState == SeatingState.Standing && !morphRestricted;
         HandleActionInput(interactPressed && actionKeyAllowed, isGrounded);
 
         bool seatingLocked = _seatingState != SeatingState.Standing;
@@ -207,7 +210,7 @@ public partial class SimpleCharacterController : MonoBehaviour
         _isInWater = DetectWater();
         float waterSpeedMultiplier = _isInWater ? this.waterMoveSpeedMultiplier : 1f;
         float waterJumpMultiplier = _isInWater ? this.waterJumpVelocityMultiplier : 1f;
-        float baseMoveSpeed = morphActive ? _morphMoveSpeed : moveSpeed;
+        float baseMoveSpeed = morphRestricted ? _morphMoveSpeed : moveSpeed;
 
         Vector3 desiredPlanarVelocity = Vector3.zero;
 
@@ -466,7 +469,7 @@ public partial class SimpleCharacterController : MonoBehaviour
 
         bool attackRotationApplied = ProcessAttackAimRotation(deltaTime);
 
-        if (!morphActive && !attackRotationApplied && !isAttacking && !shouldRunBackward && !shouldStrafe
+        if (!morphRestricted && !attackRotationApplied && !isAttacking && !shouldRunBackward && !shouldStrafe
             && planarMove.sqrMagnitude > 0.0001f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(planarMove.normalized, Vector3.up);
@@ -1109,7 +1112,14 @@ public partial class SimpleCharacterController : MonoBehaviour
     public void SetMorphState(bool active, float moveSpeedOverride)
     {
         _morphActive = active;
-        _morphMoveSpeed = Mathf.Max(0f, moveSpeedOverride);
+        if (moveSpeedOverride < 0f)
+        {
+            _morphMoveSpeed = moveSpeed;
+        }
+        else
+        {
+            _morphMoveSpeed = Mathf.Max(0f, moveSpeedOverride);
+        }
 
         if (active)
         {

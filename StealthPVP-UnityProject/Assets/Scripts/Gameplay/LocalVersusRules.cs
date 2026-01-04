@@ -62,7 +62,12 @@ public class LocalVersusRules : MonoBehaviour
         set => manager._player3Score = value;
     }
 
-    private int scorePerTargetKill => manager.scorePerTargetKill;
+    private int scorePerTargetKill => manager != null && manager.gameplayTuning != null
+        ? manager.gameplayTuning.scorePerTargetKill
+        : (manager != null ? manager.scorePerTargetKill : 0);
+    private int wrongTargetPenalty => manager != null && manager.gameplayTuning != null
+        ? manager.gameplayTuning.wrongTargetPenalty
+        : (manager != null ? -Mathf.Abs(manager.scorePerTargetKill) : 0);
 
     public void Initialize(LocalVersusGameManager manager)
     {
@@ -125,7 +130,7 @@ public class LocalVersusRules : MonoBehaviour
 
     private void TryAwardScore(CharacterHealth dead)
     {
-        if (!dead || scorePerTargetKill <= 0)
+        if (!dead)
         {
             return;
         }
@@ -165,11 +170,32 @@ public class LocalVersusRules : MonoBehaviour
             _ => null
         };
 
-        if (assignedTarget && assignedTarget == deadIdentity)
+        if (!assignedTarget)
         {
+            return;
+        }
+
+        if (assignedTarget == deadIdentity)
+        {
+            if (scorePerTargetKill == 0)
+            {
+                return;
+            }
+
             AddScore(killerSlot.Value, scorePerTargetKill);
             UpdateScoreboards();
             ShowKillPopup(killerHealth, scorePerTargetKill);
+        }
+        else
+        {
+            if (wrongTargetPenalty == 0)
+            {
+                return;
+            }
+
+            AddScore(killerSlot.Value, wrongTargetPenalty);
+            UpdateScoreboards();
+            ShowWrongTargetPopup(killerHealth, wrongTargetPenalty);
         }
     }
 
@@ -236,6 +262,46 @@ public class LocalVersusRules : MonoBehaviour
 
         PlayerFloatingTextController floatingText = GetFloatingTextController(scorer.gameObject);
         floatingText?.ShowHumiliation(points);
+    }
+
+    private void ShowWrongTargetPopup(CharacterHealth scorer, int points)
+    {
+        if (!scorer)
+        {
+            return;
+        }
+
+        PlayerFloatingTextController floatingText = GetFloatingTextController(scorer.gameObject);
+        floatingText?.ShowWrongTarget(points);
+    }
+
+    internal void HandleWrongTargetKill(CharacterHealth dead)
+    {
+        if (!dead || wrongTargetPenalty == 0)
+        {
+            return;
+        }
+
+        if (!dead.TryGetLastDamage(out DamagePayload payload))
+        {
+            return;
+        }
+
+        CharacterHealth killerHealth = ResolveInstigatorHealth(payload);
+        if (!killerHealth || killerHealth == dead)
+        {
+            return;
+        }
+
+        PlayerSlot? killerSlot = ResolvePlayerSlot(killerHealth);
+        if (!killerSlot.HasValue)
+        {
+            return;
+        }
+
+        AddScore(killerSlot.Value, wrongTargetPenalty);
+        UpdateScoreboards();
+        ShowWrongTargetPopup(killerHealth, wrongTargetPenalty);
     }
 
     private PlayerFloatingTextController GetFloatingTextController(GameObject root)
@@ -372,6 +438,11 @@ public class LocalVersusRules : MonoBehaviour
         PlayerSlot? attackerSlot = ResolvePlayerSlot(attacker);
         PlayerSlot? victimSlot = ResolvePlayerSlot(victim);
         if (!attackerSlot.HasValue || !victimSlot.HasValue)
+        {
+            return true;
+        }
+
+        if (wrongTargetPenalty != 0)
         {
             return true;
         }

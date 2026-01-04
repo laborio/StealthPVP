@@ -5105,7 +5105,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1220401918378861978
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6297,7 +6297,7 @@ CharacterController:
   m_Enabled: 1
   serializedVersion: 3
   m_Height: 1.87
-  m_Radius: 0.25
+  m_Radius: 0.5
   m_SlopeLimit: 45
   m_StepOffset: 0.25
   m_SkinWidth: 0.08
@@ -6398,8 +6398,8 @@ MonoBehaviour:
   lethalShakeDuration: 0.2
   debugLogs: 0
   freezeAndCleanupOnRagdoll: 1
-  freezeAfterFrames: 3000
-  destroyDelayAfterFreeze: 5
+  freezeAfterFrames: 120
+  destroyDelayAfterFreeze: 2
   npcDeadTriggerName: NPCDead
   ragdollGravityMultiplier: 2.2
 --- !u!195 &1303794103584574667
@@ -6438,6 +6438,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NpcIdentity
   identifierColor: {r: 0.13375808, g: 0.13056247, b: 0.16981131, a: 1}
   targetIndicator: {fileID: 0}
+  previewIcon: {fileID: 21300000, guid: 41313cb2f87a14e3198824c6c76f9eb1, type: 3}
 --- !u!114 &-6521619335711553035
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6633,7 +6634,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3862951192762057215}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e64353902c0584373a2b5e1f740970d4, type: 3}
   m_Name: 
@@ -12581,8 +12582,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerFloatingTextController
   floatingTextsRoot: {fileID: 3374396610665634546}
   statusText: {fileID: 2225378708691973751}
-  killText: {fileID: 2212553427489048001}
-  humiliationText: {fileID: 6062323767449539698}
+  pointsTypeText: {fileID: 0}
+  pointsValueText: {fileID: 0}
   statusDefinitions:
   - key: Stunned
     label: Stunned
@@ -12592,6 +12593,8 @@ MonoBehaviour:
     label: Pacified
     priority: 0
     visibleToAll: 1
+  positivePointsColor: {r: 1, g: 0.9, b: 0.2, a: 1}
+  negativePointsColor: {r: 1, g: 0.4, b: 0.1, a: 1}
   popupDuration: 1.2
   popupFadeIn: 0.2
   popupFadeOut: 0.3
