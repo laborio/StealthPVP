@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2728506489615335884}
   - component: {fileID: 6736610705191218007}
   m_Layer: 0
-  m_Name: TargetImage_Dark
+  m_Name: TargetImage_Blue
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -65,7 +65,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 41313cb2f87a14e3198824c6c76f9eb1, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 39d26f0d7267e4d049d325a0971f40ab, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

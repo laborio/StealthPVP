@@ -60,7 +60,7 @@ public class LocalVersusGameManager : MonoBehaviour
     [SerializeField] internal ScoreboardController player1Scoreboard;
     [SerializeField] internal ScoreboardController player2Scoreboard;
     [SerializeField] internal ScoreboardController player3Scoreboard;
-    [SerializeField, Tooltip("Points awarded for killing the assigned target.")] internal int scorePerTargetKill = 100;
+    [SerializeField, Tooltip("Fallback points awarded for killing the assigned target (used if GameplayTuning is missing).")] internal int scorePerTargetKill = 100;
     [Header("Minimap")]
     [SerializeField] internal MinimapController player1Minimap;
     [SerializeField] internal MinimapController player2Minimap;

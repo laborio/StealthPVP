@@ -9,6 +9,10 @@ public class GameplayTuning : ScriptableObject
     [Header("Difficulty")]
     [Range(0f, 1f)] public float aiDifficulty = 0.5f;
 
+[Header("Scoring")]
+public int scorePerTargetKill = 100;
+public int wrongTargetPenalty = -100;
+
 [Header("Reveal - Skill (shared)")]
 public float revealCooldown = 30f;
 public float revealHold = 2f;
@@ -24,6 +28,9 @@ public float smokeCooldown = 90f;
 public float morphDuration = 6f;
 public float morphMoveSpeed = 1.25f;
 public float morphSearchRadius = 6f;
+public bool morphAllowNpc = true;
+public float morphNpcMoveSpeed = -1f;
+public float morphNpcMaterialColorTolerance = 0.05f;
 
 [Header("Dash")]
 public float dashSpeedMultiplier = 3f;

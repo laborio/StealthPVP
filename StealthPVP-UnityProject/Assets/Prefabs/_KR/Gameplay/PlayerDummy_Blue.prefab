@@ -5817,6 +5817,7 @@ MonoBehaviour:
   hitPointBias: 0
   weaponKillTag: WeaponKill
   weaponStunTag: WeaponStun
+  ignoreSphereColliders: 1
 --- !u!1 &3131824482997555398
 GameObject:
   m_ObjectHideFlags: 0
@@ -6276,6 +6277,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NpcIdentity
   identifierColor: {r: 0.0141509175, g: 0.16981117, b: 1, a: 1}
   targetIndicator: {fileID: 0}
+  previewIcon: {fileID: 0}
 --- !u!195 &6800617221964233051
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -12863,8 +12865,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8945044522417601190}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.38375387, z: -0.000000014901163, w: -0.9234354}
-  m_LocalPosition: {x: 40.530552, y: 0.32181138, z: 27.853422}
+  m_LocalRotation: {x: -0, y: -0.99118376, z: -0, w: -0.13249461}
+  m_LocalPosition: {x: 41.044052, y: 0.5345016, z: 27.146618}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

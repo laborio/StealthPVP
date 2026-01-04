@@ -349,13 +349,20 @@ public class NpcGameDirector : MonoBehaviour
         }
 
         dead.Died -= OnNpcDied;
-        if (decoysOnlyMode)
+
+        NpcIdentity identity = dead.GetComponent<NpcIdentity>() ?? dead.GetComponentInChildren<NpcIdentity>(true) ?? dead.GetComponentInParent<NpcIdentity>();
+        if (!identity)
         {
             return;
         }
 
-        NpcIdentity identity = dead.GetComponent<NpcIdentity>() ?? dead.GetComponentInChildren<NpcIdentity>(true) ?? dead.GetComponentInParent<NpcIdentity>();
-        if (!identity)
+        if (!identity.IsTarget)
+        {
+            LocalVersusGameManager manager = LocalVersusGameManager.Instance;
+            manager?.rules?.HandleWrongTargetKill(dead);
+        }
+
+        if (decoysOnlyMode)
         {
             return;
         }
