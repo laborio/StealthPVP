@@ -121,7 +121,7 @@ Material:
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
-    - _CLip: 0.5
+    - _CLip: 0
     - _CastShadows: 0
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
@@ -138,6 +138,7 @@ Material:
     - _DstBlendAlpha: 0
     - _Edge_Width: 0.06
     - _Effect: 1
+    - _Effect_Multiply: 43865
     - _EnvironmentReflections: 1
     - _Face_axis_X: 1
     - _Face_axis_Y: 1
@@ -192,6 +193,7 @@ Material:
     - _ZTest: 4
     - _ZWrite: 1
     - _ZWriteControl: 0
+    - _isInvisible: 0
     - _mask_edge_1: 0.3
     - _mask_edge_2: 0.9
     - _twirl: 4.95
@@ -202,6 +204,7 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _Damage_Color: {r: 0.5754717, g: 0, b: 0, a: 1}
     - _Edge_Color: {r: 0, g: 1.5004153, b: 5.2164755, a: 1}
+    - _Effect_dot_product: {r: 12.9898, g: 78.233, b: 0, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 0}
     - _Height_offset: {r: 0, g: 0, b: 0, a: 0}
     - _Height_tiling: {r: 0, g: 0, b: 0, a: 0}

@@ -102,6 +102,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     private bool _lastAttackWasSecondary;
     private bool _morphActive;
     private float _morphMoveSpeed;
+    private PlayerInvisibility _invisibility;
 
     private void Awake()
     {
@@ -118,6 +119,7 @@ public partial class SimpleCharacterController : MonoBehaviour
             inputRouter = GetComponent<PlayerInputRouter>();
         }
         ResolveMorphAbility();
+        ResolveInvisibility();
         if (inputRouter)
         {
             inputRouter.SetInputCamera(_camera);
@@ -133,6 +135,11 @@ public partial class SimpleCharacterController : MonoBehaviour
         if (_inputSuppressed)
         {
             inputSnapshot = default;
+        }
+        ResolveInvisibility();
+        if ((inputSnapshot.PrimaryReleased || inputSnapshot.SecondaryReleased) && _invisibility && _invisibility.IsInvisible)
+        {
+            _invisibility.EndInvisibility();
         }
         ResolveMorphAbility();
         bool npcMorphActive = morphAbility && morphAbility.IsNpcMorph;
@@ -327,17 +334,29 @@ public partial class SimpleCharacterController : MonoBehaviour
 
             if (!_isDashing && _dashCooldownTimer <= 0f && inputSnapshot.DashPressed)
             {
-                Vector3 forward = transform.forward;
-                forward.y = 0f;
-                if (forward.sqrMagnitude < 0.0001f)
+                Vector3 dashDirection = transform.forward;
+                bool useAimForDash = inputRouter == null || inputRouter is not PlayerInputRouterGamepad;
+                if (useAimForDash && TryGetAimPoint(inputSnapshot, out Vector3 dashPoint))
                 {
-                    forward = Vector3.forward;
+                    Vector3 toPoint = dashPoint - transform.position;
+                    toPoint.y = 0f;
+                    if (toPoint.sqrMagnitude > 0.0001f)
+                    {
+                        dashDirection = toPoint.normalized;
+                    }
                 }
-                forward.Normalize();
+                dashDirection.y = 0f;
+                if (dashDirection.sqrMagnitude < 0.0001f)
+                {
+                    dashDirection = Vector3.forward;
+                }
+                dashDirection.Normalize();
+
+                transform.rotation = Quaternion.LookRotation(dashDirection, Vector3.up);
 
                 float dashMultiplier = isGrounded ? dashSpeedMultiplier : dashAirSpeedMultiplier;
                 float speed = baseMoveSpeed * runMultiplier * dashMultiplier * waterSpeedMultiplier;
-                _currentPlanarVelocity = forward * speed;
+                _currentPlanarVelocity = dashDirection * speed;
                 _dashTimer = dashDuration;
                 _dashCooldownTimer = dashCooldown;
                 _isDashing = true;
@@ -1134,6 +1153,14 @@ public partial class SimpleCharacterController : MonoBehaviour
         if (!morphAbility)
         {
             morphAbility = GetComponent<MorphAbility>() ?? GetComponentInChildren<MorphAbility>(true);
+        }
+    }
+
+    private void ResolveInvisibility()
+    {
+        if (!_invisibility)
+        {
+            _invisibility = GetComponent<PlayerInvisibility>() ?? GetComponentInChildren<PlayerInvisibility>(true);
         }
     }
 
