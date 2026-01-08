@@ -10,9 +10,10 @@ public class PlayerInvisibility : MonoBehaviour
     [SerializeField] private string invisibleProperty = "_isInvisible";
     [SerializeField] private bool disableShadowsWhileInvisible = true;
     [SerializeField] private bool includeInactiveRenderers = true;
+    [SerializeField] private bool statusVisibleToAll = false;
+    [SerializeField] private int statusPriority = 4;
 
     private Renderer[] _renderers;
-    private SkinnedMeshRenderer[] _skinnedRenderers;
     private int[] _originalLayers;
     private ShadowCastingMode[] _originalShadowModes;
     private bool[] _originalReceiveShadows;
@@ -22,6 +23,10 @@ public class PlayerInvisibility : MonoBehaviour
     private float _timer;
     private bool _playerLayerResolved;
     private int _playerOnlyLayer = -1;
+    private PlayerFloatingTextController _floatingText;
+    private bool _statusActive;
+
+    private const string InvisibleStatusKey = "Invisible";
 
     public bool IsInvisible => _isInvisible;
 
@@ -40,6 +45,7 @@ public class PlayerInvisibility : MonoBehaviour
         }
 
         _timer -= Time.deltaTime;
+        UpdateInvisibleStatus();
         if (_timer <= 0f)
         {
             EndInvisibility();
@@ -63,9 +69,11 @@ public class PlayerInvisibility : MonoBehaviour
             ApplyPlayerOnlyLayer();
             SetInvisibleProperty(true);
             _isInvisible = true;
+            SetInvisibleStatusActive(true);
         }
 
         _timer = Mathf.Max(_timer, durationSeconds);
+        UpdateInvisibleStatus();
     }
 
     public void EndInvisibility()
@@ -79,6 +87,7 @@ public class PlayerInvisibility : MonoBehaviour
         SetInvisibleProperty(false);
         _isInvisible = false;
         _timer = 0f;
+        SetInvisibleStatusActive(false);
     }
 
     private void OnDisable()
@@ -89,7 +98,6 @@ public class PlayerInvisibility : MonoBehaviour
     private void CacheRenderers()
     {
         _renderers = GetComponentsInChildren<Renderer>(includeInactiveRenderers);
-        _skinnedRenderers = GetComponentsInChildren<SkinnedMeshRenderer>(includeInactiveRenderers);
     }
 
     private void CacheOriginalStates()
@@ -183,16 +191,21 @@ public class PlayerInvisibility : MonoBehaviour
 
     private void SetInvisibleProperty(bool value)
     {
-        if (_skinnedRenderers == null || _skinnedRenderers.Length == 0 || _invisiblePropertyId == 0)
+        if (_renderers == null || _renderers.Length == 0 || _invisiblePropertyId == 0)
         {
             return;
         }
 
         float floatValue = value ? 1f : 0f;
-        for (int i = 0; i < _skinnedRenderers.Length; i++)
+        for (int i = 0; i < _renderers.Length; i++)
         {
-            SkinnedMeshRenderer renderer = _skinnedRenderers[i];
+            Renderer renderer = _renderers[i];
             if (!renderer)
+            {
+                continue;
+            }
+
+            if (!RendererSupportsInvisible(renderer))
             {
                 continue;
             }
@@ -201,6 +214,26 @@ public class PlayerInvisibility : MonoBehaviour
             _propertyBlock.SetFloat(_invisiblePropertyId, floatValue);
             renderer.SetPropertyBlock(_propertyBlock);
         }
+    }
+
+    private bool RendererSupportsInvisible(Renderer renderer)
+    {
+        Material[] materials = renderer.sharedMaterials;
+        if (materials == null || materials.Length == 0)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < materials.Length; i++)
+        {
+            Material material = materials[i];
+            if (material && material.HasProperty(_invisiblePropertyId))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void ResolvePlayerOnlyLayer()
@@ -240,6 +273,59 @@ public class PlayerInvisibility : MonoBehaviour
         {
             Debug.LogWarning("PlayerInvisibility: Player-only layer not found. Check Tags and Layers settings.", this);
         }
+    }
+
+    private void SetInvisibleStatusActive(bool active)
+    {
+        if (_statusActive == active)
+        {
+            if (active)
+            {
+                UpdateInvisibleStatus();
+            }
+            return;
+        }
+
+        _statusActive = active;
+        if (!ResolveFloatingText())
+        {
+            return;
+        }
+
+        _floatingText.SetStatusActive(InvisibleStatusKey, active);
+        if (active)
+        {
+            UpdateInvisibleStatus();
+        }
+    }
+
+    private void UpdateInvisibleStatus()
+    {
+        if (!_isInvisible)
+        {
+            return;
+        }
+
+        if (!ResolveFloatingText())
+        {
+            return;
+        }
+
+        int seconds = Mathf.CeilToInt(_timer);
+        string label = seconds.ToString();
+        _floatingText.SetStatusLabel(InvisibleStatusKey, label, statusPriority, statusVisibleToAll);
+    }
+
+    private bool ResolveFloatingText()
+    {
+        if (_floatingText)
+        {
+            return true;
+        }
+
+        _floatingText = GetComponent<PlayerFloatingTextController>()
+            ?? GetComponentInChildren<PlayerFloatingTextController>(true);
+        return _floatingText != null;
     }
 
     private void OnValidate()
