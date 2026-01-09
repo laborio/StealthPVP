@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6606300510891223180}
   - component: {fileID: 8148199548174289703}
   - component: {fileID: 4805474676081248851}
+  - component: {fileID: -4004350737051897983}
   m_Layer: 0
   m_Name: Bonus_Invisibility
   m_TagString: Untagged
@@ -148,3 +149,20 @@ MonoBehaviour:
   alignRotationToSpawnPoint: 1
   disableRenderersOnPickup: 1
   disableCollidersOnPickup: 1
+--- !u!114 &-4004350737051897983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 688996253903455725}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1221327cd40e54faa9b2dc5119d7f9a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InvisibilityBonusMinimapIcon
+  iconPrefab: {fileID: 7555798300692899855, guid: ccd087f4cd81f4b008295b5cbca90fe6, type: 3}
+  iconColor: {r: 1, g: 0.8353392, b: 0, a: 1}
+  overrideIconColor: 1
+  clampToPlayableArea: 1
+  bonusPickup: {fileID: 4805474676081248851}

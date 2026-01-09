@@ -398,6 +398,20 @@ public class LocalVersusRules : MonoBehaviour
         target3 = hasPlayer3 ? id1 : null;
     }
 
+    internal void ResolveHunters(NpcIdentity id1, NpcIdentity id2, NpcIdentity id3,
+        out NpcIdentity hunter1, out NpcIdentity hunter2, out NpcIdentity hunter3)
+    {
+        ResolveKillTargets(id1, id2, id3, out NpcIdentity target1, out NpcIdentity target2, out NpcIdentity target3);
+
+        hunter1 = null;
+        hunter2 = null;
+        hunter3 = null;
+
+        AssignHunter(id1, target1, id1, id2, id3, ref hunter1, ref hunter2, ref hunter3);
+        AssignHunter(id2, target2, id1, id2, id3, ref hunter1, ref hunter2, ref hunter3);
+        AssignHunter(id3, target3, id1, id2, id3, ref hunter1, ref hunter2, ref hunter3);
+    }
+
     private void ResolveKillTargets(NpcIdentity id1, NpcIdentity id2, NpcIdentity id3,
         out NpcIdentity target1, out NpcIdentity target2, out NpcIdentity target3)
     {
@@ -421,6 +435,28 @@ public class LocalVersusRules : MonoBehaviour
             target2 = id1;
         }
         target3 = null;
+    }
+
+    private static void AssignHunter(NpcIdentity hunter, NpcIdentity target, NpcIdentity id1, NpcIdentity id2, NpcIdentity id3,
+        ref NpcIdentity hunter1, ref NpcIdentity hunter2, ref NpcIdentity hunter3)
+    {
+        if (!hunter || !target)
+        {
+            return;
+        }
+
+        if (target == id1)
+        {
+            hunter1 = hunter;
+        }
+        else if (target == id2)
+        {
+            hunter2 = hunter;
+        }
+        else if (target == id3)
+        {
+            hunter3 = hunter;
+        }
     }
 
     internal bool IsPlayerHealth(CharacterHealth health)

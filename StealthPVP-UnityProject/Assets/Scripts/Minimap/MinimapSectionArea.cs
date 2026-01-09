@@ -20,9 +20,23 @@ public class MinimapSectionArea : MonoBehaviour
     private bool useObjectNameWhenEmpty = true;
 
     private readonly HashSet<NpcIdentity> _inside = new HashSet<NpcIdentity>();
+    private Collider _cachedCollider;
 
     public string SectionId
         => !string.IsNullOrWhiteSpace(sectionId) ? sectionId.Trim() : (useObjectNameWhenEmpty ? name : string.Empty);
+
+    public bool TryGetWorldBounds(out Bounds bounds)
+    {
+        Collider col = _cachedCollider ? _cachedCollider : (_cachedCollider = GetComponent<Collider>());
+        if (!col)
+        {
+            bounds = default;
+            return false;
+        }
+
+        bounds = col.bounds;
+        return true;
+    }
 
     private void Reset()
     {

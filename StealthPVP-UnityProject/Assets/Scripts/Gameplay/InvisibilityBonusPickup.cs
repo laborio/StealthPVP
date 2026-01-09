@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -27,6 +28,10 @@ public class InvisibilityBonusPickup : MonoBehaviour
     private Collider[] _colliders;
     private Renderer[] _renderers;
     private Coroutine _respawnRoutine;
+    private bool _isAvailable = true;
+
+    public bool IsAvailable => _isAvailable;
+    public event Action<InvisibilityBonusPickup, bool> AvailabilityChanged;
 
     private void Awake()
     {
@@ -168,7 +173,7 @@ public class InvisibilityBonusPickup : MonoBehaviour
             return null;
         }
 
-        int startIndex = randomize ? Random.Range(0, spawnPoints.Count) : 0;
+        int startIndex = randomize ? UnityEngine.Random.Range(0, spawnPoints.Count) : 0;
         for (int i = 0; i < spawnPoints.Count; i++)
         {
             int index = (startIndex + i) % spawnPoints.Count;
@@ -184,6 +189,12 @@ public class InvisibilityBonusPickup : MonoBehaviour
 
     private void SetPickupActive(bool active)
     {
+        if (_isAvailable != active)
+        {
+            _isAvailable = active;
+            AvailabilityChanged?.Invoke(this, active);
+        }
+
         if (disableCollidersOnPickup && _colliders != null)
         {
             for (int i = 0; i < _colliders.Length; i++)

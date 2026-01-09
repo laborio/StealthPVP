@@ -124,6 +124,20 @@ public class LocalVersusVisuals : MonoBehaviour
         target3 = null;
     }
 
+    private void ResolveHunters(NpcIdentity id1, NpcIdentity id2, NpcIdentity id3,
+        out NpcIdentity hunter1, out NpcIdentity hunter2, out NpcIdentity hunter3)
+    {
+        if (rules)
+        {
+            rules.ResolveHunters(id1, id2, id3, out hunter1, out hunter2, out hunter3);
+            return;
+        }
+
+        hunter1 = null;
+        hunter2 = null;
+        hunter3 = null;
+    }
+
     private void ResolveGameplayTuning()
     {
         manager.ResolveGameplayTuning();
@@ -186,6 +200,7 @@ public class LocalVersusVisuals : MonoBehaviour
         ApplyRevealTuning(ability3, player3Compass);
         UpdateMinimaps(target1, target2, target3);
         UpdateTargetImages(id1, id2, id3, target1, target2, target3);
+        UpdateHunterImages(id1, id2, id3);
     }
 
     private void ConfigureRevealIndicators(GameObject playerInstance, RevealIndicatorController primaryCompass, NpcIdentity target,
@@ -298,6 +313,15 @@ public class LocalVersusVisuals : MonoBehaviour
         UpdateTargetImage(player3Ui, ResolveTargetPrefab(id1, id2, id3, player3Target));
     }
 
+    private void UpdateHunterImages(NpcIdentity id1, NpcIdentity id2, NpcIdentity id3)
+    {
+        ResolveHunters(id1, id2, id3, out NpcIdentity hunter1, out NpcIdentity hunter2, out NpcIdentity hunter3);
+
+        UpdateHunterImage(player1Ui, ResolveTargetPrefab(id1, id2, id3, hunter1));
+        UpdateHunterImage(player2Ui, ResolveTargetPrefab(id1, id2, id3, hunter2));
+        UpdateHunterImage(player3Ui, ResolveTargetPrefab(id1, id2, id3, hunter3));
+    }
+
     private GameObject ResolveTargetPrefab(NpcIdentity id1, NpcIdentity id2, NpcIdentity id3, NpcIdentity target)
     {
         if (!target)
@@ -328,6 +352,14 @@ public class LocalVersusVisuals : MonoBehaviour
         if (ui)
         {
             ui.SetTargetImagePrefab(prefab);
+        }
+    }
+
+    private void UpdateHunterImage(GameUiManager ui, GameObject prefab)
+    {
+        if (ui)
+        {
+            ui.SetHunterImagePrefab(prefab);
         }
     }
 
