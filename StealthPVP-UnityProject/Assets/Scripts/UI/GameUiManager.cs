@@ -27,9 +27,13 @@ public class GameUiManager : MonoBehaviour
     [Header("Target UI")]
     [SerializeField, Tooltip("Container that holds the target image prefab.")] private Transform targetContainer;
     [SerializeField, Tooltip("Fallback name used to find the target container if not assigned.")] private string targetContainerName = "TargetContainer";
+    [SerializeField, Tooltip("Container that holds the hunter image prefab.")] private Transform hunterContainer;
+    [SerializeField, Tooltip("Fallback name used to find the hunter container if not assigned.")] private string hunterContainerName = "HunterContainer";
 
     private GameObject _activeTargetInstance;
     private GameObject _activeTargetPrefab;
+    private GameObject _activeHunterInstance;
+    private GameObject _activeHunterPrefab;
     private bool _defensiveCyclerSubscribed;
     private Sprite _defensiveDefaultIcon;
     private bool _defensiveDefaultCached;
@@ -82,6 +86,26 @@ public class GameUiManager : MonoBehaviour
         if (prefab)
         {
             _activeTargetInstance = Instantiate(prefab, targetContainer);
+        }
+    }
+
+    public void SetHunterImagePrefab(GameObject prefab)
+    {
+        if (!ResolveHunterContainer())
+        {
+            return;
+        }
+
+        if (_activeHunterPrefab == prefab && _activeHunterInstance)
+        {
+            return;
+        }
+
+        ClearHunterContainer();
+        _activeHunterPrefab = prefab;
+        if (prefab)
+        {
+            _activeHunterInstance = Instantiate(prefab, hunterContainer);
         }
     }
 
@@ -304,6 +328,39 @@ public class GameUiManager : MonoBehaviour
         return false;
     }
 
+    private bool ResolveHunterContainer()
+    {
+        if (hunterContainer)
+        {
+            return true;
+        }
+
+        if (string.IsNullOrEmpty(hunterContainerName))
+        {
+            return false;
+        }
+
+        Transform direct = transform.Find(hunterContainerName);
+        if (direct)
+        {
+            hunterContainer = direct;
+            return true;
+        }
+
+        Transform[] all = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < all.Length; i++)
+        {
+            Transform candidate = all[i];
+            if (candidate && candidate.name == hunterContainerName)
+            {
+                hunterContainer = candidate;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void UpdateCooldownText(TMP_Text text, float remaining)
     {
         if (!text)
@@ -350,5 +407,24 @@ public class GameUiManager : MonoBehaviour
         }
 
         _activeTargetInstance = null;
+    }
+
+    private void ClearHunterContainer()
+    {
+        if (!hunterContainer)
+        {
+            return;
+        }
+
+        for (int i = hunterContainer.childCount - 1; i >= 0; i--)
+        {
+            Transform child = hunterContainer.GetChild(i);
+            if (child)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+
+        _activeHunterInstance = null;
     }
 }
