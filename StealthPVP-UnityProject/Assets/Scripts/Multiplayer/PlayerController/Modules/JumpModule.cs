@@ -11,8 +11,8 @@ public class JumpModule : MonoBehaviour
     public event Action OnLandingStarted;
     public event Action OnLandingEnded;
 
-    [SerializeField] private PlayerConfigSO _config;
-    [SerializeField] private GroundDetection _groundDetection;
+    [SerializeField] private PlayerConfigSO _Config;
+    [SerializeField] private GroundDetection _GroundDetection;
 
     private float _lastJumpTime = -999f;
     private float _jumpBufferTimer = 0f;
@@ -37,14 +37,14 @@ public class JumpModule : MonoBehaviour
 
     private void Awake()
     {
-        if (_config == null)
+        if (_Config == null)
         {
             Debug.LogError($"error jump module config on {gameObject.name}");
             enabled = false;
             return;
         }
 
-        if (_groundDetection == null)
+        if (_GroundDetection == null)
         {
             Debug.LogError($"error jump module ground detection on {gameObject.name}");
             enabled = false;
@@ -53,17 +53,17 @@ public class JumpModule : MonoBehaviour
 
     private void OnEnable()
     {
-        if (_groundDetection != null)
+        if (_GroundDetection != null)
         {
-            _groundDetection.OnGrounded += HandleLanding;
+            _GroundDetection.OnGrounded += HandleLanding;
         }
     }
 
     private void OnDisable()
     {
-        if (_groundDetection != null)
+        if (_GroundDetection != null)
         {
-            _groundDetection.OnGrounded -= HandleLanding;
+            _GroundDetection.OnGrounded -= HandleLanding;
         }
     }
 
@@ -77,7 +77,7 @@ public class JumpModule : MonoBehaviour
             _jumpBufferTimer -= Time.deltaTime;
         }
 
-        if (_isLanding && Time.time - _landingStartTime >= _config.LandingDuration)
+        if (_isLanding && Time.time - _landingStartTime >= _Config.LandingDuration)
         {
             _isLanding = false;
             OnLandingEnded?.Invoke();
@@ -89,9 +89,9 @@ public class JumpModule : MonoBehaviour
     /// </summary>
     public void RegisterJumpInput()
     {
-        if (_jumpBufferTimer <= 0 && (_groundDetection.IsGrounded || _groundDetection.IsInCoyoteTime(_config.CoyoteTime)))
+        if (_jumpBufferTimer <= 0 && (_GroundDetection.IsGrounded || _GroundDetection.IsInCoyoteTime(_Config.CoyoteTime)))
         {
-            _jumpBufferTimer = _config.JumpBufferTime;
+            _jumpBufferTimer = _Config.JumpBufferTime;
         }
     }
 
@@ -105,7 +105,7 @@ public class JumpModule : MonoBehaviour
             return 0f;
         }
 
-        if (Time.time < _lastJumpTime + _config.JumpCooldown)
+        if (Time.time < _lastJumpTime + _Config.JumpCooldown)
         {
             return 0f;
         }
@@ -118,7 +118,7 @@ public class JumpModule : MonoBehaviour
     /// </summary>
     public float GetGravityMultiplier(float currentVelocityY)
     {
-        if (_groundDetection.IsGrounded)
+        if (_GroundDetection.IsGrounded)
         {
             _currentJumpPhase = JumpPhase.Grounded;
             return 1f;
@@ -126,21 +126,21 @@ public class JumpModule : MonoBehaviour
 
         if (currentVelocityY > 0)
         {
-            if (currentVelocityY < _config.ApexThreshold)
+            if (currentVelocityY < _Config.ApexThreshold)
             {
                 _currentJumpPhase = JumpPhase.Apex;
-                return _config.ApexGravityMultiplier;
+                return _Config.ApexGravityMultiplier;
             }
             else
             {
                 _currentJumpPhase = JumpPhase.Rising;
-                return _config.JumpRiseGravityMultiplier;
+                return _Config.JumpRiseGravityMultiplier;
             }
         }
         else
         {
             _currentJumpPhase = JumpPhase.Falling;
-            return _config.JumpFallGravityMultiplier;
+            return _Config.JumpFallGravityMultiplier;
         }
     }
 
@@ -154,9 +154,9 @@ public class JumpModule : MonoBehaviour
             return 1f;
         }
 
-        if (Time.time - _landingStartTime < _config.LandingDuration)
+        if (Time.time - _landingStartTime < _Config.LandingDuration)
         {
-            return 1f - _config.LandingSpeedReduction;
+            return 1f - _Config.LandingSpeedReduction;
         }
 
         return 1f;
@@ -165,14 +165,14 @@ public class JumpModule : MonoBehaviour
     private bool CanPerformJump()
     {
         bool jumpBuffered = _jumpBufferTimer > 0;
-        bool onGroundOrCoyote = _groundDetection.IsGrounded || _groundDetection.IsInCoyoteTime(_config.CoyoteTime);
+        bool onGroundOrCoyote = _GroundDetection.IsGrounded || _GroundDetection.IsInCoyoteTime(_Config.CoyoteTime);
 
         return jumpBuffered && onGroundOrCoyote && !_jumpConsumed;
     }
 
     private float PerformJump()
     {
-        float jumpVelocity = Mathf.Sqrt(_config.JumpHeight * -2f * _config.Gravity);
+        float jumpVelocity = Mathf.Sqrt(_Config.JumpHeight * -2f * _Config.Gravity);
 
         _lastJumpTime = Time.time;
         _currentJumpPhase = JumpPhase.Rising;

@@ -1,30 +1,30 @@
 using Unity.Netcode;
 using UnityEngine;
 
+/// <summary>
+/// Orchestrates player movement modules for networked multiplayer.
+/// Delegates logic to specialized modules for maintainability and extensibility.
+/// </summary>
 public class CustomPlayerController : NetworkBehaviour
 {
     #region Serialized Fields
-    [Header("Player Components")]
+    [Header("Configuration")]
     [SerializeField] private PlayerConfigSO _PlayerConfig;
+
+    [Header("Input")]
     [SerializeField] private PlayerInputHandler _PlayerInputs;
-    [SerializeField] private CharacterController _CharacterController;
+
+    [Header("Modules")]
     [SerializeField] private GroundDetection _GroundDetection;
     [SerializeField] private JumpModule _JumpModule;
-    [SerializeField] private GameObject _IsoPlayerCam;
+    [SerializeField] private MovementModule _MovementModule;
 
-    [Header("Transforms")]
-    [SerializeField] private Transform _PlayerRoot;
-    [SerializeField] private Transform _PlayerCam;
+    [Header("Camera")]
+    [SerializeField] private GameObject _IsoPlayerCam;
     #endregion
 
     #region Private Variables
     private Vector3 _velocity;
-    private Vector3 _cameraForwardAxis;
-    private Vector3 _cameraRightAxis;
-    private Vector3 _moveDirection;
-    private Quaternion _targetRotation = new();
-    private float _currentSpeed = 0f;
-    private Vector2 _input;
     #endregion
 
     #region Network Lifecycle
@@ -34,9 +34,7 @@ public class CustomPlayerController : NetworkBehaviour
 
         if (!IsOwner)
         {
-            _PlayerCam.gameObject.SetActive(false);
             _IsoPlayerCam.gameObject.SetActive(false);
-            _CharacterController.enabled = false;
             enabled = false;
         }
     }
@@ -47,18 +45,18 @@ public class CustomPlayerController : NetworkBehaviour
     {
         if (!IsOwner) return;
 
+        UpdateModules();
+        HandleInput();
+        HandlePhysics();
+    }
+
+    private void UpdateModules()
+    {
         _GroundDetection.UpdateDetection();
         _JumpModule.UpdateJumpBuffer();
-
-        HandleJumpInput();
-        HandleJump();
-        HandleGravity();
-        HandleMovement();
     }
-    #endregion
 
-    #region Jump System
-    private void HandleJumpInput()
+    private void HandleInput()
     {
         if (_PlayerInputs.IsJumping)
         {
@@ -67,6 +65,15 @@ public class CustomPlayerController : NetworkBehaviour
         }
     }
 
+    private void HandlePhysics()
+    {
+        HandleJump();
+        HandleGravity();
+        HandleMovement();
+    }
+    #endregion
+
+    #region Jump
     private void HandleJump()
     {
         float jumpVelocity = _JumpModule.TryJump();
@@ -78,58 +85,7 @@ public class CustomPlayerController : NetworkBehaviour
     }
     #endregion
 
-    #region Physics & Movement
-    private void HandleMovement()
-    {
-        _input = _PlayerInputs.MoveInput;
-
-        Vector3 horizontalMove = Vector3.zero;
-
-        if (_input.sqrMagnitude >= .01f)
-        {
-            _cameraForwardAxis = _PlayerCam.forward;
-            _cameraRightAxis = _PlayerCam.right;
-
-            _cameraForwardAxis.y = 0;
-            _cameraRightAxis.y = 0;
-            _cameraForwardAxis.Normalize();
-            _cameraRightAxis.Normalize();
-
-            _moveDirection = (_cameraForwardAxis * _input.y + _cameraRightAxis * _input.x).normalized;
-
-            float speedMultiplier = 1f;
-
-            if (!_GroundDetection.IsGrounded)
-            {
-                speedMultiplier *= _PlayerConfig.AirControlMultiplier;
-            }
-
-            speedMultiplier *= _JumpModule.GetLandingSpeedMultiplier();
-
-            _currentSpeed = _PlayerInputs.IsWalking ? _PlayerConfig.WalkSpeed : _PlayerConfig.DefaultSpeed;
-            _currentSpeed *= speedMultiplier;
-
-            horizontalMove = _moveDirection * _currentSpeed * Time.deltaTime;
-
-            HandleRotation(_moveDirection, _PlayerConfig.RotationSpeed);
-        }
-
-        Vector3 totalMove = horizontalMove + (_velocity * Time.deltaTime);
-        _CharacterController.Move(totalMove);
-    }
-
-    private void HandleRotation(Vector3 moveDir, float rotationSpeed)
-    {
-        if (moveDir.sqrMagnitude > .01f)
-        {
-            _targetRotation = Quaternion.LookRotation(moveDir);
-            _PlayerRoot.rotation = Quaternion.Slerp(
-                _PlayerRoot.rotation,
-                _targetRotation,
-                rotationSpeed * Time.deltaTime);
-        }
-    }
-
+    #region Gravity
     private void HandleGravity()
     {
         if (_GroundDetection.IsGrounded && _velocity.y < 0)
@@ -144,12 +100,26 @@ public class CustomPlayerController : NetworkBehaviour
     }
     #endregion
 
+    #region Movement
+    private void HandleMovement()
+    {
+        float speedModifier = _JumpModule.GetLandingSpeedMultiplier();
+
+        _MovementModule.ProcessMovement(
+            _PlayerInputs.MoveInput,
+            _PlayerInputs.IsWalking,
+            _velocity,
+            speedModifier
+        );
+    }
+    #endregion
+
     #region Debug
     private void OnGUI()
     {
         if (!IsOwner) return;
 
-        GUILayout.BeginArea(new Rect(10, 10, 350, 280));
+        GUILayout.BeginArea(new Rect(10, 10, 350, 300));
         GUILayout.Label("=== CLIENT-SIDE MOVEMENT ===");
         GUILayout.Label($"Jump Phase: {_JumpModule.CurrentPhase}");
         GUILayout.Label($"Velocity Y: {_velocity.y:F2}");
@@ -159,6 +129,8 @@ public class CustomPlayerController : NetworkBehaviour
         GUILayout.Label($"Jump Consumed: {_JumpModule.IsJumpConsumed}");
         GUILayout.Label($"Landing: {_JumpModule.IsLanding}");
         GUILayout.Label($"Gravity Mult: {_JumpModule.GetGravityMultiplier(_velocity.y):F2}x");
+        GUILayout.Label($"Move Speed: {_MovementModule.CurrentSpeed:F2}");
+        GUILayout.Label($"Move Dir: {_MovementModule.MoveDirection}");
         GUILayout.EndArea();
     }
     #endregion
