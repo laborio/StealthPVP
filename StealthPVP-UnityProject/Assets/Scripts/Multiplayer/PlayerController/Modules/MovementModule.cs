@@ -65,9 +65,18 @@ public class MovementModule : MonoBehaviour
     /// <param name="isWalking">Is walk modifier active</param>
     /// <param name="verticalVelocity">Current vertical velocity vector</param>
     /// <param name="speedModifier">Additional speed multiplier (e.g., from landing)</param>
-    public void ProcessMovement(Vector2 input, bool isWalking, Vector3 verticalVelocity, float speedModifier = 1f)
+    /// <summary>
+    /// Process movement input and move the character.
+    /// </summary>
+    /// <param name="input">Movement input (normalized)</param>
+    /// <param name="isWalking">Is walk modifier active</param>
+    /// <param name="verticalVelocity">Current vertical velocity vector</param>
+    /// <param name="horizontalVelocity">External horizontal velocity (e.g., from wall jump)</param>
+    /// <param name="speedModifier">Additional speed multiplier (e.g., from landing)</param>
+    /// <param name="airControlModifier">Air control reduction (e.g., during wall jump)</param>
+    public void ProcessMovement(Vector2 input, bool isWalking, Vector3 verticalVelocity, Vector3 horizontalVelocity, float speedModifier = 1f, float airControlModifier = 1f)
     {
-        Vector3 horizontalMove = Vector3.zero;
+        Vector3 horizontalMove = horizontalVelocity * Time.deltaTime;
 
         if (input.sqrMagnitude >= 0.01f)
         {
@@ -75,14 +84,20 @@ public class MovementModule : MonoBehaviour
 
             float totalSpeedModifier = CalculateSpeedModifier() * speedModifier;
 
+            // Apply air control modifier
+            if (!_GroundDetection.IsGrounded)
+            {
+                totalSpeedModifier *= airControlModifier;
+            }
+
             _currentSpeed = isWalking ? _Config.WalkSpeed : _Config.DefaultSpeed;
             _currentSpeed *= totalSpeedModifier;
 
-            horizontalMove = _moveDirection * _currentSpeed * Time.deltaTime;
+            horizontalMove += _moveDirection * _currentSpeed * Time.deltaTime;
 
             HandleRotation(_moveDirection, _Config.RotationSpeed);
         }
-        else
+        else if (horizontalVelocity == Vector3.zero)
         {
             _currentSpeed = 0f;
         }

@@ -16,7 +16,9 @@ public class CustomPlayerController : NetworkBehaviour
 
     [Header("Modules")]
     [SerializeField] private GroundDetection _GroundDetection;
+    [SerializeField] private WallDetection _WallDetection;
     [SerializeField] private JumpModule _JumpModule;
+    [SerializeField] private WallJumpModule _WallJumpModule;
     [SerializeField] private MovementModule _MovementModule;
 
     [Header("Camera")]
@@ -25,6 +27,7 @@ public class CustomPlayerController : NetworkBehaviour
 
     #region Private Variables
     private Vector3 _velocity;
+    private Vector3 _horizontalVelocity;
     #endregion
 
     #region Network Lifecycle
@@ -53,14 +56,25 @@ public class CustomPlayerController : NetworkBehaviour
     private void UpdateModules()
     {
         _GroundDetection.UpdateDetection();
+        _WallDetection.UpdateDetection();
         _JumpModule.UpdateJumpBuffer();
+        _WallJumpModule.UpdateWallJump();
     }
 
     private void HandleInput()
     {
         if (_PlayerInputs.IsJumping)
         {
-            _JumpModule.RegisterJumpInput();
+            // Priority: wall jump > normal jump
+            if (_WallDetection.IsAgainstWall && !_GroundDetection.IsGrounded)
+            {
+                _WallJumpModule.RegisterWallJumpInput();
+            }
+            else
+            {
+                _JumpModule.RegisterJumpInput();
+            }
+
             _PlayerInputs.ResetJump();
         }
     }
@@ -76,6 +90,18 @@ public class CustomPlayerController : NetworkBehaviour
     #region Jump
     private void HandleJump()
     {
+        // Try wall jump first
+        Vector3 wallJumpVelocity = _WallJumpModule.TryWallJump();
+
+        if (wallJumpVelocity != Vector3.zero)
+        {
+            // Wall jump: set both vertical and horizontal velocity
+            _velocity.y = wallJumpVelocity.y;
+            _horizontalVelocity = new Vector3(wallJumpVelocity.x, 0, wallJumpVelocity.z);
+            return;
+        }
+
+        // Try normal jump
         float jumpVelocity = _JumpModule.TryJump();
 
         if (jumpVelocity > 0)
@@ -94,8 +120,20 @@ public class CustomPlayerController : NetworkBehaviour
         }
 
         float gravityMultiplier = _JumpModule.GetGravityMultiplier(_velocity.y);
-        float effectiveGravity = _PlayerConfig.Gravity * gravityMultiplier;
 
+        // Apply wall slide gravity modifier
+        if (_WallJumpModule.ShouldWallSlide(_velocity.y))
+        {
+            gravityMultiplier *= _WallJumpModule.GetWallSlideGravityMultiplier();
+
+            // Clamp wall slide speed
+            if (_velocity.y < -_PlayerConfig.WallSlideSpeed)
+            {
+                _velocity.y = -_PlayerConfig.WallSlideSpeed;
+            }
+        }
+
+        float effectiveGravity = _PlayerConfig.Gravity * gravityMultiplier;
         _velocity.y += effectiveGravity * Time.deltaTime;
     }
     #endregion
@@ -105,12 +143,24 @@ public class CustomPlayerController : NetworkBehaviour
     {
         float speedModifier = _JumpModule.GetLandingSpeedMultiplier();
 
+        // Apply reduced air control during wall jump lock time
+        float airControlModifier = 1f;
+        if (_WallJumpModule.ShouldReduceAirControl())
+        {
+            airControlModifier = _PlayerConfig.WallJumpAirControlMultiplier;
+        }
+
         _MovementModule.ProcessMovement(
             _PlayerInputs.MoveInput,
             _PlayerInputs.IsWalking,
             _velocity,
-            speedModifier
+            _horizontalVelocity,
+            speedModifier,
+            airControlModifier
         );
+
+        // Decay horizontal velocity from wall jump
+        _horizontalVelocity = Vector3.Lerp(_horizontalVelocity, Vector3.zero, Time.deltaTime * 2f);
     }
     #endregion
 
@@ -119,7 +169,7 @@ public class CustomPlayerController : NetworkBehaviour
     {
         if (!IsOwner) return;
 
-        GUILayout.BeginArea(new Rect(10, 10, 350, 300));
+        GUILayout.BeginArea(new Rect(10, 10, 350, 360));
         GUILayout.Label("=== CLIENT-SIDE MOVEMENT ===");
         GUILayout.Label($"Jump Phase: {_JumpModule.CurrentPhase}");
         GUILayout.Label($"Velocity Y: {_velocity.y:F2}");
@@ -130,7 +180,14 @@ public class CustomPlayerController : NetworkBehaviour
         GUILayout.Label($"Landing: {_JumpModule.IsLanding}");
         GUILayout.Label($"Gravity Mult: {_JumpModule.GetGravityMultiplier(_velocity.y):F2}x");
         GUILayout.Label($"Move Speed: {_MovementModule.CurrentSpeed:F2}");
-        GUILayout.Label($"Move Dir: {_MovementModule.MoveDirection}");
+
+        GUILayout.Space(10);
+        GUILayout.Label("=== WALL JUMP ===");
+        GUILayout.Label($"Against Wall: {_WallDetection.IsAgainstWall}");
+        GUILayout.Label($"Can Wall Jump: {_WallDetection.CanWallJump()}");
+        GUILayout.Label($"Wall Sliding: {_WallJumpModule.IsWallSliding}");
+        GUILayout.Label($"Wall Jump Buffer: {_WallJumpModule.WallJumpBufferTimer:F2}s");
+        GUILayout.Label($"Wall Normal: {_WallDetection.WallNormal}");
         GUILayout.EndArea();
     }
     #endregion
