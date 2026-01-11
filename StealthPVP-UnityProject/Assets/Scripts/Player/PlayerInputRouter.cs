@@ -29,16 +29,27 @@ public class PlayerInputRouter : MonoBehaviour
     [SerializeField, Tooltip("Layers considered for attack aim / range indicator.")] private LayerMask attackGroundMask = Physics.DefaultRaycastLayers;
 
     [Header("Click To Move")]
+    [SerializeField, Tooltip("If false, right click move is disabled.")] private bool clickToMoveEnabled = true;
+    [SerializeField, Tooltip("Mouse button index used for click-to-move (0=left,1=right,2=middle).")] private int clickToMoveMouseButton = 1;
     [SerializeField] private float maximumRayDistance = 250f;
     [SerializeField] private LayerMask groundMask;
+
+    private int _lastSnapshotFrame = -1;
+    private PlayerInputSnapshot _lastSnapshot;
 
     /// <summary>
     /// Polls the underlying Unity input system and returns a snapshot for this frame.
     /// </summary>
     public virtual PlayerInputSnapshot PollInput()
     {
+        if (TryGetCachedSnapshot(out PlayerInputSnapshot cachedSnapshot))
+        {
+            return cachedSnapshot;
+        }
+
         if (!inputEnabled || inputSuppressed)
         {
+            CacheSnapshot(default);
             return default;
         }
 
@@ -52,15 +63,17 @@ public class PlayerInputRouter : MonoBehaviour
             PrimaryPressed = Input.GetMouseButtonDown(0),
             PrimaryHeld = Input.GetMouseButton(0),
             PrimaryReleased = Input.GetMouseButtonUp(0),
-            SecondaryPressed = Input.GetMouseButtonDown(2),
-            SecondaryHeld = Input.GetMouseButton(2),
-            SecondaryReleased = Input.GetMouseButtonUp(2),
+            SecondaryPressed = Input.GetMouseButtonDown(1),
+            SecondaryHeld = Input.GetMouseButton(1),
+            SecondaryReleased = Input.GetMouseButtonUp(1),
+            LockPressed = Input.GetMouseButtonDown(2),
             MoveAxis = keyboardOnlyMovement ? BuildKeyboardMoveAxis() : new Vector2(
                 string.IsNullOrEmpty(horizontalAxis) ? 0f : Input.GetAxisRaw(horizontalAxis),
                 string.IsNullOrEmpty(verticalAxis) ? 0f : Input.GetAxisRaw(verticalAxis))
         };
 
-        if (Input.GetMouseButtonDown(1) && TryResolveMoveTarget(out Vector3 targetPosition))
+        if (clickToMoveEnabled && clickToMoveMouseButton >= 0
+            && Input.GetMouseButtonDown(clickToMoveMouseButton) && TryResolveMoveTarget(out Vector3 targetPosition))
         {
             snapshot.MoveIssued = true;
             snapshot.MoveTarget = targetPosition;
@@ -76,6 +89,7 @@ public class PlayerInputRouter : MonoBehaviour
             }
         }
 
+        CacheSnapshot(snapshot);
         return snapshot;
     }
 
@@ -124,6 +138,7 @@ public class PlayerInputRouter : MonoBehaviour
     {
         maximumRayDistance = Mathf.Max(0f, maximumRayDistance);
         attackRayDistance = Mathf.Max(0f, attackRayDistance);
+        clickToMoveMouseButton = Mathf.Clamp(clickToMoveMouseButton, -1, 2);
     }
 
     public Camera ResolveCamera()
@@ -149,6 +164,24 @@ public class PlayerInputRouter : MonoBehaviour
     public void SetInputSuppressed(bool suppressed)
     {
         inputSuppressed = suppressed;
+    }
+
+    protected bool TryGetCachedSnapshot(out PlayerInputSnapshot snapshot)
+    {
+        if (Time.frameCount == _lastSnapshotFrame)
+        {
+            snapshot = _lastSnapshot;
+            return true;
+        }
+
+        snapshot = default;
+        return false;
+    }
+
+    protected void CacheSnapshot(PlayerInputSnapshot snapshot)
+    {
+        _lastSnapshot = snapshot;
+        _lastSnapshotFrame = Time.frameCount;
     }
 
     protected bool IsInputAllowed => inputEnabled && !inputSuppressed;
@@ -204,6 +237,7 @@ public struct PlayerInputSnapshot
     public bool SecondaryPressed;
     public bool SecondaryHeld;
     public bool SecondaryReleased;
+    public bool LockPressed;
     public bool MoveIssued;
     public Vector2 MoveAxis;
     public Vector3 MoveTarget;

@@ -6197,6 +6197,7 @@ MonoBehaviour:
   walkAnimationBaseSpeed: 0.8
   runAnimationBaseSpeed: 1
   jumpAnimationBaseSpeed: 1
+  attackAnimationSpeed: 1
   runParticleSystem: {fileID: 7560775613690615504}
   controlUpperBodyLayerWeight: 1
   upperBodyLayerName: Upper Body
@@ -6797,6 +6798,7 @@ MonoBehaviour:
   targetCamera: {fileID: 0}
   lockYAxis: 0
   useRenderingCamera: 1
+  invertFacing: 1
 --- !u!1 &5217284982952724537
 GameObject:
   m_ObjectHideFlags: 0
@@ -12865,8 +12867,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8945044522417601190}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.0005898238, y: -0.9979894, z: 0.06267905, w: -0.009391308}
-  m_LocalPosition: {x: 40.94646, y: 0.32003218, z: 27.135792}
+  m_LocalRotation: {x: 0.54510987, y: -0.2550199, z: 0.17858621, w: 0.7784132}
+  m_LocalPosition: {x: -10.34888, y: 1.3716711, z: -12.860012}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

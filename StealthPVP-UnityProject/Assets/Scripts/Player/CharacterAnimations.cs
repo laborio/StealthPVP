@@ -30,6 +30,7 @@ public class CharacterAnimations : MonoBehaviour
     [SerializeField] private float walkAnimationBaseSpeed = 1f;
     [SerializeField] private float runAnimationBaseSpeed = 1f;
     [SerializeField] private float jumpAnimationBaseSpeed = 1f;
+    [SerializeField, Tooltip("Animator speed while an attack animation is active.")] private float attackAnimationSpeed = 1f;
 
     [Header("Effects")]
     [SerializeField] private ParticleSystem runParticleSystem;
@@ -87,6 +88,7 @@ public class CharacterAnimations : MonoBehaviour
         walkAnimationBaseSpeed = Mathf.Max(0.01f, walkAnimationBaseSpeed);
         runAnimationBaseSpeed = Mathf.Max(0.01f, runAnimationBaseSpeed);
         jumpAnimationBaseSpeed = Mathf.Max(0.01f, jumpAnimationBaseSpeed);
+        attackAnimationSpeed = Mathf.Max(0.01f, attackAnimationSpeed);
         upperBodySpeedDefault = Mathf.Max(0f, upperBodySpeedDefault);
         ResolveAnimators();
         CacheHashes();
@@ -140,7 +142,7 @@ public class CharacterAnimations : MonoBehaviour
         }
 
         bool isAttacking = IsInAnyAttackState(animator);
-        animator.speed = isAttacking ? 1f : animatorSpeed;
+        animator.speed = isAttacking ? attackAnimationSpeed : animatorSpeed;
         UpdateUpperBodyLayerWeight();
     }
 

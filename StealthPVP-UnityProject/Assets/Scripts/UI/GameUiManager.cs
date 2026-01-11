@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
@@ -24,6 +25,13 @@ public class GameUiManager : MonoBehaviour
     [SerializeField, Tooltip("Cooldown text for the movement slot.")] private TMP_Text movementCooldownText;
     [SerializeField, Tooltip("Icon image for the movement slot.")] private Image movementIcon;
     [SerializeField, Tooltip("Dash controller for this player.")] private SimpleCharacterController dashController;
+    [Header("Round Timer")]
+    [SerializeField, Tooltip("Timer text for the round countdown (MM:SS).")] private TMP_Text roundTimerText;
+    [SerializeField, Tooltip("Panel shown when the round ends.")] private GameObject gameOverPanel;
+    [SerializeField, Tooltip("Main text in the game over panel.")] private TMP_Text gameOverText;
+    [SerializeField, Tooltip("Restart button in the game over panel.")] private Button restartButton;
+    [SerializeField, Tooltip("Message displayed when the round starts.")] private string roundStartMessage = "Get Ready";
+    [SerializeField, Tooltip("Message displayed when the game ends.")] private string gameOverMessage = "Game Over";
     [Header("Target UI")]
     [SerializeField, Tooltip("Container that holds the target image prefab.")] private Transform targetContainer;
     [SerializeField, Tooltip("Fallback name used to find the target container if not assigned.")] private string targetContainerName = "TargetContainer";
@@ -37,6 +45,7 @@ public class GameUiManager : MonoBehaviour
     private bool _defensiveCyclerSubscribed;
     private Sprite _defensiveDefaultIcon;
     private bool _defensiveDefaultCached;
+    private bool _restartButtonBound;
 
     private const string RevealLabel = "Compass";
     private const string DefensiveSmokeLabel = "Smoke";
@@ -50,11 +59,13 @@ public class GameUiManager : MonoBehaviour
         UpdateRevealName();
         UpdateMovementName();
         UpdateDefensiveNameFromCycler();
+        BindRestartButton();
     }
 
     private void OnDisable()
     {
         UnbindDefensiveCycler();
+        UnbindRestartButton();
     }
 
     private void Update()
@@ -388,6 +399,119 @@ public class GameUiManager : MonoBehaviour
         Color color = image.color;
         color.a = cooldownRemaining > 0f ? 0f : 1f;
         image.color = color;
+    }
+
+    public void SetRoundTimerSeconds(float remainingSeconds)
+    {
+        if (!roundTimerText)
+        {
+            return;
+        }
+
+        int totalSeconds = Mathf.Max(0, Mathf.CeilToInt(remainingSeconds));
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        roundTimerText.text = $"{minutes:00}:{seconds:00}";
+    }
+
+    public void SetGameOverActive(bool isActive)
+    {
+        SetPanelActive(isActive, gameOverMessage, "Game Over");
+    }
+
+    public void SetRoundStartActive(bool isActive)
+    {
+        SetPanelActive(isActive, roundStartMessage, "Get Ready");
+    }
+
+    public void RestartGame()
+    {
+        HandlePrimaryButton();
+    }
+
+    private void BindRestartButton()
+    {
+        if (_restartButtonBound)
+        {
+            return;
+        }
+
+        if (!restartButton && gameOverPanel)
+        {
+            restartButton = gameOverPanel.GetComponentInChildren<Button>(true);
+        }
+
+        if (!restartButton)
+        {
+            return;
+        }
+
+        restartButton.onClick.AddListener(HandlePrimaryButton);
+        _restartButtonBound = true;
+    }
+
+    private void UnbindRestartButton()
+    {
+        if (!_restartButtonBound || !restartButton)
+        {
+            _restartButtonBound = false;
+            return;
+        }
+
+        restartButton.onClick.RemoveListener(HandlePrimaryButton);
+        _restartButtonBound = false;
+    }
+
+    public void HandlePrimaryButton()
+    {
+        LocalVersusGameManager manager = LocalVersusGameManager.Instance;
+        if (!manager)
+        {
+            manager = FindFirstObjectByType<LocalVersusGameManager>();
+        }
+
+        if (manager)
+        {
+            if (manager.TryBeginRoundFromUi())
+            {
+                return;
+            }
+
+            if (!manager.IsRoundOver)
+            {
+                return;
+            }
+        }
+
+        ExecuteSceneRestart();
+    }
+
+    private void ExecuteSceneRestart()
+    {
+        Debug.Log("CLICK BUTTON");
+        Time.timeScale = 1f;
+
+        GameManager manager = FindFirstObjectByType<GameManager>();
+        if (manager)
+        {
+            manager.RestartScene();
+            return;
+        }
+
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    private void SetPanelActive(bool isActive, string message, string fallbackMessage)
+    {
+        if (gameOverPanel)
+        {
+            gameOverPanel.SetActive(isActive);
+        }
+
+        if (isActive && gameOverText)
+        {
+            gameOverText.text = string.IsNullOrEmpty(message) ? fallbackMessage : message;
+        }
     }
 
     private void ClearTargetContainer()
