@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -32,8 +33,24 @@ public partial class SimpleCharacterController : MonoBehaviour
     [SerializeField, Tooltip("Optional range indicator shown while holding the attack button.")] private GameObject rangeIndicator;
     [SerializeField, Tooltip("If true, keeps the range indicator visible during the attack animation.")] private bool showRangeIndicatorDuringAttack = true;
     [SerializeField, Tooltip("Rotation speed (deg/sec) when aligning to the attack aim.")] private float attackAimRotationSpeed = 1080f;
+    [SerializeField, Tooltip("If true, snap facing to the attack target instantly.")] private bool snapAttackFacing = false;
     [SerializeField, Tooltip("Layers considered for attack aiming.")] private LayerMask attackGroundMask = Physics.DefaultRaycastLayers;
     [SerializeField, Tooltip("Minimum time attack input stays locked after triggering an attack.")] private float attackLockMinDuration = 0.05f;
+    [SerializeField, Tooltip("Max distance to allow a lock-on attack.")] private float lockOnAttackRange = 2.5f;
+    [SerializeField, Tooltip("If true, attacks require a lock-on target.")] private bool requireLockOnTargetForAttack = false;
+    [SerializeField, Tooltip("If true, allow attacks while airborne.")] private bool allowAirAttack = true;
+    [SerializeField, Tooltip("Max vertical distance allowed for lock-on attacks while airborne (0 = ignore vertical).")] private float airAttackVerticalRange = 8f;
+    [SerializeField, Tooltip("If true, pulls the player toward the target when attacking mid-air.")] private bool airAttackPullEnabled = true;
+    [SerializeField, Tooltip("Speed used to pull toward the target during mid-air attacks.")] private float airAttackPullSpeed = 12f;
+    [SerializeField, Tooltip("Stop pulling once within this distance of the target.")] private float airAttackPullStopDistance = 0.35f;
+    [SerializeField, Tooltip("Maximum duration to pull during a mid-air attack.")] private float airAttackPullMaxDuration = 0.35f;
+    [SerializeField, Tooltip("Optional body hitbox used during mid-air attacks.")] private WeaponDamage airAttackBodyDamage;
+    [SerializeField, Tooltip("Seconds to keep the body hitbox active during mid-air attacks.")] private float airAttackDamageWindow = 0.25f;
+    [SerializeField, Tooltip("If true, attacks require facing the target within the angle limit.")] private bool requireFacingForAttack = false;
+    [SerializeField, Tooltip("Max angle (deg) allowed between forward and target to trigger attack (>=180 means no restriction)."), Range(0f, 360f)]
+    private float attackFacingAngle = 90f;
+    [SerializeField, Tooltip("Max angle (deg) allowed between forward and target for mid-air attacks (>=180 means no restriction)."), Range(0f, 360f)]
+    private float airAttackFacingAngle = 120f;
     [SerializeField, Tooltip("If true, movement input is locked while an attack is active.")] private bool lockMovementDuringAttack = false;
     [SerializeField, Tooltip("Range indicator color for regular attacks.")] private Color rangeIndicatorAttackColor = Color.red;
     [SerializeField, Tooltip("Range indicator color for stun attacks.")] private Color rangeIndicatorStunColor = Color.yellow;
@@ -103,6 +120,14 @@ public partial class SimpleCharacterController : MonoBehaviour
     private bool _morphActive;
     private float _morphMoveSpeed;
     private PlayerInvisibility _invisibility;
+    private Transform _lockOnTarget;
+    private Transform _airAttackPullTarget;
+    private float _airAttackPullTimer;
+    private bool _airAttackPullActive;
+    private float _airAttackDamageTimer;
+    private bool _airAttackDamageActive;
+
+    public event Action<bool> AttackTriggered;
 
     private void Awake()
     {
@@ -184,6 +209,7 @@ public partial class SimpleCharacterController : MonoBehaviour
         HandleBenchInput(requestedMovement, interactPressed);
         HandleAttackInput(inputSnapshot, isGrounded);
         UpdateAttackLockState(deltaTime);
+        UpdateAirAttackDamageWindow(deltaTime);
         bool attackStateActive = characterAnimations != null && characterAnimations.IsInAttackState();
         bool shouldShowRangeIndicator = _attackChargeActive || (showRangeIndicatorDuringAttack && (_attackLockActive || attackStateActive));
         SetRangeIndicatorActive(shouldShowRangeIndicator);
@@ -468,6 +494,7 @@ public partial class SimpleCharacterController : MonoBehaviour
             lockedPosition.z = morphLockPosition.z;
             transform.position = lockedPosition;
         }
+        ApplyAirAttackPull(deltaTime);
 
         Vector3 planarMove = new Vector3(_currentPlanarVelocity.x, 0f, _currentPlanarVelocity.z);
         float planarSpeed = planarMove.magnitude;
@@ -551,6 +578,12 @@ public partial class SimpleCharacterController : MonoBehaviour
             return;
         }
 
+        if (requireLockOnTargetForAttack && !_lockOnTarget)
+        {
+            CancelAttackCharge();
+            return;
+        }
+
         if (_attackLockActive || (characterAnimations != null && characterAnimations.IsInAttackState()))
         {
             return;
@@ -560,7 +593,10 @@ public partial class SimpleCharacterController : MonoBehaviour
         {
             if (input.PrimaryPressed)
             {
-                StartAttackCharge(attackTriggerName, false);
+                if (!_lockOnTarget || IsLockOnTargetInRange())
+                {
+                    StartAttackCharge(attackTriggerName, false);
+                }
             }
             else if (input.SecondaryPressed && !string.IsNullOrEmpty(stunTriggerName))
             {
@@ -576,10 +612,25 @@ public partial class SimpleCharacterController : MonoBehaviour
         bool released = _attackChargeFromSecondary ? input.SecondaryReleased : input.PrimaryReleased;
         if (_attackChargeActive && released)
         {
-            if (isGrounded)
+            if (!_attackChargeFromSecondary && _lockOnTarget && !IsLockOnTargetInRange())
+            {
+                if (!(allowAirAttack && !isGrounded && airAttackPullEnabled))
+                {
+                    CancelAttackCharge();
+                    return;
+                }
+            }
+
+            if (!IsFacingAttackTarget(input, isGrounded))
+            {
+                CancelAttackCharge();
+                return;
+            }
+
+            if (isGrounded || allowAirAttack)
             {
                 Debug.Log("ATCK");
-                TriggerAttack(input, _pendingAttackTriggerName);
+                TriggerAttack(input, _pendingAttackTriggerName, isGrounded);
             }
             else
             {
@@ -612,6 +663,14 @@ public partial class SimpleCharacterController : MonoBehaviour
 
     private void UpdateAttackAim(PlayerInputSnapshot input)
     {
+        if (TryGetLockOnDirection(out Vector3 lockDirection))
+        {
+            _lastAimDirection = lockDirection;
+            _attackAimHasInput = true;
+            ApplyRangeIndicatorRotation(_lastAimDirection);
+            return;
+        }
+
         if (!TryGetAimPoint(input, out Vector3 aimPoint))
         {
             if (!_attackAimHasInput)
@@ -633,14 +692,18 @@ public partial class SimpleCharacterController : MonoBehaviour
         ApplyRangeIndicatorRotation(_lastAimDirection);
     }
 
-    private void TriggerAttack(PlayerInputSnapshot input, string triggerName)
+    private void TriggerAttack(PlayerInputSnapshot input, string triggerName, bool isGrounded)
     {
         SetRangeIndicatorActive(false);
         _attackChargeActive = false;
         _lastAttackWasSecondary = _attackChargeFromSecondary;
 
         Vector3 aimDirection = _lastAimDirection;
-        if (TryGetAimPoint(input, out Vector3 aimPoint))
+        if (TryGetLockOnDirection(out Vector3 lockDirection))
+        {
+            aimDirection = lockDirection;
+        }
+        else if (TryGetAimPoint(input, out Vector3 aimPoint))
         {
             Vector3 dir = aimPoint - transform.position;
             dir.y = 0f;
@@ -656,6 +719,28 @@ public partial class SimpleCharacterController : MonoBehaviour
         _attackLockTimer = Mathf.Max(attackLockMinDuration, 0f);
         string trigger = string.IsNullOrEmpty(triggerName) ? attackTriggerName : triggerName;
         characterAnimations?.TriggerAttack(trigger);
+        TryBeginAirAttackPull(isGrounded);
+        TryBeginAirAttackDamage(isGrounded);
+        AttackTriggered?.Invoke(_lastAttackWasSecondary);
+    }
+
+    private bool TryGetLockOnDirection(out Vector3 direction)
+    {
+        direction = default;
+        if (!_lockOnTarget)
+        {
+            return false;
+        }
+
+        Vector3 dir = _lockOnTarget.position - transform.position;
+        dir.y = 0f;
+        if (dir.sqrMagnitude < 0.0001f)
+        {
+            return false;
+        }
+
+        direction = dir.normalized;
+        return true;
     }
 
     private void BeginAttackRotation(Vector3 aimDirection)
@@ -667,6 +752,13 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
 
         _attackTargetRotation = Quaternion.LookRotation(aimDirection.normalized, Vector3.up);
+        if (snapAttackFacing)
+        {
+            transform.rotation = _attackTargetRotation;
+            _attackAimInProgress = false;
+            return;
+        }
+
         _attackAimInProgress = true;
     }
 
@@ -698,6 +790,14 @@ public partial class SimpleCharacterController : MonoBehaviour
     {
         if (!_attackLockActive)
         {
+            if (_airAttackPullActive)
+            {
+                CancelAirAttackPull();
+            }
+            if (_airAttackDamageActive)
+            {
+                EndAirAttackDamageWindow();
+            }
             return;
         }
 
@@ -714,6 +814,169 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
 
         _attackLockActive = false;
+    }
+
+    private void TryBeginAirAttackDamage(bool isGrounded)
+    {
+        if (!airAttackBodyDamage || !allowAirAttack || isGrounded)
+        {
+            return;
+        }
+
+        Debug.Log($"[AirAttack] Start body damage window on {name} ({airAttackBodyDamage.name})");
+        airAttackBodyDamage.StartDamageWindow();
+        _airAttackDamageTimer = Mathf.Max(0f, airAttackDamageWindow);
+        _airAttackDamageActive = _airAttackDamageTimer > 0f;
+        if (!_airAttackDamageActive)
+        {
+            airAttackBodyDamage.EndDamageWindow();
+        }
+    }
+
+    private void UpdateAirAttackDamageWindow(float deltaTime)
+    {
+        if (!_airAttackDamageActive)
+        {
+            return;
+        }
+
+        _airAttackDamageTimer = Mathf.Max(0f, _airAttackDamageTimer - deltaTime);
+        if (_airAttackDamageTimer <= 0f)
+        {
+            EndAirAttackDamageWindow();
+        }
+    }
+
+    private void EndAirAttackDamageWindow()
+    {
+        if (airAttackBodyDamage)
+        {
+            Debug.Log($"[AirAttack] End body damage window on {name} ({airAttackBodyDamage.name})");
+            airAttackBodyDamage.EndDamageWindow();
+        }
+        _airAttackDamageActive = false;
+        _airAttackDamageTimer = 0f;
+    }
+
+    private void TryBeginAirAttackPull(bool isGrounded)
+    {
+        if (!airAttackPullEnabled || !allowAirAttack || isGrounded)
+        {
+            return;
+        }
+
+        if (_lastAttackWasSecondary)
+        {
+            return;
+        }
+
+        if (!_lockOnTarget)
+        {
+            return;
+        }
+
+        _airAttackPullTarget = _lockOnTarget;
+        _airAttackPullTimer = Mathf.Max(0f, airAttackPullMaxDuration);
+        _airAttackPullActive = _airAttackPullTimer > 0f;
+    }
+
+    private void ApplyAirAttackPull(float deltaTime)
+    {
+        if (!_airAttackPullActive)
+        {
+            return;
+        }
+
+        if (!_airAttackPullTarget || _airAttackPullTimer <= 0f)
+        {
+            CancelAirAttackPull();
+            return;
+        }
+
+        if (_characterController.isGrounded)
+        {
+            CancelAirAttackPull();
+            return;
+        }
+
+        _airAttackPullTimer = Mathf.Max(0f, _airAttackPullTimer - deltaTime);
+
+        Vector3 toTarget = _airAttackPullTarget.position - transform.position;
+        float sqrDistance = toTarget.sqrMagnitude;
+        float stopDistance = Mathf.Max(0f, airAttackPullStopDistance);
+        if (sqrDistance <= stopDistance * stopDistance)
+        {
+            CancelAirAttackPull();
+            return;
+        }
+
+        Vector3 step = toTarget.normalized * (airAttackPullSpeed * deltaTime);
+        if (step.sqrMagnitude > sqrDistance)
+        {
+            step = toTarget;
+        }
+
+        _characterController.Move(step);
+
+        Vector3 flat = toTarget;
+        flat.y = 0f;
+        if (flat.sqrMagnitude > 0.0001f)
+        {
+            transform.rotation = Quaternion.LookRotation(flat.normalized, Vector3.up);
+        }
+    }
+
+    private void CancelAirAttackPull()
+    {
+        _airAttackPullActive = false;
+        _airAttackPullTimer = 0f;
+        _airAttackPullTarget = null;
+    }
+
+    private bool IsFacingAttackTarget(PlayerInputSnapshot input, bool isGrounded)
+    {
+        if (!requireFacingForAttack || attackFacingAngle >= 180f)
+        {
+            return true;
+        }
+
+        float angleLimit = isGrounded ? attackFacingAngle : airAttackFacingAngle;
+        if (angleLimit >= 180f)
+        {
+            return true;
+        }
+
+        Vector3 direction;
+        if (TryGetLockOnDirection(out direction))
+        {
+            return IsFacingDirection(direction, angleLimit);
+        }
+
+        if (TryGetAimPoint(input, out Vector3 aimPoint))
+        {
+            Vector3 dir = aimPoint - transform.position;
+            dir.y = 0f;
+            return IsFacingDirection(dir, angleLimit);
+        }
+
+        return IsFacingDirection(_lastAimDirection, angleLimit);
+    }
+
+    private bool IsFacingDirection(Vector3 direction, float angleLimit)
+    {
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            return true;
+        }
+
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            return true;
+        }
+
+        float angle = Vector3.Angle(transform.forward, direction.normalized);
+        return angle <= Mathf.Clamp(angleLimit, 0f, 180f);
     }
 
     private bool TryGetAimPoint(PlayerInputSnapshot input, out Vector3 point)
@@ -982,6 +1245,14 @@ public partial class SimpleCharacterController : MonoBehaviour
         waterJumpVelocityMultiplier = Mathf.Clamp(waterJumpVelocityMultiplier, 0.1f, 1f);
         attackAimRotationSpeed = Mathf.Max(0f, attackAimRotationSpeed);
         attackLockMinDuration = Mathf.Max(0f, attackLockMinDuration);
+        lockOnAttackRange = Mathf.Max(0f, lockOnAttackRange);
+        airAttackVerticalRange = Mathf.Max(0f, airAttackVerticalRange);
+        airAttackPullSpeed = Mathf.Max(0f, airAttackPullSpeed);
+        airAttackPullStopDistance = Mathf.Max(0f, airAttackPullStopDistance);
+        airAttackPullMaxDuration = Mathf.Max(0f, airAttackPullMaxDuration);
+        airAttackDamageWindow = Mathf.Max(0f, airAttackDamageWindow);
+        attackFacingAngle = Mathf.Clamp(attackFacingAngle, 0f, 360f);
+        airAttackFacingAngle = Mathf.Clamp(airAttackFacingAngle, 0f, 360f);
         backwardRunDotThreshold = Mathf.Clamp(backwardRunDotThreshold, -1f, 1f);
         strafeDotThreshold = Mathf.Clamp(strafeDotThreshold, 0f, 1f);
         rigidbodyPushForce = Mathf.Max(0f, rigidbodyPushForce);
@@ -1000,9 +1271,10 @@ public partial class SimpleCharacterController : MonoBehaviour
             PrimaryPressed = Input.GetMouseButtonDown(0),
             PrimaryHeld = Input.GetMouseButton(0),
             PrimaryReleased = Input.GetMouseButtonUp(0),
-            SecondaryPressed = Input.GetMouseButtonDown(2),
-            SecondaryHeld = Input.GetMouseButton(2),
-            SecondaryReleased = Input.GetMouseButtonUp(2),
+            SecondaryPressed = Input.GetMouseButtonDown(1),
+            SecondaryHeld = Input.GetMouseButton(1),
+            SecondaryReleased = Input.GetMouseButtonUp(1),
+            LockPressed = Input.GetMouseButtonDown(2),
             MoveAxis = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"))
         };
 
@@ -1199,4 +1471,77 @@ public partial class SimpleCharacterController : MonoBehaviour
             CancelAttackCharge();
         }
     }
+
+    public void SetLockOnTarget(Transform target)
+    {
+        _lockOnTarget = target;
+    }
+
+    public void ClearLockOnTarget(bool keepAirPull = false, bool keepAirDamage = false)
+    {
+        _lockOnTarget = null;
+        if (!keepAirPull && _airAttackPullActive)
+        {
+            CancelAirAttackPull();
+        }
+        if (!keepAirDamage && _airAttackDamageActive)
+        {
+            EndAirAttackDamageWindow();
+        }
+    }
+
+    public Transform LockOnTarget => _lockOnTarget;
+
+    public float LockOnAttackRange => lockOnAttackRange;
+
+    public float AirAttackVerticalRange => airAttackVerticalRange;
+
+    public bool IsAirborne => _isJumping || _isFalling || (_characterController && !_characterController.isGrounded);
+
+    public bool IsLockOnTargetInRange()
+    {
+        if (!_lockOnTarget)
+        {
+            return false;
+        }
+
+        Vector3 delta = _lockOnTarget.position - transform.position;
+        float verticalDistance = Mathf.Abs(delta.y);
+        delta.y = 0f;
+        if (lockOnAttackRange > 0f && delta.sqrMagnitude > lockOnAttackRange * lockOnAttackRange)
+        {
+            return false;
+        }
+
+        if (allowAirAttack && IsAirborne && airAttackVerticalRange > 0f && verticalDistance > airAttackVerticalRange)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public void SetRequireLockOnTargetForAttack(bool required)
+    {
+        requireLockOnTargetForAttack = required;
+        if (requireLockOnTargetForAttack && !_lockOnTarget)
+        {
+            CancelAttackCharge();
+        }
+    }
+
+    public bool RequireLockOnTargetForAttack => requireLockOnTargetForAttack;
+
+    public void SetSnapAttackFacing(bool snap)
+    {
+        snapAttackFacing = snap;
+    }
+
+    public bool SnapAttackFacing => snapAttackFacing;
+
+    public bool IsAirAttackPullActive => _airAttackPullActive;
+    public bool IsAirAttackDamageActive => _airAttackDamageActive;
+
+    public bool RequireFacingForAttack => requireFacingForAttack;
+    public float AttackFacingAngle => attackFacingAngle;
 }

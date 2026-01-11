@@ -13,6 +13,9 @@ public class GameplayTuning : ScriptableObject
 public int scorePerTargetKill = 100;
 public int wrongTargetPenalty = -100;
 
+[Header("Round Timer")]
+public float roundDurationSeconds = 300f;
+
 [Header("Reveal - Skill (shared)")]
 public float revealCooldown = 30f;
 public float revealHold = 2f;

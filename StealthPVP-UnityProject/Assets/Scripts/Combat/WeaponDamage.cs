@@ -80,6 +80,10 @@ public class WeaponDamage : MonoBehaviour
         CharacterHealth targetHealth = other.GetComponentInParent<CharacterHealth>();
         if (!targetHealth || targetHealth == owner || targetHealth.IsDead || _hitThisWindow.Contains(targetHealth))
         {
+            if (targetHealth && targetHealth == owner)
+            {
+                Debug.Log($"[WeaponDamage:{name}] Ignore hit on owner {targetHealth.name}", this);
+            }
             return;
         }
 
@@ -91,10 +95,12 @@ public class WeaponDamage : MonoBehaviour
 
         if (ShouldIgnoreKillHit(targetHealth))
         {
+            Debug.Log($"[WeaponDamage:{name}] Ignore kill hit on {targetHealth.name} (rules)", this);
             return;
         }
 
         _hitThisWindow.Add(targetHealth);
+        Debug.Log($"[WeaponDamage:{name}] Apply damage to {targetHealth.name}", this);
         Vector3 hitPoint = other.ClosestPoint(transform.position);
         if (hitPointBias > 0f)
         {

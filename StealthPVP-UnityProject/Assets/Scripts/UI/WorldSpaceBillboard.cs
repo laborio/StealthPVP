@@ -9,6 +9,8 @@ public class WorldSpaceBillboard : MonoBehaviour
     [SerializeField] private bool lockYAxis = true;
     [SerializeField, Tooltip("Face the camera currently rendering this object for multi-camera setups.")]
     private bool useRenderingCamera;
+    [SerializeField, Tooltip("If true, flip the facing direction (useful for UI that is backwards by default).")]
+    private bool invertFacing = true;
 
     private void LateUpdate()
     {
@@ -82,12 +84,23 @@ public class WorldSpaceBillboard : MonoBehaviour
             return;
         }
 
-        transform.rotation = Quaternion.LookRotation(-lookDirection.normalized, Vector3.up);
+        Vector3 direction = invertFacing ? -lookDirection.normalized : lookDirection.normalized;
+        transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
     }
 
     public void SetTargetCamera(Camera camera)
     {
         targetCamera = camera;
+    }
+
+    public void SetLockYAxis(bool value)
+    {
+        lockYAxis = value;
+    }
+
+    public void SetInvertFacing(bool value)
+    {
+        invertFacing = value;
     }
 
     public void SetUseRenderingCamera(bool value)
@@ -97,4 +110,6 @@ public class WorldSpaceBillboard : MonoBehaviour
 
     public Camera TargetCamera => targetCamera;
     public bool UseRenderingCamera => useRenderingCamera;
+    public bool LockYAxis => lockYAxis;
+    public bool InvertFacing => invertFacing;
 }

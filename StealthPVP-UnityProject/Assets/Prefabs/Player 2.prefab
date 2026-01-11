@@ -8,6 +8,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -1305686888224478465, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
+      propertyPath: inputRouter
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: -1305686888224478465, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
+      propertyPath: debugAutoTargeting
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -1305686888224478465, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
+      propertyPath: enableLockOnCombat
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -1305686888224478465, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
+      propertyPath: enableGamepadAutoTarget
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -1305686888224478465, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
+      propertyPath: gamepadAutoTargetMaxDistance
+      value: 50
+      objectReference: {fileID: 0}
     - target: {fileID: 560367178118575264, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
       propertyPath: m_Layer
       value: 12
@@ -133,6 +153,8 @@ MonoBehaviour:
   attackGroundMask:
     serializedVersion: 2
     m_Bits: 16379
+  clickToMoveEnabled: 1
+  clickToMoveMouseButton: 1
   maximumRayDistance: 250
   groundMask:
     serializedVersion: 2

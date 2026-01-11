@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -120,6 +121,10 @@ public class LocalVersusGameManager : MonoBehaviour
 
     [Header("Round Flow")]
     [SerializeField, Tooltip("Seconds to wait after a kill before respawning and swapping roles.")] internal float respawnDelay = 1.5f;
+    [Header("Round Timer")]
+    [SerializeField, Tooltip("Fallback round duration in seconds (used if GameplayTuning is missing).")] internal float roundDurationSeconds = 300f;
+    [SerializeField, Tooltip("Seconds to show the round start message before the timer begins.")] internal float roundStartMessageDuration = 2f;
+    [SerializeField, Tooltip("If true, waits for the start button instead of auto-starting.")] internal bool waitForStartButton = true;
 
     internal GameObject _player1Instance;
     internal GameObject _player2Instance;
@@ -132,6 +137,14 @@ public class LocalVersusGameManager : MonoBehaviour
     internal int _player1Score;
     internal int _player2Score;
     internal int _player3Score;
+    private float _roundTimeRemaining;
+    private bool _roundTimerRunning;
+    private bool _roundOver;
+    private bool _waitingForRoundStart;
+    private Coroutine _roundStartRoutine;
+
+    public bool IsRoundOver => _roundOver;
+    public bool IsWaitingForRoundStart => _waitingForRoundStart;
 
     private void Awake()
     {
@@ -158,6 +171,12 @@ public class LocalVersusGameManager : MonoBehaviour
         bindings?.UpdateSmokeBindings();
         bindings?.UpdateDashBindings();
         rules?.UpdateScoreboards();
+        StartRoundTimer();
+    }
+
+    private void Update()
+    {
+        UpdateRoundTimer();
     }
 
     private void OnDestroy()
@@ -238,6 +257,173 @@ public class LocalVersusGameManager : MonoBehaviour
         {
             gameplayTuning = applier.Tuning;
         }
+    }
+
+    private void StartRoundTimer()
+    {
+        if (_roundStartRoutine != null)
+        {
+            StopCoroutine(_roundStartRoutine);
+            _roundStartRoutine = null;
+        }
+
+        _roundTimeRemaining = ResolveRoundDurationSeconds();
+        _roundOver = false;
+        _waitingForRoundStart = false;
+        _roundTimerRunning = false;
+        UpdateRoundTimerUi(_roundTimeRemaining);
+        SetGameOverUiActive(false);
+
+        if (_roundTimeRemaining <= 0f)
+        {
+            HandleRoundTimerExpired();
+            return;
+        }
+
+        if (waitForStartButton)
+        {
+            _waitingForRoundStart = true;
+            SetRoundStartUiActive(true);
+            Time.timeScale = 0f;
+            return;
+        }
+
+        float startDelay = Mathf.Max(0f, roundStartMessageDuration);
+        if (startDelay > 0f)
+        {
+            SetRoundStartUiActive(true);
+            _roundStartRoutine = StartCoroutine(BeginRoundAfterDelay(startDelay));
+        }
+        else
+        {
+            SetRoundStartUiActive(false);
+            _roundTimerRunning = true;
+        }
+    }
+
+    private void UpdateRoundTimer()
+    {
+        if (_roundOver || !_roundTimerRunning)
+        {
+            return;
+        }
+
+        _roundTimeRemaining = Mathf.Max(0f, _roundTimeRemaining - Time.deltaTime);
+        UpdateRoundTimerUi(_roundTimeRemaining);
+
+        if (_roundTimeRemaining <= 0f)
+        {
+            HandleRoundTimerExpired();
+        }
+    }
+
+    private float ResolveRoundDurationSeconds()
+    {
+        if (gameplayTuning)
+        {
+            return Mathf.Max(0f, gameplayTuning.roundDurationSeconds);
+        }
+
+        return Mathf.Max(0f, roundDurationSeconds);
+    }
+
+    private void HandleRoundTimerExpired()
+    {
+        if (_roundOver)
+        {
+            return;
+        }
+
+        _roundOver = true;
+        _roundTimerRunning = false;
+        _waitingForRoundStart = false;
+        if (_roundStartRoutine != null)
+        {
+            StopCoroutine(_roundStartRoutine);
+            _roundStartRoutine = null;
+        }
+        UpdateRoundTimerUi(0f);
+        SetGameOverUiActive(true);
+        Time.timeScale = 0f;
+    }
+
+    private void UpdateRoundTimerUi(float remainingSeconds)
+    {
+        if (player1Ui)
+        {
+            player1Ui.SetRoundTimerSeconds(remainingSeconds);
+        }
+
+        if (player2Ui)
+        {
+            player2Ui.SetRoundTimerSeconds(remainingSeconds);
+        }
+
+        if (player3Ui)
+        {
+            player3Ui.SetRoundTimerSeconds(remainingSeconds);
+        }
+    }
+
+    private void SetGameOverUiActive(bool isActive)
+    {
+        if (player1Ui)
+        {
+            player1Ui.SetGameOverActive(isActive);
+        }
+
+        if (player2Ui)
+        {
+            player2Ui.SetGameOverActive(isActive);
+        }
+
+        if (player3Ui)
+        {
+            player3Ui.SetGameOverActive(isActive);
+        }
+    }
+
+    private void SetRoundStartUiActive(bool isActive)
+    {
+        if (player1Ui)
+        {
+            player1Ui.SetRoundStartActive(isActive);
+        }
+
+        if (player2Ui)
+        {
+            player2Ui.SetRoundStartActive(isActive);
+        }
+
+        if (player3Ui)
+        {
+            player3Ui.SetRoundStartActive(isActive);
+        }
+    }
+
+    private IEnumerator BeginRoundAfterDelay(float delaySeconds)
+    {
+        yield return new WaitForSecondsRealtime(delaySeconds);
+        SetRoundStartUiActive(false);
+        if (!_roundOver)
+        {
+            _roundTimerRunning = true;
+        }
+        _roundStartRoutine = null;
+    }
+
+    public bool TryBeginRoundFromUi()
+    {
+        if (!_waitingForRoundStart || _roundOver)
+        {
+            return false;
+        }
+
+        _waitingForRoundStart = false;
+        SetRoundStartUiActive(false);
+        Time.timeScale = 1f;
+        _roundTimerRunning = true;
+        return true;
     }
 
 }

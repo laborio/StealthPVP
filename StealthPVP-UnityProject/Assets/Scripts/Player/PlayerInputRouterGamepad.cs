@@ -53,10 +53,16 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
 
     public override PlayerInputSnapshot PollInput()
     {
+        if (TryGetCachedSnapshot(out PlayerInputSnapshot cachedSnapshot))
+        {
+            return cachedSnapshot;
+        }
+
         if (!IsInputAllowed)
         {
             _previousPrimaryHeld = false;
             _previousSecondaryHeld = false;
+            CacheSnapshot(default);
             return default;
         }
 
@@ -108,6 +114,7 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
             SecondaryPressed = secondaryPressed,
             SecondaryHeld = secondaryHeld,
             SecondaryReleased = secondaryReleased,
+            LockPressed = false,
             MoveAxis = moveAxis
         };
 
@@ -142,6 +149,7 @@ public class PlayerInputRouterGamepad : PlayerInputRouter
             DebugKeycodes();
         }
 
+        CacheSnapshot(snapshot);
         return snapshot;
     }
 
