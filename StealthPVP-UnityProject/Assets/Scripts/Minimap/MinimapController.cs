@@ -29,6 +29,7 @@ public class MinimapController : MonoBehaviour
     private readonly Dictionary<string, Image> _sections = new Dictionary<string, Image>();
     private readonly Dictionary<string, int> _targetPresenceCounts = new Dictionary<string, int>();
     private readonly Dictionary<string, int> _ownerPresenceCounts = new Dictionary<string, int>();
+    private readonly HashSet<NpcIdentity> _extraTargets = new HashSet<NpcIdentity>();
     private Coroutine _layoutSyncRoutine;
     private bool _layoutDirty;
     private int _debugFrameCounter;
@@ -84,12 +85,31 @@ public class MinimapController : MonoBehaviour
 
     public void SetTarget(NpcIdentity identity)
     {
-        if (targetIdentity == identity)
+        if (targetIdentity == identity && _extraTargets.Count == 0)
         {
             return;
         }
 
         targetIdentity = identity;
+        _extraTargets.Clear();
+        ClearHighlights();
+        RefreshIdentityStates();
+    }
+
+    public void SetTargets(IEnumerable<NpcIdentity> identities)
+    {
+        _extraTargets.Clear();
+        targetIdentity = null;
+        if (identities != null)
+        {
+            foreach (NpcIdentity identity in identities)
+            {
+                if (identity)
+                {
+                    _extraTargets.Add(identity);
+                }
+            }
+        }
         ClearHighlights();
         RefreshIdentityStates();
     }
@@ -520,7 +540,7 @@ public class MinimapController : MonoBehaviour
             return;
         }
 
-        if (identity == targetIdentity)
+        if (identity == targetIdentity || _extraTargets.Contains(identity))
         {
             UpdateSectionPresence(sectionId, entered, isTarget: true);
         }
@@ -550,6 +570,17 @@ public class MinimapController : MonoBehaviour
             if (targetIdentity && area.IsInside(targetIdentity))
             {
                 UpdateSectionPresence(area.SectionId, true, isTarget: true);
+            }
+
+            if (_extraTargets.Count > 0)
+            {
+                foreach (NpcIdentity identity in _extraTargets)
+                {
+                    if (identity && area.IsInside(identity))
+                    {
+                        UpdateSectionPresence(area.SectionId, true, isTarget: true);
+                    }
+                }
             }
 
             if (ownerIdentity && area.IsInside(ownerIdentity))

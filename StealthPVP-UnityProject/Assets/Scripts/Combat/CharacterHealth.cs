@@ -83,6 +83,19 @@ public class CharacterHealth : MonoBehaviour, IDamageable
         CurrentHealth = Mathf.Min(maxHealth, CurrentHealth + amount);
     }
 
+    public void SetMaxHealth(float value, bool healToFull)
+    {
+        maxHealth = Mathf.Max(1f, value);
+        if (healToFull && !IsDead)
+        {
+            CurrentHealth = maxHealth;
+        }
+        else
+        {
+            CurrentHealth = Mathf.Clamp(CurrentHealth, 0f, maxHealth);
+        }
+    }
+
     public bool TryGetLastDamage(out DamagePayload payload)
     {
         payload = _lastDamage;

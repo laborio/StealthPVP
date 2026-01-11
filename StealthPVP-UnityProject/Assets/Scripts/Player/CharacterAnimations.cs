@@ -73,6 +73,7 @@ public class CharacterAnimations : MonoBehaviour
     private bool _hasStandToSitSpeedFloat;
     private bool _hasTeleportedBool;
     private bool _hasStunnedBool;
+    private float _attackSpeedMultiplier = 1f;
 
     private void Awake()
     {
@@ -140,8 +141,18 @@ public class CharacterAnimations : MonoBehaviour
         }
 
         bool isAttacking = IsInAnyAttackState(animator);
-        animator.speed = isAttacking ? 1f : animatorSpeed;
+        float attackSpeed = Mathf.Max(0.01f, _attackSpeedMultiplier);
+        animator.speed = isAttacking ? attackSpeed : animatorSpeed;
+        if (_hasUpperBodySpeedParam)
+        {
+            animator.SetFloat(_upperBodySpeedHash, upperBodySpeedDefault * (isAttacking ? attackSpeed : 1f));
+        }
         UpdateUpperBodyLayerWeight();
+    }
+
+    public void SetAttackSpeedMultiplier(float multiplier)
+    {
+        _attackSpeedMultiplier = Mathf.Max(0.01f, multiplier);
     }
 
     public void SetSittingState(bool isSitting, float animationSpeed)

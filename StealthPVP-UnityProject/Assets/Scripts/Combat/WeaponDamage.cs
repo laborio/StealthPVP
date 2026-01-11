@@ -122,6 +122,12 @@ public class WeaponDamage : MonoBehaviour
             return false;
         }
 
+        LocalVersusGameManager manager = LocalVersusGameManager.Instance;
+        if (manager && manager.IsPhase2Active && manager.IsEmpoweredHealth(targetHealth))
+        {
+            return true;
+        }
+
         PlayerStunController stun = targetHealth.GetComponentInParent<PlayerStunController>()
             ?? targetHealth.GetComponentInChildren<PlayerStunController>(true);
         if (!stun)
@@ -130,7 +136,6 @@ public class WeaponDamage : MonoBehaviour
         }
 
         stun.ApplyStun();
-        LocalVersusGameManager manager = LocalVersusGameManager.Instance;
         if (manager && owner)
         {
             manager.TryHandleHumiliation(owner, targetHealth);

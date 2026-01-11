@@ -439,6 +439,33 @@ public class LocalVersusSpawner : MonoBehaviour
             yield return new WaitForSeconds(respawnDelay);
         }
 
+        if (manager && manager.IsGameOver)
+        {
+            _respawnInProgress = false;
+            yield break;
+        }
+
+        if (manager && manager.IsPhase2Active)
+        {
+            bool shouldRespawn = manager.TryHandlePhase2Death(dead);
+            if (!shouldRespawn)
+            {
+                _respawnInProgress = false;
+                yield break;
+            }
+
+            RespawnDeadPlayer(dead);
+            UpdateRoleIndicators();
+            UpdateCompasses();
+            UpdateFogBindings();
+            UpdateRevealBindings();
+            UpdateStunBindings();
+            UpdateSmokeBindings();
+            UpdateDashBindings();
+            _respawnInProgress = false;
+            yield break;
+        }
+
         if (!_player3Instance)
         {
             _hunterIsPlayer1 = !_hunterIsPlayer1;

@@ -29,6 +29,8 @@ public class GameUiManager : MonoBehaviour
     [SerializeField, Tooltip("Fallback name used to find the target container if not assigned.")] private string targetContainerName = "TargetContainer";
     [SerializeField, Tooltip("Container that holds the hunter image prefab.")] private Transform hunterContainer;
     [SerializeField, Tooltip("Fallback name used to find the hunter container if not assigned.")] private string hunterContainerName = "HunterContainer";
+    [Header("Phase Status")]
+    [SerializeField, Tooltip("Shows phase 1 timer or empowered HP% in phase 2.")] private TMP_Text phaseStatusText;
 
     private GameObject _activeTargetInstance;
     private GameObject _activeTargetPrefab;
@@ -62,6 +64,7 @@ public class GameUiManager : MonoBehaviour
         UpdateRevealCooldown();
         UpdateDefensiveCooldown();
         UpdateMovementCooldown();
+        UpdatePhaseStatus();
     }
 
     public void SetRevealAbility(AbilityRunner ability)
@@ -376,6 +379,42 @@ public class GameUiManager : MonoBehaviour
         {
             text.text = string.Empty;
         }
+    }
+
+    private void UpdatePhaseStatus()
+    {
+        if (!phaseStatusText)
+        {
+            return;
+        }
+
+        LocalVersusGameManager manager = LocalVersusGameManager.Instance;
+        if (!manager)
+        {
+            phaseStatusText.text = string.Empty;
+            return;
+        }
+
+        if (!manager.IsPhase2Active)
+        {
+            float remaining = manager.Phase1TimeRemaining;
+            int totalSeconds = Mathf.Max(0, Mathf.CeilToInt(remaining));
+            int minutes = totalSeconds / 60;
+            int seconds = totalSeconds % 60;
+            phaseStatusText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
+            return;
+        }
+
+        CharacterHealth empowered = manager.EmpoweredHealth;
+        if (!empowered || empowered.MaxHealth <= 0f)
+        {
+            phaseStatusText.text = "HP --%";
+            return;
+        }
+
+        float percent = Mathf.Clamp01(empowered.CurrentHealth / empowered.MaxHealth) * 100f;
+        int rounded = Mathf.RoundToInt(percent);
+        phaseStatusText.text = $"HP {rounded}%";
     }
 
     private void SetIconVisibility(Image image, float cooldownRemaining)

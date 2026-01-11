@@ -25,6 +25,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     [SerializeField] private float jumpVelocity = 7.5f;
     [SerializeField] private float coyoteTime = 0.1f;
     [SerializeField] private float jumpBufferTime = 0.1f;
+    [SerializeField, Tooltip("Cooldown applied after landing before a grounded jump can trigger.")] private float groundedJumpCooldown = 0.5f;
     [SerializeField, Range(0f, 5f)] private float airControl = 0.3f;
     [Header("Attack")]
     [SerializeField, Tooltip("Name of the animator trigger used for the attack animation.")] private string attackTriggerName = "Attack";
@@ -46,6 +47,14 @@ public partial class SimpleCharacterController : MonoBehaviour
     [SerializeField] private float dashCooldown = 1f;
     [SerializeField] private float groundProbeRadius = 0.2f;
     [SerializeField] private float groundProbeDistance = 0.25f;
+    [Header("Phase 2 Ranged Attack")]
+    [SerializeField, Tooltip("Optional muzzle used as the raycast origin.")] private Transform phase2RangedMuzzle;
+    [SerializeField, Tooltip("Line renderer prefab spawned per shot.")] private LineRenderer phase2RangedLinePrefab;
+    [SerializeField, Tooltip("Layers that can be hit by the ranged attack.")] private LayerMask phase2RangedHitMask = Physics.DefaultRaycastLayers;
+    [SerializeField] private float phase2RangedDamage = 10f;
+    [SerializeField, Tooltip("Shots per second.")] private float phase2RangedFireRate = 8f;
+    [SerializeField] private float phase2RangedRange = 30f;
+    [SerializeField] private float phase2RangedLineDuration = 0.05f;
     [Header("Wall Jump")]
     [SerializeField] private float wallJumpUpVelocity = 7.5f;
     [SerializeField] private float wallJumpHorizontalSpeed = 6f;
@@ -74,6 +83,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     private bool _isFalling;
     private float _coyoteTimer;
     private float _jumpBufferTimer;
+    private float _groundedJumpCooldownTimer;
     private Vector3 _currentPlanarVelocity;
     private float _dashTimer;
     private float _dashCooldownTimer;
@@ -83,6 +93,7 @@ public partial class SimpleCharacterController : MonoBehaviour
     private Vector3 _wallNormal;
     private float _wallJumpCooldownTimer;
     private bool _isInWater;
+    private bool _wasGroundedLastFrame;
     [SerializeField] private CharacterAnimations characterAnimations;
     private bool _attackChargeActive;
     private bool _attackChargeFromSecondary;
@@ -99,10 +110,19 @@ public partial class SimpleCharacterController : MonoBehaviour
     private bool _inputSuppressed;
     private int _attackSuppressionCount;
     private bool _attackSuppressed;
+    private int _jumpSuppressionCount;
+    private bool _jumpSuppressed;
     private bool _lastAttackWasSecondary;
     private bool _morphActive;
     private float _morphMoveSpeed;
+    private float _externalMoveSpeedMultiplier = 1f;
+    private int _smokeSlowCount;
+    private float _smokeSlowMultiplier = 1f;
+    private float _phase2RangedCooldownTimer;
+    private bool _phase2RangedAimActive;
+    private CharacterHealth _health;
     private PlayerInvisibility _invisibility;
+    private static readonly RaycastHit[] Phase2RangedHits = new RaycastHit[16];
 
     private void Awake()
     {
@@ -135,6 +155,10 @@ public partial class SimpleCharacterController : MonoBehaviour
         if (_inputSuppressed)
         {
             inputSnapshot = default;
+        }
+        if (_jumpSuppressed)
+        {
+            inputSnapshot.JumpPressed = false;
         }
         ResolveInvisibility();
         if ((inputSnapshot.PrimaryReleased || inputSnapshot.SecondaryReleased) && _invisibility && _invisibility.IsInvisible)
@@ -185,13 +209,16 @@ public partial class SimpleCharacterController : MonoBehaviour
         HandleAttackInput(inputSnapshot, isGrounded);
         UpdateAttackLockState(deltaTime);
         bool attackStateActive = characterAnimations != null && characterAnimations.IsInAttackState();
-        bool shouldShowRangeIndicator = _attackChargeActive || (showRangeIndicatorDuringAttack && (_attackLockActive || attackStateActive));
+        bool shouldShowRangeIndicator = _attackChargeActive || _phase2RangedAimActive
+            || (showRangeIndicatorDuringAttack && (_attackLockActive || attackStateActive));
         SetRangeIndicatorActive(shouldShowRangeIndicator);
         if (shouldShowRangeIndicator)
         {
-            bool useSecondaryColor = _attackChargeActive ? _attackChargeFromSecondary : _lastAttackWasSecondary;
+            bool useSecondaryColor = _phase2RangedAimActive
+                ? false
+                : (_attackChargeActive ? _attackChargeFromSecondary : _lastAttackWasSecondary);
             ApplyRangeIndicatorColor(useSecondaryColor);
-            Vector3 indicatorDirection = _attackChargeActive ? _lastAimDirection : _lastAttackAimDirection;
+            Vector3 indicatorDirection = (_attackChargeActive || _phase2RangedAimActive) ? _lastAimDirection : _lastAttackAimDirection;
             if (indicatorDirection.sqrMagnitude < 0.0001f)
             {
                 indicatorDirection = _lastAimDirection.sqrMagnitude > 0.0001f ? _lastAimDirection : transform.forward;
@@ -218,6 +245,8 @@ public partial class SimpleCharacterController : MonoBehaviour
         float waterSpeedMultiplier = _isInWater ? this.waterMoveSpeedMultiplier : 1f;
         float waterJumpMultiplier = _isInWater ? this.waterJumpVelocityMultiplier : 1f;
         float baseMoveSpeed = morphRestricted ? _morphMoveSpeed : moveSpeed;
+        baseMoveSpeed *= Mathf.Max(0.01f, _externalMoveSpeedMultiplier);
+        baseMoveSpeed *= Mathf.Max(0.01f, _smokeSlowMultiplier);
 
         Vector3 desiredPlanarVelocity = Vector3.zero;
 
@@ -301,6 +330,15 @@ public partial class SimpleCharacterController : MonoBehaviour
             _coyoteTimer = Mathf.Max(_coyoteTimer - deltaTime, 0f);
             _groundedStateTimer = Mathf.Max(_groundedStateTimer - deltaTime, 0f);
         }
+        if (isGrounded && !_wasGroundedLastFrame)
+        {
+            _groundedJumpCooldownTimer = groundedJumpCooldown;
+        }
+        if (_groundedJumpCooldownTimer > 0f)
+        {
+            _groundedJumpCooldownTimer = Mathf.Max(0f, _groundedJumpCooldownTimer - deltaTime);
+        }
+        _wasGroundedLastFrame = isGrounded;
         bool groundedForAnimation = isGrounded || _groundedStateTimer > 0f;
 
         if (!seatingLocked)
@@ -397,7 +435,8 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
 
         bool bufferedJumpRequested = _jumpBufferTimer > 0f;
-        if (bufferedJumpRequested && _coyoteTimer > 0f)
+        bool canGroundJump = _groundedJumpCooldownTimer <= 0f;
+        if (bufferedJumpRequested && _coyoteTimer > 0f && canGroundJump)
         {
             _verticalVelocity = jumpVelocity * waterJumpMultiplier;
             Vector3 launchVelocity = _currentPlanarVelocity;
@@ -539,6 +578,11 @@ public partial class SimpleCharacterController : MonoBehaviour
 
     private void HandleAttackInput(PlayerInputSnapshot input, bool isGrounded)
     {
+        if (HandlePhase2RangedAttack(input))
+        {
+            return;
+        }
+
         if (_seatingState != SeatingState.Standing)
         {
             CancelAttackCharge();
@@ -576,16 +620,248 @@ public partial class SimpleCharacterController : MonoBehaviour
         bool released = _attackChargeFromSecondary ? input.SecondaryReleased : input.PrimaryReleased;
         if (_attackChargeActive && released)
         {
-            if (isGrounded)
+            Debug.Log("ATCK");
+            TriggerAttack(input, _pendingAttackTriggerName);
+        }
+    }
+
+    private bool HandlePhase2RangedAttack(PlayerInputSnapshot input)
+    {
+        LocalVersusGameManager manager = LocalVersusGameManager.Instance;
+        if (!manager || !manager.IsPhase2Active)
+        {
+            _phase2RangedAimActive = false;
+            return false;
+        }
+
+        ResolveHealth();
+        if (_health && manager.IsEmpoweredHealth(_health))
+        {
+            _phase2RangedAimActive = false;
+            return false;
+        }
+
+        CancelAttackCharge();
+        _attackLockActive = false;
+        _attackLockTimer = 0f;
+
+        if (_attackSuppressed || _seatingState != SeatingState.Standing)
+        {
+            _phase2RangedAimActive = false;
+            return true;
+        }
+
+        if (_phase2RangedCooldownTimer > 0f)
+        {
+            _phase2RangedCooldownTimer = Mathf.Max(0f, _phase2RangedCooldownTimer - Time.deltaTime);
+        }
+
+        bool isHolding = input.PrimaryHeld || input.PrimaryPressed;
+        _phase2RangedAimActive = isHolding;
+        if (isHolding)
+        {
+            UpdateAttackAim(input);
+
+            if (_phase2RangedCooldownTimer <= 0f)
             {
-                Debug.Log("ATCK");
-                TriggerAttack(input, _pendingAttackTriggerName);
-            }
-            else
-            {
-                CancelAttackCharge();
+                FirePhase2RangedShot(input, manager);
+                float fireRate = ResolvePhase2RangedFireRate(manager);
+                _phase2RangedCooldownTimer = fireRate > 0f ? (1f / fireRate) : 0f;
             }
         }
+        else
+        {
+            SetRangeIndicatorActive(false);
+        }
+
+        return true;
+    }
+
+    private void FirePhase2RangedShot(PlayerInputSnapshot input, LocalVersusGameManager manager)
+    {
+        Vector3 aimDirection = _lastAimDirection.sqrMagnitude > 0.0001f ? _lastAimDirection : transform.forward;
+        if (TryGetAimPoint(input, out Vector3 aimPoint))
+        {
+            Vector3 toPoint = aimPoint - transform.position;
+            toPoint.y = 0f;
+            if (toPoint.sqrMagnitude > 0.0001f)
+            {
+                aimDirection = toPoint.normalized;
+            }
+        }
+
+        Vector3 origin = ResolvePhase2RangedOrigin();
+        Vector3 direction = aimDirection.sqrMagnitude > 0.0001f ? aimDirection.normalized : transform.forward;
+        float range = ResolvePhase2RangedRange(manager);
+        float maxDistance = Mathf.Max(0.1f, range);
+
+        int hitCount = Physics.RaycastNonAlloc(origin, direction, Phase2RangedHits, maxDistance, phase2RangedHitMask, QueryTriggerInteraction.Collide);
+        bool hasHit = TryFindFirstValidHit(hitCount, out RaycastHit bestHit);
+        Vector3 endPoint = hasHit ? bestHit.point : origin + direction * maxDistance;
+        SpawnPhase2RangedLine(origin, endPoint, manager);
+
+        if (hasHit)
+        {
+            CharacterHealth targetHealth = bestHit.collider.GetComponentInParent<CharacterHealth>()
+                ?? bestHit.collider.GetComponentInChildren<CharacterHealth>(true);
+            if (targetHealth && targetHealth != _health && !targetHealth.IsDead)
+            {
+                if (manager && manager.IsPlayerHealth(targetHealth) && !manager.CanKillPlayer(_health, targetHealth))
+                {
+                    return;
+                }
+
+                DamagePayload payload = new DamagePayload
+                {
+                    Amount = ResolvePhase2RangedDamage(manager),
+                    HitPoint = bestHit.point,
+                    HitNormal = bestHit.normal,
+                    Source = gameObject,
+                    Instigator = gameObject,
+                    HitCollider = bestHit.collider
+                };
+
+                targetHealth.ApplyDamage(payload);
+            }
+        }
+
+        _lastAttackAimDirection = direction;
+    }
+
+    private bool TryFindFirstValidHit(int hitCount, out RaycastHit bestHit)
+    {
+        bestHit = default;
+        if (hitCount <= 0)
+        {
+            return false;
+        }
+
+        float bestDistance = float.MaxValue;
+        for (int i = 0; i < hitCount; i++)
+        {
+            RaycastHit hit = Phase2RangedHits[i];
+            if (!hit.collider)
+            {
+                continue;
+            }
+
+            if (hit.collider.transform.IsChildOf(transform))
+            {
+                continue;
+            }
+
+            CharacterHealth hitHealth = hit.collider.GetComponentInParent<CharacterHealth>()
+                ?? hit.collider.GetComponentInChildren<CharacterHealth>(true);
+            if (hitHealth && _health && hitHealth == _health)
+            {
+                continue;
+            }
+
+            float dist = hit.distance;
+            if (dist < bestDistance)
+            {
+                bestDistance = dist;
+                bestHit = hit;
+            }
+        }
+
+        return bestDistance < float.MaxValue;
+    }
+
+    private Vector3 ResolvePhase2RangedOrigin()
+    {
+        if (phase2RangedMuzzle)
+        {
+            return phase2RangedMuzzle.position;
+        }
+
+        if (_characterController)
+        {
+            return _characterController.bounds.center;
+        }
+
+        return transform.position + Vector3.up;
+    }
+
+    private void SpawnPhase2RangedLine(Vector3 start, Vector3 end, LocalVersusGameManager manager)
+    {
+        if (!phase2RangedLinePrefab)
+        {
+            return;
+        }
+
+        LineRenderer line = Instantiate(phase2RangedLinePrefab);
+        if (!line.gameObject.activeSelf)
+        {
+            line.gameObject.SetActive(true);
+        }
+        line.enabled = true;
+        line.useWorldSpace = true;
+        line.positionCount = 2;
+        line.SetPosition(0, start);
+        line.SetPosition(1, end);
+
+        float duration = ResolvePhase2RangedLineDuration(manager);
+        if (duration > 0f)
+        {
+            Destroy(line.gameObject, duration);
+        }
+    }
+
+    private float ResolvePhase2RangedDamage(LocalVersusGameManager manager)
+    {
+        if (manager)
+        {
+            manager.ResolveGameplayTuning();
+            if (manager.gameplayTuning)
+            {
+                return manager.gameplayTuning.phase2RangedDamage;
+            }
+        }
+
+        return phase2RangedDamage;
+    }
+
+    private float ResolvePhase2RangedFireRate(LocalVersusGameManager manager)
+    {
+        if (manager)
+        {
+            manager.ResolveGameplayTuning();
+            if (manager.gameplayTuning)
+            {
+                return manager.gameplayTuning.phase2RangedFireRate;
+            }
+        }
+
+        return phase2RangedFireRate;
+    }
+
+    private float ResolvePhase2RangedRange(LocalVersusGameManager manager)
+    {
+        if (manager)
+        {
+            manager.ResolveGameplayTuning();
+            if (manager.gameplayTuning)
+            {
+                return manager.gameplayTuning.phase2RangedRange;
+            }
+        }
+
+        return phase2RangedRange;
+    }
+
+    private float ResolvePhase2RangedLineDuration(LocalVersusGameManager manager)
+    {
+        if (manager)
+        {
+            manager.ResolveGameplayTuning();
+            if (manager.gameplayTuning)
+            {
+                return manager.gameplayTuning.phase2RangedLineDuration;
+            }
+        }
+
+        return phase2RangedLineDuration;
     }
 
     private void StartAttackCharge(string triggerName, bool fromSecondary)
@@ -934,6 +1210,8 @@ public partial class SimpleCharacterController : MonoBehaviour
         _isFalling = false;
         _coyoteTimer = 0f;
         _jumpBufferTimer = 0f;
+        _groundedJumpCooldownTimer = 0f;
+        _wasGroundedLastFrame = false;
         _currentPlanarVelocity = Vector3.zero;
         _groundedStateTimer = 0f;
         _wallContactTimer = 0f;
@@ -962,6 +1240,7 @@ public partial class SimpleCharacterController : MonoBehaviour
         jumpVelocity = Mathf.Max(0f, jumpVelocity);
         coyoteTime = Mathf.Max(0f, coyoteTime);
         jumpBufferTime = Mathf.Max(0f, jumpBufferTime);
+        groundedJumpCooldown = Mathf.Max(0f, groundedJumpCooldown);
         dashSpeedMultiplier = Mathf.Max(0f, dashSpeedMultiplier);
         dashAirSpeedMultiplier = Mathf.Max(0f, dashAirSpeedMultiplier);
         dashDuration = Mathf.Max(0f, dashDuration);
@@ -985,6 +1264,11 @@ public partial class SimpleCharacterController : MonoBehaviour
         backwardRunDotThreshold = Mathf.Clamp(backwardRunDotThreshold, -1f, 1f);
         strafeDotThreshold = Mathf.Clamp(strafeDotThreshold, 0f, 1f);
         rigidbodyPushForce = Mathf.Max(0f, rigidbodyPushForce);
+        phase2RangedDamage = Mathf.Max(0f, phase2RangedDamage);
+        phase2RangedFireRate = Mathf.Max(0f, phase2RangedFireRate);
+        phase2RangedRange = Mathf.Max(0.1f, phase2RangedRange);
+        phase2RangedLineDuration = Mathf.Max(0f, phase2RangedLineDuration);
+        _smokeSlowMultiplier = Mathf.Clamp(_smokeSlowMultiplier, 0.1f, 1f);
         CacheRangeIndicator();
     }
 
@@ -1128,6 +1412,11 @@ public partial class SimpleCharacterController : MonoBehaviour
         dashCooldown = Mathf.Max(0f, cooldown);
     }
 
+    public void SetExternalMoveSpeedMultiplier(float multiplier)
+    {
+        _externalMoveSpeedMultiplier = Mathf.Max(0.01f, multiplier);
+    }
+
     public void SetMorphState(bool active, float moveSpeedOverride)
     {
         _morphActive = active;
@@ -1164,6 +1453,14 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
     }
 
+    private void ResolveHealth()
+    {
+        if (!_health)
+        {
+            _health = GetComponent<CharacterHealth>() ?? GetComponentInChildren<CharacterHealth>(true);
+        }
+    }
+
     public void SetInputSuppressed(bool suppressed)
     {
         _inputSuppressed = suppressed;
@@ -1197,6 +1494,47 @@ public partial class SimpleCharacterController : MonoBehaviour
         if (_attackSuppressed)
         {
             CancelAttackCharge();
+        }
+    }
+
+    public void SetJumpSuppressed(bool suppressed)
+    {
+        if (suppressed)
+        {
+            _jumpSuppressionCount++;
+        }
+        else
+        {
+            _jumpSuppressionCount = Mathf.Max(0, _jumpSuppressionCount - 1);
+        }
+
+        bool next = _jumpSuppressionCount > 0;
+        if (next == _jumpSuppressed)
+        {
+            return;
+        }
+
+        _jumpSuppressed = next;
+        if (_jumpSuppressed)
+        {
+            _jumpBufferTimer = 0f;
+        }
+    }
+
+    public void SetSmokeSlow(bool suppressed, float multiplier = 0.5f)
+    {
+        if (suppressed)
+        {
+            _smokeSlowCount++;
+            _smokeSlowMultiplier = Mathf.Clamp(multiplier, 0.1f, 1f);
+        }
+        else
+        {
+            _smokeSlowCount = Mathf.Max(0, _smokeSlowCount - 1);
+            if (_smokeSlowCount == 0)
+            {
+                _smokeSlowMultiplier = 1f;
+            }
         }
     }
 }

@@ -41,6 +41,21 @@ public float dashCooldown = 1f;
 [Header("Invisibility Bonus")]
 public float invisibilityDuration = 6f;
 
+[Header("Phase 2")]
+public float phase1Duration = 300f;
+public float phase2EmpoweredMaxHealth = 500f;
+public float phase2EmpoweredMoveSpeedMultiplier = 1.25f;
+public float phase2EmpoweredAttackSpeedMultiplier = 1.25f;
+public float phase2EmpoweredNpcKillHeal = 100f;
+public float phase2EmpoweredNpcKillScalePercent = 5f;
+public int phase2TeamLives = 5;
+
+[Header("Phase 2 Ranged Attack")]
+public float phase2RangedDamage = 10f;
+public float phase2RangedFireRate = 8f;
+public float phase2RangedRange = 30f;
+public float phase2RangedLineDuration = 0.05f;
+
 [Header("Reveal - Overlook Multipliers (uses VisionSource heights)")]
 public float overlookLevel1CooldownMultiplier = 2f;
 public float overlookLevel2CooldownMultiplier = 3f;

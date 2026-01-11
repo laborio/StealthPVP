@@ -9,6 +9,7 @@ public class SmokeZone : MonoBehaviour
 {
     [SerializeField] private CharacterHealth owner;
     [SerializeField, Tooltip("Optional collider to ensure is a trigger.")] private Collider triggerCollider;
+    [SerializeField, Range(0.1f, 1f), Tooltip("Movement speed multiplier while inside the smoke.")] private float slowMultiplier = 0.5f;
 
     private readonly HashSet<SimpleCharacterController> _suppressed = new HashSet<SimpleCharacterController>();
 
@@ -87,6 +88,8 @@ public class SmokeZone : MonoBehaviour
             if (_suppressed.Add(controller))
             {
                 controller.SetAttackSuppressed(true);
+                controller.SetJumpSuppressed(true);
+                controller.SetSmokeSlow(true, slowMultiplier);
                 if (floatingText)
                 {
                     floatingText.SetStatusActive("Pacified", true);
@@ -98,6 +101,8 @@ public class SmokeZone : MonoBehaviour
             if (_suppressed.Remove(controller))
             {
                 controller.SetAttackSuppressed(false);
+                controller.SetJumpSuppressed(false);
+                controller.SetSmokeSlow(false, slowMultiplier);
                 if (floatingText)
                 {
                     floatingText.SetStatusActive("Pacified", false);
@@ -113,6 +118,8 @@ public class SmokeZone : MonoBehaviour
             if (controller)
             {
                 controller.SetAttackSuppressed(false);
+                controller.SetJumpSuppressed(false);
+                controller.SetSmokeSlow(false, slowMultiplier);
                 PlayerFloatingTextController floatingText = controller.GetComponent<PlayerFloatingTextController>()
                     ?? controller.GetComponentInChildren<PlayerFloatingTextController>(true);
                 if (floatingText)

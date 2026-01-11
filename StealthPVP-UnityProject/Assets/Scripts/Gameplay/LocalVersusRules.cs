@@ -68,6 +68,7 @@ public class LocalVersusRules : MonoBehaviour
     private int wrongTargetPenalty => manager != null && manager.gameplayTuning != null
         ? manager.gameplayTuning.wrongTargetPenalty
         : (manager != null ? -Mathf.Abs(manager.scorePerTargetKill) : 0);
+    private bool ScoreFrozen => manager != null && (manager.IsPhase2Active || manager.IsGameOver);
 
     public void Initialize(LocalVersusGameManager manager)
     {
@@ -131,6 +132,11 @@ public class LocalVersusRules : MonoBehaviour
     private void TryAwardScore(CharacterHealth dead)
     {
         if (!dead)
+        {
+            return;
+        }
+
+        if (ScoreFrozen)
         {
             return;
         }
@@ -202,6 +208,11 @@ public class LocalVersusRules : MonoBehaviour
     internal void TryHandleHumiliation(CharacterHealth attacker, CharacterHealth victim)
     {
         if (!attacker || !victim || scorePerTargetKill <= 0)
+        {
+            return;
+        }
+
+        if (ScoreFrozen)
         {
             return;
         }
@@ -278,6 +289,11 @@ public class LocalVersusRules : MonoBehaviour
     internal void HandleWrongTargetKill(CharacterHealth dead)
     {
         if (!dead || wrongTargetPenalty == 0)
+        {
+            return;
+        }
+
+        if (ScoreFrozen)
         {
             return;
         }
@@ -471,6 +487,13 @@ public class LocalVersusRules : MonoBehaviour
             return true;
         }
 
+        if (manager && manager.IsPhase2Active)
+        {
+            bool attackerEmpowered = manager.IsEmpoweredHealth(attacker);
+            bool victimEmpowered = manager.IsEmpoweredHealth(victim);
+            return attackerEmpowered || victimEmpowered;
+        }
+
         PlayerSlot? attackerSlot = ResolvePlayerSlot(attacker);
         PlayerSlot? victimSlot = ResolvePlayerSlot(victim);
         if (!attackerSlot.HasValue || !victimSlot.HasValue)
@@ -549,7 +572,17 @@ public class LocalVersusRules : MonoBehaviour
             return false;
         }
 
-        scoreboard.SetScores(_player1Score, _player2Score, _player3Score);
+        if (manager && manager.IsPhase2Active)
+        {
+            scoreboard.SetScores(
+                manager.GetPhase2Lives(PlayerSlot.Player1),
+                manager.GetPhase2Lives(PlayerSlot.Player2),
+                manager.GetPhase2Lives(PlayerSlot.Player3));
+        }
+        else
+        {
+            scoreboard.SetScores(_player1Score, _player2Score, _player3Score);
+        }
         return true;
     }
 

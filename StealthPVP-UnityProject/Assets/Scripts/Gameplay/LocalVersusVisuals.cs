@@ -1,4 +1,5 @@
 using UnityEngine;
+using PlayerSlot = LocalVersusGameManager.PlayerSlot;
 
 [DisallowMultipleComponent]
 public class LocalVersusVisuals : MonoBehaviour
@@ -286,21 +287,77 @@ public class LocalVersusVisuals : MonoBehaviour
             player3Minimap = player3Ui.GetComponentInChildren<MinimapController>(true);
         }
 
+        NpcIdentity id1 = GetIdentity(_player1Instance);
+        NpcIdentity id2 = GetIdentity(_player2Instance);
+        NpcIdentity id3 = GetIdentity(_player3Instance);
+
+        if (manager && manager.IsPhase2Active && manager.EmpoweredSlot.HasValue)
+        {
+            PlayerSlot empoweredSlot = manager.EmpoweredSlot.Value;
+            NpcIdentity empoweredIdentity = empoweredSlot switch
+            {
+                PlayerSlot.Player1 => id1,
+                PlayerSlot.Player2 => id2,
+                PlayerSlot.Player3 => id3,
+                _ => null
+            };
+
+            if (player1Minimap)
+            {
+                player1Minimap.SetOwner(id1);
+                if (empoweredSlot == PlayerSlot.Player1)
+                {
+                    player1Minimap.SetTargets(new[] { id2, id3 });
+                }
+                else
+                {
+                    player1Minimap.SetTarget(empoweredIdentity);
+                }
+            }
+
+            if (player2Minimap)
+            {
+                player2Minimap.SetOwner(id2);
+                if (empoweredSlot == PlayerSlot.Player2)
+                {
+                    player2Minimap.SetTargets(new[] { id1, id3 });
+                }
+                else
+                {
+                    player2Minimap.SetTarget(empoweredIdentity);
+                }
+            }
+
+            if (player3Minimap)
+            {
+                player3Minimap.SetOwner(id3);
+                if (empoweredSlot == PlayerSlot.Player3)
+                {
+                    player3Minimap.SetTargets(new[] { id1, id2 });
+                }
+                else
+                {
+                    player3Minimap.SetTarget(empoweredIdentity);
+                }
+            }
+            return;
+        }
+
         if (player1Minimap)
         {
-            player1Minimap.SetOwner(GetIdentity(_player1Instance));
+            player1Minimap.SetOwner(id1);
             player1Minimap.SetTarget(player1Target);
         }
 
         if (player2Minimap)
         {
-            player2Minimap.SetOwner(GetIdentity(_player2Instance));
+            player2Minimap.SetOwner(id2);
             player2Minimap.SetTarget(player2Target);
         }
 
         if (player3Minimap)
         {
-            player3Minimap.SetOwner(GetIdentity(_player3Instance));
+            player3Minimap.SetOwner(id3);
             player3Minimap.SetTarget(player3Target);
         }
     }
@@ -308,6 +365,14 @@ public class LocalVersusVisuals : MonoBehaviour
     private void UpdateTargetImages(NpcIdentity id1, NpcIdentity id2, NpcIdentity id3,
         NpcIdentity player1Target, NpcIdentity player2Target, NpcIdentity player3Target)
     {
+        if (manager && manager.IsPhase2Active)
+        {
+            UpdateTargetImage(player1Ui, null);
+            UpdateTargetImage(player2Ui, null);
+            UpdateTargetImage(player3Ui, null);
+            return;
+        }
+
         UpdateTargetImage(player1Ui, ResolveTargetPrefab(id1, id2, id3, player1Target));
         UpdateTargetImage(player2Ui, ResolveTargetPrefab(id1, id2, id3, player2Target));
         UpdateTargetImage(player3Ui, ResolveTargetPrefab(id1, id2, id3, player3Target));
@@ -315,6 +380,14 @@ public class LocalVersusVisuals : MonoBehaviour
 
     private void UpdateHunterImages(NpcIdentity id1, NpcIdentity id2, NpcIdentity id3)
     {
+        if (manager && manager.IsPhase2Active)
+        {
+            UpdateHunterImage(player1Ui, null);
+            UpdateHunterImage(player2Ui, null);
+            UpdateHunterImage(player3Ui, null);
+            return;
+        }
+
         ResolveHunters(id1, id2, id3, out NpcIdentity hunter1, out NpcIdentity hunter2, out NpcIdentity hunter3);
 
         UpdateHunterImage(player1Ui, ResolveTargetPrefab(id1, id2, id3, hunter1));

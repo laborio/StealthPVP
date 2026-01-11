@@ -110,6 +110,18 @@ public class PlayerStunController : MonoBehaviour
             return;
         }
 
+        LocalVersusGameManager manager = LocalVersusGameManager.Instance;
+        if (manager && manager.IsPhase2Active)
+        {
+            CharacterHealth health = GetComponent<CharacterHealth>()
+                ?? GetComponentInParent<CharacterHealth>()
+                ?? GetComponentInChildren<CharacterHealth>(true);
+            if (manager.IsEmpoweredHealth(health))
+            {
+                return;
+            }
+        }
+
         if (!morphAbility)
         {
             morphAbility = GetComponent<MorphAbility>() ?? GetComponentInChildren<MorphAbility>(true);

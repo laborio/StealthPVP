@@ -39,6 +39,7 @@ public class PlayerFloatingTextController : MonoBehaviour
     [Header("Visibility")]
     [SerializeField, Tooltip("Layer used for floating texts so all cameras can see them.")] private string sharedLayerName = "Default";
     [SerializeField, Tooltip("If true, enforce the shared layer on the floating text root.")] private bool forceSharedLayer = true;
+    [SerializeField, Tooltip("If true, keep floating texts at a constant world scale.")] private bool ignoreParentScale = true;
 
     private readonly Dictionary<string, int> _statusCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, StatusDefinition> _statusLookup = new Dictionary<string, StatusDefinition>(StringComparer.OrdinalIgnoreCase);
@@ -47,12 +48,15 @@ public class PlayerFloatingTextController : MonoBehaviour
     private Coroutine _pointsRoutine;
     private Coroutine _layerRoutine;
     private int _sharedLayer = -1;
+    private Vector3 _desiredWorldScale = Vector3.one;
+    private bool _hasDesiredWorldScale;
 
     private void Awake()
     {
         ResolveReferences();
         BuildStatusLookup();
         CacheBasePositions();
+        CacheWorldScale();
         ApplySharedLayer();
         SetTextActive(statusText, false);
         SetTextActive(pointsTypeText, false);
@@ -70,6 +74,7 @@ public class PlayerFloatingTextController : MonoBehaviour
 
     private void LateUpdate()
     {
+        MaintainWorldScale();
         if (!statusText || !statusText.gameObject.activeSelf)
         {
             return;
@@ -141,6 +146,25 @@ public class PlayerFloatingTextController : MonoBehaviour
     public void ShowWrongTarget(int points = -100)
     {
         ShowPointsPopup("Wrong Target", points);
+    }
+
+    public void ShowHeal(int amount)
+    {
+        if (!pointsTypeText)
+        {
+            return;
+        }
+
+        int clamped = Mathf.Max(0, amount);
+        pointsTypeText.text = "HP";
+
+        if (pointsValueText)
+        {
+            pointsValueText.text = $"+{clamped}hp";
+            pointsValueText.color = positivePointsColor;
+        }
+
+        PlayPopup(pointsTypeText, ref _pointsRoutine, pointsValueText);
     }
 
     private void ResolveReferences()
@@ -262,6 +286,54 @@ public class PlayerFloatingTextController : MonoBehaviour
         CacheBasePosition(statusText);
         CacheBasePosition(pointsTypeText);
         CacheBasePosition(pointsValueText);
+    }
+
+    private void CacheWorldScale()
+    {
+        if (!floatingTextsRoot)
+        {
+            return;
+        }
+
+        _desiredWorldScale = floatingTextsRoot.lossyScale;
+        _hasDesiredWorldScale = true;
+    }
+
+    private void MaintainWorldScale()
+    {
+        if (!ignoreParentScale || !floatingTextsRoot)
+        {
+            return;
+        }
+
+        Transform parent = floatingTextsRoot.parent;
+        if (!parent)
+        {
+            return;
+        }
+
+        if (!_hasDesiredWorldScale)
+        {
+            CacheWorldScale();
+        }
+
+        Vector3 parentScale = parent.lossyScale;
+        if (Mathf.Approximately(parentScale.x, 0f)
+            || Mathf.Approximately(parentScale.y, 0f)
+            || Mathf.Approximately(parentScale.z, 0f))
+        {
+            return;
+        }
+
+        Vector3 targetLocalScale = new Vector3(
+            _desiredWorldScale.x / parentScale.x,
+            _desiredWorldScale.y / parentScale.y,
+            _desiredWorldScale.z / parentScale.z);
+
+        if (floatingTextsRoot.localScale != targetLocalScale)
+        {
+            floatingTextsRoot.localScale = targetLocalScale;
+        }
     }
 
     private void CacheBasePosition(TMP_Text text)
