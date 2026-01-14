@@ -27,6 +27,11 @@ public partial class SimpleCharacterController : MonoBehaviour
     [SerializeField] private float coyoteTime = 0.1f;
     [SerializeField] private float jumpBufferTime = 0.1f;
     [SerializeField, Range(0f, 5f)] private float airControl = 0.3f;
+    [Header("Air Shadow")]
+    [SerializeField, Tooltip("Sprite renderer used as a ground shadow while airborne.")] private SpriteRenderer airShadow;
+    [SerializeField, Tooltip("Offset applied above the ground hit point to avoid z-fighting.")] private float airShadowGroundOffset = 0.02f;
+    [SerializeField, Tooltip("Max distance to look for ground below the player when placing the shadow.")] private float airShadowMaxDistance = 10f;
+    [SerializeField, Tooltip("Layers used to position the shadow; defaults to groundMask when empty.")] private LayerMask airShadowGroundMask;
     [Header("Attack")]
     [SerializeField, Tooltip("Name of the animator trigger used for the attack animation.")] private string attackTriggerName = "Attack";
     [SerializeField, Tooltip("Name of the animator trigger used for the stun animation.")] private string stunTriggerName = "Stun";
@@ -44,6 +49,9 @@ public partial class SimpleCharacterController : MonoBehaviour
     [SerializeField, Tooltip("Speed used to pull toward the target during mid-air attacks.")] private float airAttackPullSpeed = 12f;
     [SerializeField, Tooltip("Stop pulling once within this distance of the target.")] private float airAttackPullStopDistance = 0.35f;
     [SerializeField, Tooltip("Maximum duration to pull during a mid-air attack.")] private float airAttackPullMaxDuration = 0.35f;
+    [SerializeField, Tooltip("Layers considered when finding pull targets without lock-on (empty = everything).")] private LayerMask airAttackPullTargetMask;
+    [SerializeField, Tooltip("Radius used when scanning for non-lock pull targets.")] private float airAttackPullTargetRadius = 0.5f;
+    [SerializeField, Range(-1f, 1f), Tooltip("Dot threshold vs aim direction when selecting non-lock pull targets.")] private float airAttackPullAimDotThreshold = 0.15f;
     [SerializeField, Tooltip("Optional body hitbox used during mid-air attacks.")] private WeaponDamage airAttackBodyDamage;
     [SerializeField, Tooltip("Seconds to keep the body hitbox active during mid-air attacks.")] private float airAttackDamageWindow = 0.25f;
     [SerializeField, Tooltip("If true, attacks require facing the target within the angle limit.")] private bool requireFacingForAttack = false;
@@ -77,6 +85,11 @@ public partial class SimpleCharacterController : MonoBehaviour
     [SerializeField] private LayerMask waterLayerMask = 1 << 4;
     [SerializeField, Range(0.1f, 1f)] private float waterMoveSpeedMultiplier = 0.6f;
     [SerializeField, Range(0.1f, 1f)] private float waterJumpVelocityMultiplier = 0.6f;
+    [Header("Test Auto Move")]
+    [SerializeField, Tooltip("If true, overrides input with a simple left/right + jump loop for testing.")] private bool enableTestAutoMove;
+    [SerializeField, Tooltip("Seconds before switching direction during auto-move.")] private float autoMoveSwitchInterval = 1.5f;
+    [SerializeField, Tooltip("Seconds between auto-jumps.")] private float autoMoveJumpInterval = 2.5f;
+    [SerializeField, Tooltip("If true, only fires auto-jumps when grounded.")] private bool autoMoveJumpWhileGroundedOnly = true;
 
     partial void OnBenchAwake();
 
@@ -112,6 +125,8 @@ public partial class SimpleCharacterController : MonoBehaviour
     private Vector3 _lastAttackAimDirection = Vector3.forward;
     private Transform _rangeIndicatorTransform;
     private SpriteRenderer _rangeIndicatorRenderer;
+    private SpriteRenderer _airShadowRenderer;
+    private Transform _airShadowTransform;
     private float _attackLockTimer;
     private bool _inputSuppressed;
     private int _attackSuppressionCount;
@@ -126,6 +141,10 @@ public partial class SimpleCharacterController : MonoBehaviour
     private bool _airAttackPullActive;
     private float _airAttackDamageTimer;
     private bool _airAttackDamageActive;
+    private float _autoMoveSwitchTimer;
+    private float _autoMoveJumpTimer;
+    private bool _autoMoveDirectionRight = true;
+    private bool _autoMoveWasEnabled;
 
     public event Action<bool> AttackTriggered;
 
@@ -151,12 +170,28 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
         CacheRangeIndicator();
         SetRangeIndicatorActive(false);
+        CacheAirShadow();
+        SetAirShadowActive(false);
         OnBenchAwake();
     }
 
     private void Update()
     {
         PlayerInputSnapshot inputSnapshot = inputRouter ? inputRouter.PollInput() : PollLegacyInput();
+        float deltaTime = Time.deltaTime;
+        if (enableTestAutoMove)
+        {
+            if (!_autoMoveWasEnabled)
+            {
+                ResetAutoMoveState();
+                _autoMoveWasEnabled = true;
+            }
+            inputSnapshot = BuildAutoMoveInput(deltaTime);
+        }
+        else if (_autoMoveWasEnabled)
+        {
+            _autoMoveWasEnabled = false;
+        }
         if (_inputSuppressed)
         {
             inputSnapshot = default;
@@ -205,7 +240,6 @@ public partial class SimpleCharacterController : MonoBehaviour
         Vector2 movementInputRaw = inputSnapshot.MoveAxis;
         bool requestedMovement = movementInputRaw.sqrMagnitude > 0.0001f;
         bool interactPressed = inputSnapshot.InteractPressed;
-        float deltaTime = Time.deltaTime;
         HandleBenchInput(requestedMovement, interactPressed);
         HandleAttackInput(inputSnapshot, isGrounded);
         UpdateAttackLockState(deltaTime);
@@ -559,6 +593,7 @@ public partial class SimpleCharacterController : MonoBehaviour
             RunSpeed = baseMoveSpeed * runMultiplier,
             JumpAnimationSpeed = 1f
         });
+        UpdateAirShadow(isGrounded);
         UpdateSeatingState(deltaTime);
         ProcessBenchCollisionRestore(deltaTime);
         UpdateActionHintDisplay(actionKeyAllowed, isGrounded);
@@ -860,7 +895,7 @@ public partial class SimpleCharacterController : MonoBehaviour
 
     private void TryBeginAirAttackPull(bool isGrounded)
     {
-        if (!airAttackPullEnabled || !allowAirAttack || isGrounded)
+        if (!airAttackPullEnabled || !allowAirAttack)
         {
             return;
         }
@@ -870,12 +905,24 @@ public partial class SimpleCharacterController : MonoBehaviour
             return;
         }
 
-        if (!_lockOnTarget)
+        Transform pullTarget = _lockOnTarget;
+        if (!pullTarget && !TryResolveNonLockPullTarget(out pullTarget))
         {
             return;
         }
 
-        _airAttackPullTarget = _lockOnTarget;
+        bool allowPull = !isGrounded || IsTargetAirborne(pullTarget);
+        if (!allowPull)
+        {
+            return;
+        }
+
+        if (!IsTargetWithinVerticalRange(pullTarget))
+        {
+            return;
+        }
+
+        _airAttackPullTarget = pullTarget;
         _airAttackPullTimer = Mathf.Max(0f, airAttackPullMaxDuration);
         _airAttackPullActive = _airAttackPullTimer > 0f;
     }
@@ -895,13 +942,21 @@ public partial class SimpleCharacterController : MonoBehaviour
 
         if (_characterController.isGrounded)
         {
-            CancelAirAttackPull();
-            return;
+            if (!IsTargetAirborne(_airAttackPullTarget))
+            {
+                CancelAirAttackPull();
+                return;
+            }
         }
 
         _airAttackPullTimer = Mathf.Max(0f, _airAttackPullTimer - deltaTime);
 
         Vector3 toTarget = _airAttackPullTarget.position - transform.position;
+        if (airAttackVerticalRange > 0f && Mathf.Abs(toTarget.y) > airAttackVerticalRange)
+        {
+            CancelAirAttackPull();
+            return;
+        }
         float sqrDistance = toTarget.sqrMagnitude;
         float stopDistance = Mathf.Max(0f, airAttackPullStopDistance);
         if (sqrDistance <= stopDistance * stopDistance)
@@ -1079,6 +1134,104 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
     }
 
+    private void SetAirShadowActive(bool active)
+    {
+        if (!_airShadowRenderer)
+        {
+            return;
+        }
+
+        if (_airShadowRenderer.enabled != active)
+        {
+            _airShadowRenderer.enabled = active;
+        }
+    }
+
+    private void CacheAirShadow()
+    {
+        if (airShadow)
+        {
+            _airShadowRenderer = airShadow;
+            _airShadowTransform = airShadow.transform;
+            return;
+        }
+
+        Transform[] children = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < children.Length; i++)
+        {
+            if (children[i] && children[i].name == "AirShadow")
+            {
+                _airShadowTransform = children[i];
+                _airShadowRenderer = children[i].GetComponentInChildren<SpriteRenderer>(true);
+                airShadow = _airShadowRenderer;
+                break;
+            }
+        }
+    }
+
+    private void UpdateAirShadow(bool isGrounded)
+    {
+        if (!_airShadowTransform || !_airShadowRenderer)
+        {
+            return;
+        }
+
+        bool groundedNow = _characterController ? _characterController.isGrounded : isGrounded;
+        bool shouldShow = !groundedNow || _isJumping || _isFalling;
+        if (!shouldShow)
+        {
+            SetAirShadowActive(false);
+            return;
+        }
+
+        if (!TryGetAirShadowGroundPoint(out Vector3 groundPoint))
+        {
+            SetAirShadowActive(false);
+            return;
+        }
+
+        SetAirShadowActive(true);
+        Vector3 position = _airShadowTransform.position;
+        position.x = groundPoint.x;
+        position.z = groundPoint.z;
+        position.y = groundPoint.y + airShadowGroundOffset;
+        _airShadowTransform.position = position;
+    }
+
+    private bool TryGetAirShadowGroundPoint(out Vector3 point)
+    {
+        point = default;
+        float maxDistance = Mathf.Max(0f, airShadowMaxDistance);
+        if (maxDistance <= 0f)
+        {
+            return false;
+        }
+
+        Vector3 origin = transform.position;
+        if (_characterController)
+        {
+            Bounds bounds = _characterController.bounds;
+            origin = bounds.center;
+            origin.y = bounds.max.y + 0.05f;
+        }
+        else
+        {
+            origin.y += 0.5f;
+        }
+
+        int mask = airShadowGroundMask.value != 0
+            ? airShadowGroundMask.value
+            : (groundMask.value != 0 ? groundMask.value : Physics.DefaultRaycastLayers);
+
+        if (Physics.Raycast(origin, Vector3.down, out RaycastHit hitInfo, maxDistance, mask, QueryTriggerInteraction.Ignore))
+        {
+            point = hitInfo.point;
+            return true;
+        }
+
+        return false;
+    }
+
     private bool IsGrounded()
     {
         if (_characterController == null)
@@ -1250,13 +1403,20 @@ public partial class SimpleCharacterController : MonoBehaviour
         airAttackPullSpeed = Mathf.Max(0f, airAttackPullSpeed);
         airAttackPullStopDistance = Mathf.Max(0f, airAttackPullStopDistance);
         airAttackPullMaxDuration = Mathf.Max(0f, airAttackPullMaxDuration);
+        airAttackPullTargetRadius = Mathf.Max(0f, airAttackPullTargetRadius);
+        airAttackPullAimDotThreshold = Mathf.Clamp(airAttackPullAimDotThreshold, -1f, 1f);
         airAttackDamageWindow = Mathf.Max(0f, airAttackDamageWindow);
         attackFacingAngle = Mathf.Clamp(attackFacingAngle, 0f, 360f);
         airAttackFacingAngle = Mathf.Clamp(airAttackFacingAngle, 0f, 360f);
         backwardRunDotThreshold = Mathf.Clamp(backwardRunDotThreshold, -1f, 1f);
         strafeDotThreshold = Mathf.Clamp(strafeDotThreshold, 0f, 1f);
         rigidbodyPushForce = Mathf.Max(0f, rigidbodyPushForce);
+        airShadowGroundOffset = Mathf.Max(0f, airShadowGroundOffset);
+        airShadowMaxDistance = Mathf.Max(0f, airShadowMaxDistance);
+        autoMoveSwitchInterval = Mathf.Max(0.1f, autoMoveSwitchInterval);
+        autoMoveJumpInterval = Mathf.Max(0.1f, autoMoveJumpInterval);
         CacheRangeIndicator();
+        CacheAirShadow();
     }
 
     private PlayerInputSnapshot PollLegacyInput()
@@ -1293,6 +1453,43 @@ public partial class SimpleCharacterController : MonoBehaviour
         }
 
         return snapshot;
+    }
+
+    private PlayerInputSnapshot BuildAutoMoveInput(float deltaTime)
+    {
+        _autoMoveSwitchTimer -= deltaTime;
+        if (_autoMoveSwitchTimer <= 0f)
+        {
+            _autoMoveDirectionRight = !_autoMoveDirectionRight;
+            _autoMoveSwitchTimer = Mathf.Max(0.1f, autoMoveSwitchInterval);
+        }
+
+        bool groundedNow = _characterController && _characterController.isGrounded;
+        bool jumpPressed = false;
+        _autoMoveJumpTimer -= deltaTime;
+        if (_autoMoveJumpTimer <= 0f)
+        {
+            if (!autoMoveJumpWhileGroundedOnly || groundedNow)
+            {
+                jumpPressed = true;
+                _autoMoveJumpTimer = Mathf.Max(0.1f, autoMoveJumpInterval);
+            }
+        }
+
+        float direction = _autoMoveDirectionRight ? 1f : -1f;
+        return new PlayerInputSnapshot
+        {
+            MoveAxis = new Vector2(direction, 0f),
+            RunHeld = false,
+            JumpPressed = jumpPressed
+        };
+    }
+
+    private void ResetAutoMoveState()
+    {
+        _autoMoveSwitchTimer = Mathf.Max(0.1f, autoMoveSwitchInterval);
+        _autoMoveJumpTimer = Mathf.Max(0.1f, autoMoveJumpInterval);
+        _autoMoveDirectionRight = true;
     }
 
     private bool TryResolveClickToMove(out Vector3 targetPosition)
@@ -1497,6 +1694,132 @@ public partial class SimpleCharacterController : MonoBehaviour
     public float AirAttackVerticalRange => airAttackVerticalRange;
 
     public bool IsAirborne => _isJumping || _isFalling || (_characterController && !_characterController.isGrounded);
+
+    private bool IsTargetWithinVerticalRange(Transform target)
+    {
+        if (!target)
+        {
+            return false;
+        }
+
+        if (airAttackVerticalRange <= 0f)
+        {
+            return true;
+        }
+
+        float verticalDistance = Mathf.Abs(target.position.y - transform.position.y);
+        return verticalDistance <= airAttackVerticalRange;
+    }
+
+    private bool IsTargetAirborne(Transform target)
+    {
+        if (!target)
+        {
+            return false;
+        }
+
+        SimpleCharacterController targetController = target.GetComponentInParent<SimpleCharacterController>()
+            ?? target.GetComponentInChildren<SimpleCharacterController>(true);
+        if (targetController)
+        {
+            return targetController.IsAirborne;
+        }
+
+        CharacterController targetCharacter = target.GetComponentInParent<CharacterController>()
+            ?? target.GetComponentInChildren<CharacterController>(true);
+        if (targetCharacter)
+        {
+            return !targetCharacter.isGrounded;
+        }
+
+        return false;
+    }
+
+    private bool TryResolveNonLockPullTarget(out Transform target)
+    {
+        target = null;
+        float range = lockOnAttackRange;
+        if (range <= 0f)
+        {
+            return false;
+        }
+
+        Vector3 origin = _characterController ? _characterController.bounds.center : transform.position;
+        Vector3 aimDirection = _lastAttackAimDirection.sqrMagnitude > 0.0001f ? _lastAttackAimDirection : transform.forward;
+        aimDirection.y = 0f;
+        if (aimDirection.sqrMagnitude < 0.0001f)
+        {
+            aimDirection = transform.forward;
+        }
+        aimDirection.Normalize();
+
+        int mask = airAttackPullTargetMask.value != 0
+            ? airAttackPullTargetMask.value
+            : Physics.DefaultRaycastLayers;
+        float radius = Mathf.Max(0f, airAttackPullTargetRadius);
+        RaycastHit[] hits = Physics.SphereCastAll(origin, radius, aimDirection, range, mask, QueryTriggerInteraction.Ignore);
+        if (hits == null || hits.Length == 0)
+        {
+            return false;
+        }
+
+        float bestSqrDistance = float.MaxValue;
+        Transform bestTarget = null;
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Collider hit = hits[i].collider;
+            if (!hit)
+            {
+                continue;
+            }
+
+            CharacterHealth targetHealth = hit.GetComponentInParent<CharacterHealth>();
+            if (!targetHealth)
+            {
+                continue;
+            }
+
+            Transform candidate = targetHealth.transform;
+            if (!candidate || candidate == transform || candidate.IsChildOf(transform))
+            {
+                continue;
+            }
+
+            if (!IsTargetAirborne(candidate) || !IsTargetWithinVerticalRange(candidate))
+            {
+                continue;
+            }
+
+            Vector3 toTarget = candidate.position - transform.position;
+            Vector3 planar = toTarget;
+            planar.y = 0f;
+            if (planar.sqrMagnitude < 0.0001f)
+            {
+                continue;
+            }
+
+            float dot = Vector3.Dot(aimDirection, planar.normalized);
+            if (dot < airAttackPullAimDotThreshold)
+            {
+                continue;
+            }
+
+            float sqrDistance = toTarget.sqrMagnitude;
+            if (sqrDistance < bestSqrDistance)
+            {
+                bestSqrDistance = sqrDistance;
+                bestTarget = candidate;
+            }
+        }
+
+        if (!bestTarget)
+        {
+            return false;
+        }
+
+        target = bestTarget;
+        return true;
+    }
 
     public bool IsLockOnTargetInRange()
     {

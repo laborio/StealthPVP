@@ -4217,7 +4217,7 @@ MonoBehaviour:
   - {fileID: 8179491082229621717, guid: 94af4aa8f3c224d548571277d09c0ab7, type: 3}
   - {fileID: 8179491082229621717, guid: 08097a163339342bead8c672512535d9, type: 3}
   - {fileID: 8179491082229621717, guid: 21f788c4b4bd04dc1b890be2d409d058, type: 3}
-  decoyCount: 75
+  decoyCount: 0
   spawnPoints:
   - {fileID: 1966851062}
   - {fileID: 1699200515}

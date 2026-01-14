@@ -100,6 +100,18 @@ PrefabInstance:
       propertyPath: inputRouter
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 5776939949241814741, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
+      propertyPath: enableTestAutoMove
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5776939949241814741, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
+      propertyPath: autoMoveJumpInterval
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5776939949241814741, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
+      propertyPath: autoMoveSwitchInterval
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6903999798086121422, guid: 27ecaee4c2da243a5a94df4f83ec23e3, type: 3}
       propertyPath: m_Layer
       value: 13
